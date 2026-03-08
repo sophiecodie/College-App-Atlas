@@ -4,17 +4,18 @@ import difflib
 import re
 
 THEME = {
-    "bg": "#FFF9FB",
-    "surface": "#FFFFFF",
-    "primary": "#FF7FB2",
-    "primary_soft": "#FFD6E8",
-    "text": "#2E2A33",
-    "muted": "#776B7A",
-    "border": "#F2DCE8",
+    "bg": "#F8F5EF",
+    "surface": "#FFFDF9",
+    "primary": "#B96B7A",
+    "primary_soft": "#EFD9D5",
+    "text": "#2F2A25",
+    "muted": "#746A60",
+    "border": "#E9DED1",
 }
 
 ui.add_head_html(f"""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap');
 :root {{
   --bg: {THEME['bg']};
   --surface: {THEME['surface']};
@@ -27,19 +28,37 @@ ui.add_head_html(f"""
 body {{
   background: var(--bg);
   color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui;
+  font-family: Manrope, ui-sans-serif, system-ui;
 }}
 .shell {{ min-height: 100vh; }}
-.sidebar {{ width: 240px; background: var(--surface); border-right: 1px solid var(--border); border-radius: 0 24px 24px 0; }}
-.nav-item {{ width: 100%; justify-content: flex-start; border-radius: 14px; padding: 10px 14px; }}
+.sidebar {{ width: 240px; background: linear-gradient(180deg, #fffdf9 0%, #f7f1e7 100%); border-right: 1px solid var(--border); border-radius: 0 24px 24px 0; }}
+.nav-item {{ width: 100%; justify-content: flex-start; border-radius: 14px; padding: 10px 14px; transition: background-color .2s ease, transform .2s ease; }}
 .nav-item.active {{ background: var(--primary-soft); color: #8F2F5A; font-weight: 600; }}
-.card {{ border-radius: 18px; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 6px 20px rgba(255,127,178,0.12); }}
-.add-btn {{ border-radius: 999px; background: var(--primary); color: white; }}
+.nav-item:hover {{ background: #f4ece2; transform: translateY(-1px); }}
+.card {{ border-radius: 20px; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 8px 24px rgba(80, 58, 40, 0.08); transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }}
+.card:hover {{ transform: translateY(-2px); box-shadow: 0 12px 28px rgba(80, 58, 40, 0.12); border-color: #d8c8b6; }}
+.add-btn {{ border-radius: 999px; background: var(--primary); color: white; transition: transform .2s ease, filter .2s ease; }}
+.add-btn:hover {{ transform: translateY(-1px); filter: brightness(1.03); }}
 .art {{ width: 220px; height: 320px; border-radius: 22px; border: 1px dashed var(--border); display:flex; align-items:center; justify-content:center; color: var(--muted); }}
-.stat-num {{ font-size: 1.8rem; font-weight: 700; color: #8F2F5A; }}
+.stat-num {{ font-size: 1.8rem; font-weight: 700; color: #7F4B56; font-family: Fraunces, serif; }}
 .section-title {{ font-size: 1.1rem; font-weight: 700; }}
 .chip {{ border: 1px solid var(--border); background: #fff; border-radius: 999px; padding: 4px 10px; font-size: 0.8rem; color: var(--muted); }}
-.progress-ring {{ width: 64px; height: 64px; border-radius: 999px; display:flex; align-items:center; justify-content:center; font-size: 0.85rem; font-weight: 700; color: #8F2F5A; }}
+.progress-ring {{ width: 64px; height: 64px; border-radius: 999px; display:flex; align-items:center; justify-content:center; font-size: 0.85rem; font-weight: 700; color: #7F4B56; }}
+h1, h2, h3, .text-3xl, .text-xl {{ font-family: Fraunces, serif; letter-spacing: 0.2px; }}
+.q-tab, .q-expansion-item__container, .q-btn {{ border-radius: 12px; }}
+.q-tab--active {{ background: #f2e7db; color: #6a3e48; }}
+.q-expansion-item__container {{ border: 1px solid var(--border); background: #fffdfa; }}
+.q-expansion-item__container:hover {{ border-color: #d8c8b6; }}
+.q-field__control {{ border-radius: 12px !important; }}
+.q-btn {{ transition: transform .2s ease, box-shadow .2s ease; }}
+.q-btn:hover {{ transform: translateY(-1px); }}
+@keyframes softFadeUp {{
+  0% {{ opacity: 0; transform: translateY(8px); }}
+  100% {{ opacity: 1; transform: translateY(0); }}
+}}
+.shell > div:last-child {{
+  animation: softFadeUp .35s ease-out;
+}}
 </style>
 """)
 
