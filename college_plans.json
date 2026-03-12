@@ -1,0 +1,281 @@
+{
+  "colleges": [
+    {
+      "name": "Harvard",
+      "application_options": [
+        {
+          "type": "Restrictive Early Action",
+          "deadline": "Nov 01, 2026"
+        },
+        {
+          "type": "Regular Decision",
+          "deadline": "Jan 01, 2027"
+        }
+      ],
+      "selected_application_type": "Regular Decision",
+      "status": "In Progress",
+      "major": "CS",
+      "quick_notes": "Refine leadership example in personal statement.",
+      "important_links": [
+        {
+          "label": "Admissions Portal",
+          "url": "https://college.harvard.edu/admissions"
+        },
+        {
+          "label": "Application Guide",
+          "url": "https://college.harvard.edu/apply"
+        }
+      ],
+      "basic_info": {
+        "location": "Cambridge, MA",
+        "program_focus": "Liberal Arts + Research",
+        "summary": "Strong interdisciplinary fit with computing and public policy."
+      },
+      "essay_prompts": [
+        {
+          "prompt_text": "How will you explore your academic interests at Harvard?",
+          "word_limit": 250,
+          "completed": false
+        },
+        {
+          "prompt_text": "Tell us about a community you belong to.",
+          "word_limit": 200,
+          "completed": false
+        }
+      ],
+      "research_page_reference": "research://Harvard",
+      "required_recommendations": [
+        {
+          "label": "Required Recommender 1",
+          "assigned_recommender": "Mr. Johnson"
+        },
+        {
+          "label": "Required Recommender 2",
+          "assigned_recommender": "Dr. Kim"
+        }
+      ],
+      "optional_recommendations": [
+        {
+          "label": "Optional Recommender",
+          "assigned_recommender": "Mr. Johnson"
+        }
+      ]
+    },
+    {
+      "name": "Duke",
+      "application_options": [
+        {
+          "type": "Early Decision I",
+          "deadline": "Nov 03, 2026"
+        },
+        {
+          "type": "Early Decision II",
+          "deadline": "Jan 02, 2027"
+        },
+        {
+          "type": "Regular Decision",
+          "deadline": "Jan 02, 2027"
+        }
+      ],
+      "selected_application_type": "Early Decision II",
+      "status": "In Progress",
+      "major": "CS",
+      "quick_notes": "Add one more policy impact anecdote.",
+      "important_links": [
+        {
+          "label": "Admissions Portal",
+          "url": "https://admissions.duke.edu"
+        },
+        {
+          "label": "Apply to Duke",
+          "url": "https://admissions.duke.edu/apply/"
+        }
+      ],
+      "basic_info": {
+        "location": "Durham, NC",
+        "program_focus": "Policy + Leadership",
+        "summary": "Good fit for practical policy training and research opportunities."
+      },
+      "essay_prompts": [
+        {
+          "prompt_text": "Why Duke?",
+          "word_limit": 250,
+          "completed": false
+        }
+      ],
+      "research_page_reference": "research://Duke",
+      "required_recommendations": [
+        {
+          "label": "Required Recommender 1",
+          "assigned_recommender": ""
+        },
+        {
+          "label": "Required Recommender 2",
+          "assigned_recommender": ""
+        }
+      ],
+      "optional_recommendations": [
+        {
+          "label": "Optional Recommender",
+          "assigned_recommender": ""
+        }
+      ]
+    },
+    {
+      "name": "Stanford",
+      "application_options": [
+        {
+          "type": "Restrictive Early Action",
+          "deadline": "Nov 01, 2026"
+        },
+        {
+          "type": "Regular Decision",
+          "deadline": "Jan 05, 2027"
+        }
+      ],
+      "selected_application_type": "Regular Decision",
+      "status": "In Progress",
+      "major": "Symbolic Systems",
+      "quick_notes": "Research AI + society labs and faculty fit.",
+      "important_links": [
+        {
+          "label": "Undergraduate Admission",
+          "url": "https://admission.stanford.edu"
+        }
+      ],
+      "basic_info": {
+        "location": "Stanford, CA",
+        "program_focus": "Interdisciplinary innovation",
+        "summary": "Excellent match for human-centered technology goals."
+      },
+      "essay_prompts": [
+        {
+          "prompt_text": "What matters most to you, and why?",
+          "word_limit": 250,
+          "completed": false
+        }
+      ],
+      "research_page_reference": "research://Stanford",
+      "required_recommendations": [
+        {
+          "label": "Required Recommender 1",
+          "assigned_recommender": ""
+        },
+        {
+          "label": "Required Recommender 2",
+          "assigned_recommender": ""
+        }
+      ],
+      "optional_recommendations": [
+        {
+          "label": "Optional Recommender",
+          "assigned_recommender": ""
+        }
+      ]
+    },
+    {
+      "name": "Princeton",
+      "application_options": [
+        {
+          "type": "Single-Choice Early Action",
+          "deadline": "Nov 01, 2026"
+        },
+        {
+          "type": "Regular Decision",
+          "deadline": "Jan 01, 2027"
+        }
+      ],
+      "selected_application_type": "Regular Decision",
+      "status": "In Progress",
+      "major": "Economics",
+      "quick_notes": "Strengthen community leadership examples.",
+      "important_links": [
+        {
+          "label": "Princeton Admission",
+          "url": "https://admission.princeton.edu"
+        }
+      ],
+      "basic_info": {
+        "location": "Princeton, NJ",
+        "program_focus": "Research-intensive liberal arts",
+        "summary": "Strong academics with close faculty mentorship."
+      },
+      "essay_prompts": [
+        {
+          "prompt_text": "How have your lived experiences shaped you?",
+          "word_limit": 500,
+          "completed": true
+        }
+      ],
+      "research_page_reference": "research://Princeton",
+      "required_recommendations": [
+        {
+          "label": "Required Recommender 1",
+          "assigned_recommender": ""
+        },
+        {
+          "label": "Required Recommender 2",
+          "assigned_recommender": ""
+        }
+      ],
+      "optional_recommendations": [
+        {
+          "label": "Optional Recommender",
+          "assigned_recommender": ""
+        }
+      ]
+    },
+    {
+      "name": "Yale",
+      "application_options": [
+        {
+          "type": "Single-Choice Early Action",
+          "deadline": "Nov 01, 2026"
+        },
+        {
+          "type": "Regular Decision",
+          "deadline": "Jan 02, 2027"
+        }
+      ],
+      "selected_application_type": "Single-Choice Early Action",
+      "status": "In Progress",
+      "major": "Political Science",
+      "quick_notes": "Draft stronger opening paragraph for 'Why Yale'.",
+      "important_links": [
+        {
+          "label": "Yale Admissions",
+          "url": "https://admissions.yale.edu"
+        }
+      ],
+      "basic_info": {
+        "location": "New Haven, CT",
+        "program_focus": "Humanities + social sciences",
+        "summary": "Compelling fit for policy + writing interests."
+      },
+      "essay_prompts": [
+        {
+          "prompt_text": "What inspires your academic direction?",
+          "word_limit": 200,
+          "completed": false
+        }
+      ],
+      "research_page_reference": "research://Yale",
+      "required_recommendations": [
+        {
+          "label": "Required Recommender 1",
+          "assigned_recommender": ""
+        },
+        {
+          "label": "Required Recommender 2",
+          "assigned_recommender": ""
+        }
+      ],
+      "optional_recommendations": [
+        {
+          "label": "Optional Recommender",
+          "assigned_recommender": ""
+        }
+      ]
+    }
+  ]
+}

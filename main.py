@@ -1,6 +1,8 @@
 from nicegui import ui
 from datetime import datetime
+from pathlib import Path
 import difflib
+import json
 import re
 
 THEME = {
@@ -39,6 +41,7 @@ body {{
 .card:hover {{ transform: translateY(-2px); box-shadow: 0 12px 28px rgba(80, 58, 40, 0.12); border-color: #d8c8b6; }}
 .add-btn {{ border-radius: 999px; background: var(--primary); color: white; transition: transform .2s ease, filter .2s ease; }}
 .add-btn:hover {{ transform: translateY(-1px); filter: brightness(1.03); }}
+.plus-square {{ width: 42px; height: 42px; min-width: 42px; border-radius: 12px; background: var(--primary); color: white; font-size: 1.2rem; font-weight: 700; }}
 .art {{ width: 220px; height: 320px; border-radius: 22px; border: 1px dashed var(--border); display:flex; align-items:center; justify-content:center; color: var(--muted); }}
 .stat-num {{ font-size: 1.8rem; font-weight: 700; color: #7F4B56; font-family: Fraunces, serif; }}
 .section-title {{ font-size: 1.1rem; font-weight: 700; }}
@@ -52,6 +55,77 @@ h1, h2, h3, .text-3xl, .text-xl {{ font-family: Fraunces, serif; letter-spacing:
 .q-field__control {{ border-radius: 12px !important; }}
 .q-btn {{ transition: transform .2s ease, box-shadow .2s ease; }}
 .q-btn:hover {{ transform: translateY(-1px); }}
+.split-layout {{ display: flex; gap: 16px; width: 100%; align-items: flex-start; }}
+.split-main {{ flex: 2 1 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; }}
+.split-side {{ flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; }}
+.four-col {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; width: 100%; }}
+.three-col {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; width: 100%; align-items: stretch; }}
+.research-grid {{
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1.2fr 1fr 1fr auto;
+  gap: 14px;
+  width: 100%;
+  align-items: center;
+}}
+.research-row {{
+  padding: 10px 8px;
+  border-radius: 12px;
+  transition: background-color .18s ease;
+}}
+.research-row:hover {{ background: #f7efe5; }}
+.status-pill {{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: max-content;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}}
+.pill-reach-high {{ background: #fde7e9; color: #a1303e; }}
+.pill-reach {{ background: #feefe2; color: #a45a1f; }}
+.pill-target {{ background: #e7effe; color: #2f5da8; }}
+.pill-safety {{ background: #e7f8ed; color: #277a3d; }}
+.pill-priority-high {{ background: #fff3d6; color: #8e6718; }}
+.pill-priority-medium {{ background: #f3f1ee; color: #665f55; }}
+.pill-priority-low {{ background: #f3f1ee; color: #665f55; }}
+.pill-visit {{ background: #f1edf8; color: #5b4e78; }}
+.research-list-card {{
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  background: #fffdfa;
+}}
+.research-list-card:hover {{
+  background: #fcf5eb;
+  border-color: #d8c8b6;
+}}
+.research-cards-grid {{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+  margin-top: 12px;
+}}
+.research-college-card {{
+  min-height: 190px;
+  max-height: 190px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}}
+@media (max-width: 1100px) {{
+  .four-col {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+  .three-col {{ grid-template-columns: 1fr; }}
+  .split-layout {{ flex-direction: column; }}
+  .research-grid {{ grid-template-columns: 1fr; }}
+  .research-cards-grid {{ grid-template-columns: 1fr; }}
+}}
 @keyframes softFadeUp {{
   0% {{ opacity: 0; transform: translateY(8px); }}
   100% {{ opacity: 1; transform: translateY(0); }}
@@ -66,6 +140,61 @@ widgets = [
     {"name": "Harvard", "progress": 72, "deadline": "Mar 28, 2026"},
     {"name": "Duke", "progress": 38, "deadline": "Apr 05, 2026"},
 ]
+
+
+COLLEGE_DATA_PATH = Path(__file__).with_name('college_plans.json')
+APPLICATION_STATUS_OPTIONS = ['In Progress', 'Ready to Submit', 'Submitted']
+
+
+def load_college_catalog():
+    try:
+        with COLLEGE_DATA_PATH.open('r', encoding='utf-8') as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as error:
+        print(f'Could not load college catalog from {COLLEGE_DATA_PATH}: {error}')
+        return {}
+
+    # Backward compatibility: old format was {college_name: {plans: {...}}}
+    if isinstance(data, dict) and 'colleges' not in data:
+        converted = {}
+        for college_name, value in data.items():
+            plans = value.get('plans', {}) if isinstance(value, dict) else {}
+            converted[college_name] = {
+                'name': college_name,
+                'application_options': [{'type': plan_type, 'deadline': deadline} for plan_type, deadline in plans.items()],
+                'selected_application_type': next(iter(plans), 'Regular Decision'),
+                'status': 'In Progress',
+                'major': 'Undeclared',
+                'quick_notes': '',
+                'important_links': [],
+                'basic_info': {},
+                'essay_prompts': [],
+                'research_page_reference': f'research://{college_name}',
+                'required_recommendations': [
+                    {'label': 'Required Recommender 1', 'assigned_recommender': ''},
+                    {'label': 'Required Recommender 2', 'assigned_recommender': ''},
+                ],
+                'optional_recommendations': [
+                    {'label': 'Optional Recommender', 'assigned_recommender': ''},
+                ],
+            }
+        return converted
+
+    colleges = data.get('colleges', []) if isinstance(data, dict) else []
+    by_name = {}
+    for college in colleges:
+        if isinstance(college, dict) and college.get('name'):
+            by_name[college['name']] = college
+    return by_name
+
+
+def save_college_catalog():
+    payload = {'colleges': list(college_data.values())}
+    with COLLEGE_DATA_PATH.open('w', encoding='utf-8') as file:
+        json.dump(payload, file, indent=2)
+
+
+college_data = load_college_catalog()
 essays_due = [
     {"title": "Harvard Supplemental", "due": "Mar 20, 2026"},
     {"title": "Duke Why Us", "due": "Mar 24, 2026"},
@@ -230,6 +359,7 @@ recommenders = [
     {
         "name": "Ms. Patel",
         "role": "Math Teacher",
+        "subject": "Mathematics",
         "schools_assigned": ["Harvard", "Duke"],
         "request_sent": True,
         "confirmed": True,
@@ -239,6 +369,7 @@ recommenders = [
     {
         "name": "Mr. Johnson",
         "role": "Counselor",
+        "subject": "College Counseling",
         "schools_assigned": ["Harvard", "Duke"],
         "request_sent": True,
         "confirmed": True,
@@ -248,6 +379,7 @@ recommenders = [
     {
         "name": "Dr. Kim",
         "role": "Supplemental Recommender",
+        "subject": "Research Mentorship",
         "schools_assigned": ["Harvard"],
         "request_sent": True,
         "confirmed": False,
@@ -304,18 +436,21 @@ def get_widget(college_name: str):
 
 
 def get_college_profile(college_name: str):
+    record = get_college_record(college_name) or {}
     profile = college_profiles.get(college_name, {})
     widget = get_widget(college_name) or {}
     return {
-        "application_type": profile.get("application_type", "Not set"),
-        "deadline": widget.get("deadline", "TBD"),
-        "status": profile.get("status", "Not started"),
-        "major": profile.get("major", "Undeclared"),
+        "application_type": record.get("selected_application_type") or profile.get("application_type", "Not set"),
+        "deadline": widget.get("deadline", get_college_deadline(college_name)),
+        "status": record.get("status", profile.get("status", "Not started")),
+        "major": record.get("major", profile.get("major", "Undeclared")),
         "progress": widget.get("progress", 0),
-        "notes": profile.get("notes", "Add quick notes for this college."),
-        "links": profile.get("links", []),
-        "essays": profile.get("essays", []),
-        "research": profile.get("research", []),
+        "notes": record.get("quick_notes", profile.get("notes", "Add quick notes for this college.")),
+        "links": record.get("important_links", profile.get("links", [])),
+        "essays": record.get("essay_prompts", profile.get("essays", [])),
+        "research": [record.get("basic_info", {}).get("summary", "")] if record.get("basic_info", {}).get("summary") else profile.get("research", []),
+        "basic_info": record.get("basic_info", {}),
+        "research_page_reference": record.get("research_page_reference", f"research://{college_name}"),
         "requirements": profile.get("requirements", []),
         "fees": profile.get("fees", []),
         "recs": profile.get("recs", []),
@@ -562,13 +697,14 @@ def default_research_entry(college_name: str, deadline: str = 'TBD'):
         "location": "TBD",
         "major_program": "Undeclared",
         "application_deadline": deadline,
+        "reach_level": "--",
         "why_this_school": "",
         "vibe": "",
         "academic_strengths": "",
         "notes_status": "Not started",
         "interview": "Unknown",
-        "visit_status": "Not planned",
-        "priority_level": "Medium",
+        "visit_status": "No Visit",
+        "priority_level": "--",
         "general_notes": "",
         "academic_programs": "",
         "campus_culture": "",
@@ -579,31 +715,217 @@ def default_research_entry(college_name: str, deadline: str = 'TBD'):
     }
 
 
+def default_college_profile():
+    return {
+        "application_type": "Not set",
+        "status": "Not started",
+        "major": "Undeclared",
+        "notes": "Add quick notes for this college.",
+        "links": [],
+        "essays": [],
+        "research": [],
+        "requirements": [],
+        "fees": [],
+        "recs": [],
+    }
+
+
+def default_college_record(college_name: str):
+    return {
+        'name': college_name,
+        'application_options': [],
+        'selected_application_type': '',
+        'status': 'In Progress',
+        'major': 'Undeclared',
+        'quick_notes': '',
+        'important_links': [],
+        'basic_info': {},
+        'essay_prompts': [],
+        'research_page_reference': f'research://{college_name}',
+        'required_recommendations': [
+            {'label': 'Required Recommender 1', 'assigned_recommender': ''},
+            {'label': 'Required Recommender 2', 'assigned_recommender': ''},
+        ],
+        'optional_recommendations': [
+            {'label': 'Optional Recommender', 'assigned_recommender': ''},
+        ],
+    }
+
+
+def get_college_record(college_name: str):
+    return college_data.get(college_name)
+
+
+def ensure_college_record(college_name: str):
+    if college_name not in college_data:
+        college_data[college_name] = default_college_record(college_name)
+    record = college_data[college_name]
+    changed = False
+    def normalize_slots(raw_value, default_count: int, prefix: str):
+        if isinstance(raw_value, int):
+            target_count = max(1, min(raw_value, 3))
+            slots = []
+        elif isinstance(raw_value, list):
+            target_count = max(1, min(len(raw_value), 3)) if len(raw_value) else default_count
+            slots = raw_value
+        else:
+            target_count = default_count
+            slots = []
+
+        normalized = []
+        for i in range(target_count):
+            slot = slots[i] if i < len(slots) and isinstance(slots[i], dict) else {}
+            normalized.append({
+                'label': slot.get('label') or f'{prefix} {i + 1}',
+                'assigned_recommender': slot.get('assigned_recommender') or '',
+            })
+        return normalized
+
+    normalized_required = normalize_slots(record.get('required_recommendations'), 2, 'Required Recommender')
+    if normalized_required != record.get('required_recommendations'):
+        record['required_recommendations'] = normalized_required
+        changed = True
+
+    normalized_optional = normalize_slots(record.get('optional_recommendations'), 1, 'Optional Recommender')
+    if normalized_optional != record.get('optional_recommendations'):
+        record['optional_recommendations'] = normalized_optional
+        changed = True
+
+    if changed:
+        save_college_catalog()
+    return record
+
+
+def normalize_college_records():
+    changed = False
+    for college_name in list(college_data.keys()):
+        before = json.dumps(college_data.get(college_name, {}), sort_keys=True)
+        ensure_college_record(college_name)
+        after = json.dumps(college_data.get(college_name, {}), sort_keys=True)
+        if before != after:
+            changed = True
+    if changed:
+        save_college_catalog()
+
+
+def get_college_deadline(college_name: str):
+    record = get_college_record(college_name)
+    if not record:
+        return 'TBD'
+    selected_type = record.get('selected_application_type')
+    for option in record.get('application_options', []):
+        if option.get('type') == selected_type:
+            return option.get('deadline', 'TBD')
+    if record.get('application_options'):
+        return record['application_options'][0].get('deadline', 'TBD')
+    return 'TBD'
+
+
+def get_effective_deadline(college_name: str):
+    catalog_deadline = get_college_deadline(college_name)
+    if catalog_deadline != 'TBD':
+        return catalog_deadline
+    widget = get_widget(college_name)
+    return widget.get('deadline', 'TBD') if widget else 'TBD'
+
+
+def sync_widget_deadlines_from_college_data():
+    for item in widgets:
+        synced_deadline = get_college_deadline(item['name'])
+        if synced_deadline != 'TBD':
+            item['deadline'] = synced_deadline
+
+
+def get_valid_application_plans(college_name: str):
+    record = get_college_record(college_name)
+    if not record:
+        return []
+    return [option.get('type') for option in record.get('application_options', []) if option.get('type')]
+
+
+def get_deadline_for_college_plan(college_name: str, application_plan: str):
+    record = get_college_record(college_name)
+    if not record:
+        return 'TBD'
+    for option in record.get('application_options', []):
+        if option.get('type') == application_plan:
+            return option.get('deadline', 'TBD')
+    return 'TBD'
+
+
+def add_or_update_college(college_name: str, application_plan: str, deadline: str):
+    record = ensure_college_record(college_name)
+    if not record.get('application_options'):
+        record['application_options'] = [{'type': application_plan, 'deadline': deadline}]
+    else:
+        matched = False
+        for option in record['application_options']:
+            if option.get('type') == application_plan:
+                option['deadline'] = deadline
+                matched = True
+                break
+        if not matched:
+            record['application_options'].append({'type': application_plan, 'deadline': deadline})
+    record['selected_application_type'] = application_plan
+
+    existing_widget = get_widget(college_name)
+    if existing_widget:
+        existing_widget["deadline"] = deadline
+    else:
+        widgets.append({"name": college_name, "progress": 0, "deadline": deadline})
+
+    if college_name not in college_profiles:
+        college_profiles[college_name] = default_college_profile()
+    college_profiles[college_name]["application_type"] = application_plan
+
+    research_database[college_name] = research_database.get(college_name, default_research_entry(college_name, deadline))
+    research_database[college_name]["application_deadline"] = deadline
+    ensure_recommendation_row(college_name)
+    ensure_fee_row(college_name)
+    save_college_catalog()
+
+
 def render_research_page():
     ui.label('Research').classes('text-3xl font-bold')
-    ui.label('Move fast in the database view, then go deep in each college research workspace.').classes('text-base')
+    ui.label('Lightweight research overview for quick scanning. Open a college for full notes and depth.').classes('text-base')
 
     if research_state["college"]:
         college_name = research_state["college"]
         entry = research_database[college_name]
+        profile = get_college_profile(college_name)
 
         with ui.row().classes('w-full justify-between items-center'):
             ui.label(f'{college_name} Research Workspace').classes('section-title')
             ui.button('← Back to Research Database', on_click=lambda: back_to_database()).props('flat no-caps')
 
+        with ui.row().classes('four-col'):
+            with ui.card().classes('card p-4'):
+                ui.label('Location').classes('text-base font-medium')
+                ui.input(value=entry["location"], on_change=lambda e: set_research_value(college_name, "location", e.value)).classes('w-full')
+            with ui.card().classes('card p-4'):
+                ui.label('Priority').classes('text-base font-medium')
+                ui.select(["--", "High", "Medium", "Low"], value=entry["priority_level"], on_change=lambda e: set_research_value(college_name, "priority_level", e.value)).classes('w-full')
+            with ui.card().classes('card p-4'):
+                ui.label('Reach Level').classes('text-base font-medium')
+                ui.select(["--", "High Reach", "Reach", "Target", "Safety"], value=entry.get("reach_level", "--"), on_change=lambda e: set_research_value(college_name, "reach_level", e.value)).classes('w-full')
+            with ui.card().classes('card p-4'):
+                ui.label('Visit Status').classes('text-base font-medium')
+                ui.select(["Visited", "Planned", "No Visit"], value=entry.get("visit_status", "No Visit"), on_change=lambda e: set_research_value(college_name, "visit_status", e.value)).classes('w-full')
+
         with ui.row().classes('w-full gap-4'):
             with ui.card().classes('card p-4 grow'):
-                ui.label('Location').classes('text-sm')
-                ui.input(value=entry["location"], on_change=lambda e: set_research_value(college_name, "location", e.value)).classes('w-full')
+                ui.label('Intended Major / Program').classes('text-base font-medium')
+                ui.label(profile.get("major", "Undeclared")).classes('text-lg mt-2')
+                ui.label('Synced from college page').classes('text-xs')
             with ui.card().classes('card p-4 grow'):
-                ui.label('Major / Program').classes('text-sm')
-                ui.input(value=entry["major_program"], on_change=lambda e: set_research_value(college_name, "major_program", e.value)).classes('w-full')
-            with ui.card().classes('card p-4 grow'):
-                ui.label('Priority').classes('text-sm')
-                ui.select(["High", "Medium", "Low"], value=entry["priority_level"], on_change=lambda e: set_research_value(college_name, "priority_level", e.value)).classes('w-full')
+                ui.label('Application Deadline').classes('text-base font-medium')
+                ui.label(profile.get("deadline", "TBD")).classes('text-lg mt-2')
+                ui.label('Synced from college page').classes('text-xs')
 
         section_specs = [
-            ("General Notes", "general_notes"),
+            ("Vibe", "vibe"),
+            ("Academic Strengths", "academic_strengths"),
+            ("Long Notes", "general_notes"),
             ("Academic Programs", "academic_programs"),
             ("Campus Culture", "campus_culture"),
             ("Clubs / Professors / Labs", "clubs_professors_labs"),
@@ -620,7 +942,7 @@ def render_research_page():
                 ).props('autogrow outlined').classes('w-full mt-2')
         return
 
-    with ui.card().classes('card w-full p-4'):
+    with ui.card().classes('card w-full p-5'):
         with ui.row().classes('w-full justify-between items-center'):
             ui.label('Research Database View').classes('section-title')
             ui.select(
@@ -628,66 +950,89 @@ def render_research_page():
                     "priority_level",
                     "application_deadline",
                     "college",
-                    "notes_status",
+                    "reach_level",
                 ],
                 value=research_state["sort_by"],
                 on_change=lambda e: update_research_sort(e.value),
                 label='Sort by',
             ).classes('w-56')
+        ui.label('College Name • Location • Reach/Priority • Deadline • Visit').classes('text-sm mt-2')
+        with ui.element('div').classes('research-cards-grid'):
+            for row in sorted_research_rows():
+                with ui.card().classes('research-list-card research-college-card'):
+                    with ui.row().classes('w-full justify-between items-start'):
+                        with ui.column().classes('gap-1'):
+                            ui.label(row["college"]).classes('text-lg font-bold')
+                            ui.label(f"{row['location']} • {row['major_program']}").classes('text-sm')
 
-        header_cols = [
-            'College', 'Location', 'Major/Program', 'App Deadline', 'Why This School?', 'Vibe',
-            'Academic Strengths', 'Notes Status', 'Interview?', 'Visit Status', 'Priority', 'Open'
-        ]
-        with ui.row().classes('w-full no-wrap text-sm font-bold mt-3'):
-            for col in header_cols:
-                ui.label(col).classes('w-40')
+                            reach_class = {
+                                "High Reach": "pill-reach-high",
+                                "Reach": "pill-reach",
+                                "Target": "pill-target",
+                                "Safety": "pill-safety",
+                                "--": "pill-priority-medium",
+                            }.get(row["reach_level"], "pill-priority-medium")
+                            priority_class = {
+                                "High": "pill-priority-high",
+                                "Medium": "pill-priority-medium",
+                                "Low": "pill-priority-low",
+                            }.get(row["priority_level"], "pill-priority-medium")
 
-        for row in sorted_research_rows():
-            with ui.row().classes('w-full no-wrap items-center text-sm py-2 cursor-pointer').on(
-                'click', lambda _, college_name=row["college"]: open_research_college(college_name)
-            ):
-                ui.label(row["college"]).classes('w-40 font-semibold')
-                ui.label(row["location"]).classes('w-40')
-                ui.label(row["major_program"]).classes('w-40')
-                ui.label(row["application_deadline"]).classes('w-40')
-                ui.label(row["why_this_school"]).classes('w-40')
-                ui.label(row["vibe"]).classes('w-40')
-                ui.label(row["academic_strengths"]).classes('w-40')
-                ui.label(row["notes_status"]).classes('w-40')
-                ui.label(row["interview"]).classes('w-40')
-                ui.label(row["visit_status"]).classes('w-40')
-                ui.label(row["priority_level"]).classes('w-40')
-                ui.button(
-                    'Open',
-                    on_click=lambda college_name=row["college"]: open_research_college(college_name),
-                ).props('outline dense no-caps').classes('w-24')
+                            reach_text = {
+                                "High Reach": "🔴 High Reach",
+                                "Reach": "🟠 Reach",
+                                "Target": "🔵 Target",
+                                "Safety": "🟢 Safety",
+                                "--": "Reach Level: --",
+                            }.get(row["reach_level"], "--")
+                            priority_text = {
+                                "High": "★ High Priority",
+                                "Medium": "○ Medium Priority",
+                                "Low": "○ Low Priority",
+                                "--": "Priority Level: --",
+                            }.get(row["priority_level"], "--")
+                            visit_text = {
+                                "Visited": "✓ Visited",
+                                "Planned": "✈ Planned",
+                                "No Visit": "— No Visit",
+                            }.get(row["visit_status"], row["visit_status"])
+
+                            with ui.row().classes('items-center gap-2 mt-1'):
+                                ui.label(reach_text).classes(f'status-pill {reach_class}')
+                                ui.label(priority_text).classes(f'status-pill {priority_class}')
+                                ui.label(visit_text).classes('status-pill pill-visit')
+
+                            ui.label(f"Deadline: {row['application_deadline']}").classes('text-sm mt-1')
+
+                        ui.button(
+                            'Open Research →',
+                            on_click=lambda college_name=row["college"]: open_research_college(college_name),
+                        ).props('outline no-caps').classes('self-start')
 
 
 def sorted_research_rows():
     rows = []
     for college, entry in research_database.items():
+        profile = get_college_profile(college)
         rows.append({
             "college": college,
             "location": entry["location"],
-            "major_program": entry["major_program"],
-            "application_deadline": entry["application_deadline"],
-            "why_this_school": entry["why_this_school"] or '-',
-            "vibe": entry["vibe"] or '-',
-            "academic_strengths": entry["academic_strengths"] or '-',
-            "notes_status": entry["notes_status"],
-            "interview": entry["interview"],
+            "major_program": profile.get("major", "Undeclared"),
+            "application_deadline": profile.get("deadline", "TBD"),
+            "reach_level": entry.get("reach_level", "--"),
             "visit_status": entry["visit_status"],
-            "priority_level": entry["priority_level"],
+            "priority_level": entry.get("priority_level", "--"),
         })
 
     sort_by = research_state["sort_by"]
     if sort_by == "priority_level":
-        rows.sort(key=lambda row: PRIORITY_RANK.get(row["priority_level"], 99))
+        priority_rank = {"High": 0, "Medium": 1, "Low": 2, "--": 99}
+        rows.sort(key=lambda row: priority_rank.get(row["priority_level"], 99))
     elif sort_by == "application_deadline":
         rows.sort(key=lambda row: days_until(row["application_deadline"]) if days_until(row["application_deadline"]) is not None else 10**6)
-    elif sort_by == "notes_status":
-        rows.sort(key=lambda row: row["notes_status"])
+    elif sort_by == "reach_level":
+        reach_rank = {"High Reach": 0, "Reach": 1, "Target": 2, "Safety": 3, "--": 99}
+        rows.sort(key=lambda row: reach_rank.get(row["reach_level"], 99))
     else:
         rows.sort(key=lambda row: row["college"])
     return rows
@@ -751,70 +1096,191 @@ def matrix_status_symbol(status: str):
     return symbols.get(status, status)
 
 
+def get_college_assigned_recommenders(college_name: str):
+    record = ensure_college_record(college_name)
+    assigned = set()
+    for slot in record.get('required_recommendations', []):
+        value = (slot.get('assigned_recommender') or '').strip()
+        if value:
+            assigned.add(value)
+    for slot in record.get('optional_recommendations', []):
+        value = (slot.get('assigned_recommender') or '').strip()
+        if value:
+            assigned.add(value)
+    return assigned
+
+
+def get_recommender_assigned_colleges(recommender_name: str):
+    assigned_colleges = []
+    for college_name in [item["name"] for item in widgets]:
+        if recommender_name in get_college_assigned_recommenders(college_name):
+            assigned_colleges.append(college_name)
+    return assigned_colleges
+
+
+def sync_recommendation_matrix():
+    college_names = [item["name"] for item in widgets]
+    recommender_names = [rec["name"] for rec in recommenders]
+
+    for college in college_names:
+        if college not in recommendation_matrix:
+            recommendation_matrix[college] = {}
+
+        row = recommendation_matrix[college]
+
+        for old_name in list(row.keys()):
+            if old_name not in recommender_names:
+                del row[old_name]
+
+        assigned_for_college = get_college_assigned_recommenders(college)
+        for rec in recommenders:
+            is_assigned = rec["name"] in assigned_for_college
+            if rec["name"] not in row:
+                row[rec["name"]] = "Missing" if is_assigned else "N/A"
+            else:
+                if not is_assigned:
+                    row[rec["name"]] = "N/A"
+                elif row[rec["name"]] == "N/A":
+                    row[rec["name"]] = "Missing"
+
+
 def render_recommendations_page():
-    for college in [item["name"] for item in widgets]:
-        ensure_recommendation_row(college)
+    sync_recommendation_matrix()
 
     ui.label('Recommendations').classes('text-3xl font-bold')
-    ui.label('Track recommenders with low-stress clarity and quickly spot missing submissions.').classes('text-base')
+    ui.label('Manage recommenders as global profiles and assign them to colleges.').classes('text-base')
 
-    missing_total = 0
-    for college, recs in recommendation_matrix.items():
-        for status in recs.values():
-            if status == "Missing":
-                missing_total += 1
+    role_options = ["Teacher", "Counselor", "Mentor", "Supplemental", "Other"]
+    def find_recommender_index_by_name(name: str):
+        for i, rec in enumerate(recommenders):
+            if rec.get("name") == name:
+                return i
+        return None
 
-    with ui.row().classes('w-full gap-4'):
-        with ui.card().classes('card p-4 grow'):
-            ui.label('Total recommenders').classes('section-title')
-            ui.label(str(len(recommenders))).classes('stat-num')
-        with ui.card().classes('card p-4 grow'):
-            ui.label('Missing items').classes('section-title')
-            ui.label(str(missing_total)).classes('stat-num')
+    def open_recommender_form(edit_name=None):
+        edit_index = find_recommender_index_by_name(edit_name) if edit_name else None
+        is_edit = edit_index is not None
+        existing = recommenders[edit_index] if is_edit else {}
+        existing_role = existing.get('role', 'Teacher')
+        selected_role_value = existing_role if existing_role in role_options else 'Other'
 
-    with ui.card().classes('card w-full p-4'):
-        ui.label('Recommender Tracker').classes('section-title')
-        with ui.row().classes('w-full no-wrap text-sm font-bold mt-3'):
-            for header in ["Name", "Subject/Role", "Schools Assigned", "Request Sent", "Confirmed", "Submitted", "Notes", "Deadline Reminders"]:
-                ui.label(header).classes('w-40')
+        dialog = ui.dialog()
+        with dialog, ui.card().classes('card w-[560px] p-5'):
+            ui.label('Edit Recommender' if is_edit else 'Add Recommender').classes('text-xl font-bold')
 
+            name_input = ui.input(label='Name', value=existing.get('name', '')).classes('w-full')
+            role_select = ui.select(role_options, value=selected_role_value, label='Role').classes('w-full')
+            other_role_input = ui.input(label='Custom role (if Other)', value='' if existing_role in role_options else existing_role).classes('w-full')
+            subject_input = ui.input(label='Subject', value=existing.get('subject', '')).classes('w-full')
+
+            def save_recommender():
+                new_name = (name_input.value or '').strip()
+                if not new_name:
+                    ui.notify('Name is required.', color='negative')
+                    return
+                for i, rec in enumerate(recommenders):
+                    if rec.get("name") == new_name and (not is_edit or i != edit_index):
+                        ui.notify('A recommender with this name already exists.', color='negative')
+                        return
+
+                selected_role = role_select.value
+                final_role = (other_role_input.value or '').strip() if selected_role == 'Other' else selected_role
+                if selected_role == 'Other' and not final_role:
+                    ui.notify('Enter a custom role for "Other".', color='negative')
+                    return
+
+                updated = {
+                    "name": new_name,
+                    "role": final_role,
+                    "subject": (subject_input.value or '').strip(),
+                    "request_sent": existing.get("request_sent", False),
+                    "confirmed": existing.get("confirmed", False),
+                    "submitted": existing.get("submitted", False),
+                    "notes": existing.get("notes", ""),
+                }
+
+                if is_edit:
+                    old_name = recommenders[edit_index]["name"]
+                    recommenders[edit_index] = updated
+                    if old_name != new_name:
+                        for record in college_data.values():
+                            for slot in record.get('required_recommendations', []):
+                                if slot.get('assigned_recommender') == old_name:
+                                    slot['assigned_recommender'] = new_name
+                            for slot in record.get('optional_recommendations', []):
+                                if slot.get('assigned_recommender') == old_name:
+                                    slot['assigned_recommender'] = new_name
+                        for college_name, row in recommendation_matrix.items():
+                            old_status = row.pop(old_name, "N/A")
+                            row[new_name] = old_status
+                else:
+                    recommenders.append(updated)
+
+                sync_recommendation_matrix()
+                save_college_catalog()
+                dialog.close()
+                render_page()
+
+            with ui.row().classes('w-full justify-end gap-2 mt-3'):
+                ui.button('Cancel', on_click=dialog.close).props('flat')
+                ui.button('Save', on_click=save_recommender).classes('add-btn')
+
+        dialog.open()
+
+    def confirm_remove_recommender(name: str):
+        confirm_dialog = ui.dialog()
+        with confirm_dialog, ui.card().classes('card w-[420px] p-5'):
+            ui.label('Remove Recommender?').classes('text-xl font-bold')
+            ui.label(f'Are you sure you want to remove {name}? This cannot be undone.').classes('text-sm')
+
+            def do_remove():
+                index = find_recommender_index_by_name(name)
+                if index is None:
+                    confirm_dialog.close()
+                    return
+                removed_name = recommenders[index]["name"]
+                del recommenders[index]
+                for record in college_data.values():
+                    for slot in record.get('required_recommendations', []):
+                        if slot.get('assigned_recommender') == removed_name:
+                            slot['assigned_recommender'] = ''
+                    for slot in record.get('optional_recommendations', []):
+                        if slot.get('assigned_recommender') == removed_name:
+                            slot['assigned_recommender'] = ''
+                for _, row in recommendation_matrix.items():
+                    row.pop(removed_name, None)
+                sync_recommendation_matrix()
+                save_college_catalog()
+                confirm_dialog.close()
+                render_page()
+
+            with ui.row().classes('w-full justify-end gap-2 mt-3'):
+                ui.button('Cancel', on_click=confirm_dialog.close).props('flat')
+                ui.button('Remove', on_click=do_remove).props('color=negative no-caps')
+
+        confirm_dialog.open()
+
+    with ui.row().classes('w-full justify-between items-center'):
+        ui.label(f'{len(recommenders)} Recommenders').classes('section-title')
+        ui.button('+ Add Recommender', on_click=lambda: open_recommender_form()).classes('add-btn')
+
+    with ui.column().classes('w-full gap-3'):
+        if not recommenders:
+            with ui.card().classes('card w-full p-5'):
+                ui.label('No recommenders yet. Add one to get started.').classes('text-sm')
         for rec in recommenders:
-            reminder_items = []
-            for school in rec["schools_assigned"]:
-                school_widget = get_widget(school)
-                if not school_widget:
-                    continue
-                row_status = recommendation_matrix.get(school, {}).get(rec["name"], "Missing")
-                if row_status != "Submitted":
-                    reminder_items.append(f"{school}: {school_widget['deadline']}")
-            reminders = ", ".join(reminder_items) if reminder_items else "None"
-
-            with ui.row().classes('w-full no-wrap items-center text-sm py-2'):
-                ui.label(rec["name"]).classes('w-40 font-semibold')
-                ui.label(rec["role"]).classes('w-40')
-                ui.label(", ".join(rec["schools_assigned"])).classes('w-40')
-                ui.label("Yes" if rec["request_sent"] else "No").classes('w-40')
-                ui.label("Yes" if rec["confirmed"] else "No").classes('w-40')
-                ui.label("Yes" if rec["submitted"] else "No").classes('w-40')
-                ui.label(rec["notes"]).classes('w-40')
-                ui.label(reminders).classes('w-40')
-
-    with ui.card().classes('card w-full p-4'):
-        ui.label('Recommendation Matrix').classes('section-title')
-        ui.label('Rows = colleges, columns = recommenders/counselor/supplemental recs').classes('text-sm mt-1')
-
-        with ui.row().classes('w-full no-wrap text-sm font-bold mt-3'):
-            ui.label('College').classes('w-40')
-            for rec in recommenders:
-                ui.label(rec["name"]).classes('w-40')
-
-        for item in widgets:
-            college = item["name"]
-            with ui.row().classes('w-full no-wrap items-center text-sm py-2'):
-                ui.label(college).classes('w-40 font-semibold')
-                for rec in recommenders:
-                    status = recommendation_matrix[college].get(rec["name"], "Missing")
-                    ui.label(matrix_status_symbol(status)).classes('w-40')
+            assigned = get_recommender_assigned_colleges(rec.get("name", ""))
+            with ui.card().classes('card w-full p-4'):
+                with ui.row().classes('w-full justify-between items-start'):
+                    with ui.column().classes('gap-1'):
+                        ui.label(rec.get("name", "Unnamed")).classes('text-lg font-bold')
+                        ui.label(f"{rec.get('role', 'Role not set')} • {rec.get('subject', 'Subject not set')}").classes('text-sm')
+                        ui.label(
+                            f"Assigned: {', '.join(assigned) if assigned else 'No colleges assigned'}"
+                        ).classes('text-sm')
+                    with ui.row().classes('gap-2'):
+                        ui.button('Edit', on_click=lambda n=rec.get("name", ""): open_recommender_form(n)).props('outline no-caps')
+                        ui.button('Remove', on_click=lambda n=rec.get("name", ""): confirm_remove_recommender(n)).props('outline color=negative no-caps')
 
 
 def render_fees_page():
@@ -868,10 +1334,18 @@ def render_fees_page():
 
 
 def render_college_page(college_name: str):
+    record = ensure_college_record(college_name)
     profile = get_college_profile(college_name)
 
     ui.label(college_name).classes('text-3xl font-bold')
     ui.label('College command center').classes('text-base')
+
+    def open_linked_research():
+        current_page['id'] = 'research'
+        current_page['college'] = None
+        research_state["college"] = college_name
+        set_active_sidebar()
+        render_page()
 
     with ui.tabs().classes('w-full') as tabs:
         overview_tab = ui.tab('Overview')
@@ -879,48 +1353,132 @@ def render_college_page(college_name: str):
         research_tab = ui.tab('Research')
         requirements_tab = ui.tab('Requirements')
         fees_tab = ui.tab('Fees')
-        recs_tab = ui.tab('Recs')
+        recs_tab = ui.tab('Recommendations')
 
     with ui.tab_panels(tabs, value=overview_tab).classes('w-full'):
         with ui.tab_panel(overview_tab):
-            with ui.row().classes('w-full gap-4'):
+            with ui.row().classes('four-col'):
                 with ui.card().classes('card p-5 grow'):
                     ui.label('Application type').classes('section-title')
-                    ui.label(profile['application_type']).classes('text-base mt-1')
+                    application_types = get_valid_application_plans(college_name)
+
+                    def update_application_type(e):
+                        record['selected_application_type'] = e.value
+                        deadline_value = get_deadline_for_college_plan(college_name, e.value)
+                        add_or_update_college(college_name, e.value, deadline_value)
+
+                    ui.select(application_types, value=record.get('selected_application_type'), on_change=update_application_type).classes('w-full mt-2')
+
                 with ui.card().classes('card p-5 grow'):
                     ui.label('Deadline').classes('section-title')
-                    ui.label(f"{profile['deadline']} ({deadline_countdown(profile['deadline'])})").classes('text-base mt-1')
+                    selected_plan = record.get('selected_application_type')
+                    current_deadline = get_deadline_for_college_plan(college_name, selected_plan) if selected_plan else 'TBD'
+
+                    def update_deadline(e):
+                        deadline_text = e.value.strip() if e.value else 'TBD'
+                        selected_type = record.get('selected_application_type')
+                        if selected_type:
+                            add_or_update_college(college_name, selected_type, deadline_text)
+                        else:
+                            existing_widget = get_widget(college_name)
+                            if existing_widget:
+                                existing_widget['deadline'] = deadline_text
+
+                    ui.input(value=current_deadline, on_change=update_deadline).classes('w-full mt-2')
+                    ui.label(f'Countdown: {deadline_countdown(current_deadline)}').classes('text-sm mt-2')
+
                 with ui.card().classes('card p-5 grow'):
                     ui.label('Status').classes('section-title')
-                    ui.label(profile['status']).classes('text-base mt-1')
-                with ui.card().classes('card p-5 grow'):
-                    ui.label('Major').classes('section-title')
-                    ui.label(profile['major']).classes('text-base mt-1')
 
-            with ui.row().classes('w-full gap-4 mt-2 items-start'):
-                with ui.card().classes('card p-5 w-1/3'):
+                    def update_status(e):
+                        record['status'] = e.value
+                        save_college_catalog()
+
+                    ui.select(APPLICATION_STATUS_OPTIONS, value=record.get('status', 'In Progress'), on_change=update_status).classes('w-full mt-2')
+
+                with ui.card().classes('card p-5 grow'):
+                    ui.label('Intended major').classes('section-title')
+
+                    def update_major(e):
+                        record['major'] = e.value
+                        save_college_catalog()
+
+                    ui.input(value=record.get('major', profile['major']), on_change=update_major).classes('w-full mt-2')
+
+            with ui.row().classes('three-col mt-2'):
+                with ui.card().classes('card p-5'):
                     ui.label('Checklist progress').classes('section-title')
                     ui.html(progress_ring(profile['progress'])).classes('mt-3')
-                with ui.card().classes('card p-5 w-1/3'):
+
+                with ui.card().classes('card p-5'):
                     ui.label('Quick notes').classes('section-title')
-                    ui.label(profile['notes']).classes('text-sm mt-2')
-                with ui.card().classes('card p-5 w-1/3'):
+
+                    def update_notes(e):
+                        record['quick_notes'] = e.value
+                        save_college_catalog()
+
+                    ui.textarea(value=record.get('quick_notes', ''), on_change=update_notes).props('autogrow outlined').classes('w-full mt-2')
+
+                with ui.card().classes('card p-5'):
                     ui.label('Important links').classes('section-title')
-                    if profile['links']:
-                        for label, url in profile['links']:
-                            ui.link(label, url, new_tab=True).classes('block text-sm mt-1')
+                    links = record.get('important_links', [])
+                    if links:
+                        for link in links:
+                            if isinstance(link, dict):
+                                ui.link(link.get('label', link.get('url', 'Link')), link.get('url', '#'), new_tab=True).classes('block text-sm mt-1')
+                            elif isinstance(link, (list, tuple)) and len(link) == 2:
+                                ui.link(link[0], link[1], new_tab=True).classes('block text-sm mt-1')
                     else:
                         ui.label('No links yet').classes('text-sm mt-1')
 
+            with ui.card().classes('card w-full p-5 mt-2'):
+                ui.label('Basic info').classes('section-title')
+                basic_info = record.get('basic_info', {})
+                if basic_info:
+                    for key, value in basic_info.items():
+                        ui.label(f"{key.replace('_', ' ').title()}: {value}").classes('text-sm mt-1')
+                else:
+                    ui.label('No basic info yet.').classes('text-sm mt-1')
+
         with ui.tab_panel(essays_tab):
             with ui.card().classes('card w-full p-5'):
-                ui.label('Essays').classes('section-title')
-                render_simple_list(profile['essays'], 'No essays tracked yet.')
+                ui.label('Essay prompts checklist').classes('section-title')
+                prompts = record.get('essay_prompts', [])
+                if prompts:
+                    for idx, prompt in enumerate(prompts):
+                        text = prompt.get('prompt_text', f'Prompt {idx + 1}')
+                        word_limit = prompt.get('word_limit', 'N/A')
+
+                        def toggle_prompt(e, prompt_index=idx):
+                            record['essay_prompts'][prompt_index]['completed'] = bool(e.value)
+                            save_college_catalog()
+
+                        with ui.row().classes('w-full justify-between items-center mt-2'):
+                            ui.checkbox(
+                                f'{text} ({word_limit} words)',
+                                value=bool(prompt.get('completed', False)),
+                                on_change=toggle_prompt,
+                            )
+                            status = 'Complete' if prompt.get('completed') else 'Pending'
+                            ui.label(status).classes('chip')
+                else:
+                    ui.label('No essay prompts tracked yet.').classes('text-sm mt-1')
 
         with ui.tab_panel(research_tab):
             with ui.card().classes('card w-full p-5'):
-                ui.label('Research').classes('section-title')
-                render_simple_list(profile['research'], 'No research notes yet.')
+                ui.label('Research preview').classes('section-title')
+                research_entry = research_database.get(college_name, {})
+                preview_fields = ['general_notes', 'academic_programs', 'campus_culture']
+                preview_rendered = False
+                for key in preview_fields:
+                    value = research_entry.get(key, '')
+                    if value:
+                        preview_rendered = True
+                        ui.label(f"{key.replace('_', ' ').title()}: {value}").classes('text-sm mt-1')
+                if not preview_rendered:
+                    ui.label('No research notes preview available yet.').classes('text-sm mt-1')
+                ui.label(f"Reference: {record.get('research_page_reference', f'research://{college_name}')}").classes('text-xs mt-2')
+                ui.button('Open full research page', on_click=open_linked_research).props('outline no-caps').classes('mt-2')
 
         with ui.tab_panel(requirements_tab):
             with ui.card().classes('card w-full p-5'):
@@ -935,7 +1493,65 @@ def render_college_page(college_name: str):
         with ui.tab_panel(recs_tab):
             with ui.card().classes('card w-full p-5'):
                 ui.label('Recommendations').classes('section-title')
-                render_simple_list(profile['recs'], 'No recommendations tracked yet.')
+                record = ensure_college_record(college_name)
+                valid_recommender_names = {rec.get('name', '') for rec in recommenders if rec.get('name')}
+                unassigned_label = '-- Unassigned --'
+                recommender_options = [unassigned_label] + sorted(valid_recommender_names)
+
+                for slot in record.get('required_recommendations', []):
+                    current_value = slot.get('assigned_recommender', '')
+                    if current_value and current_value not in valid_recommender_names:
+                        slot['assigned_recommender'] = ''
+                for slot in record.get('optional_recommendations', []):
+                    current_value = slot.get('assigned_recommender', '')
+                    if current_value and current_value not in valid_recommender_names:
+                        slot['assigned_recommender'] = ''
+                required_slots = record.get('required_recommendations', [])[:3]
+                optional_slots = record.get('optional_recommendations', [])[:3]
+                save_college_catalog()
+
+                ui.label('Required recommenders').classes('text-sm mt-2 font-medium')
+                for idx, slot in enumerate(required_slots):
+                    selected_value = slot.get('assigned_recommender', '')
+                    selected_value = selected_value if selected_value in valid_recommender_names else unassigned_label
+
+                    def set_required(e, slot_index=idx):
+                        next_value = '' if e.value == unassigned_label else (e.value or '')
+                        record['required_recommendations'][slot_index]['assigned_recommender'] = next_value
+                        save_college_catalog()
+                        sync_recommendation_matrix()
+
+                    ui.label(f'Recommender {idx + 1}').classes('text-sm mt-2')
+                    ui.select(
+                        recommender_options,
+                        value=selected_value,
+                        on_change=set_required,
+                    ).props('use-input input-debounce=0').classes('w-full')
+
+                ui.label('Optional recommenders').classes('text-sm mt-4 font-medium')
+                for idx, slot in enumerate(optional_slots):
+                    selected_value = slot.get('assigned_recommender', '')
+                    selected_value = selected_value if selected_value in valid_recommender_names else unassigned_label
+
+                    def set_optional(e, slot_index=idx):
+                        next_value = '' if e.value == unassigned_label else (e.value or '')
+                        record['optional_recommendations'][slot_index]['assigned_recommender'] = next_value
+                        save_college_catalog()
+                        sync_recommendation_matrix()
+
+                    ui.label(f'Recommender {idx + 1}').classes('text-sm mt-2')
+                    ui.select(
+                        recommender_options,
+                        value=selected_value,
+                        on_change=set_optional,
+                    ).props('use-input input-debounce=0').classes('w-full')
+
+                if not recommenders:
+                    ui.label('No global recommenders available yet.').classes('text-sm mt-4')
+                    ui.button(
+                        'Go to Recommendations Directory',
+                        on_click=lambda: open_page('recs'),
+                    ).props('outline no-caps').classes('mt-2')
 
     ui.button('← Back to Home', on_click=lambda: open_page('home')).props('flat').classes('mt-2')
 
@@ -975,9 +1591,77 @@ def progress_ring(progress: int):
     )
 
 
+def render_add_college_control(square: bool = False):
+    add_college_dialog = ui.dialog()
+    with add_college_dialog, ui.card().classes('card w-[540px] p-5'):
+        ui.label('Add College Application').classes('text-xl font-bold')
+        ui.label('Choose a college, pick a valid application plan, and confirm the deadline.').classes('text-sm')
+
+        college_options = list(college_data.keys())
+        college_select = ui.select(
+            options=college_options,
+            value=None,
+            label='College',
+        ).props('use-input input-debounce=0 options-dense').classes('w-full')
+        application_type_select = ui.select(options=[], label='Application Type').classes('w-full')
+        deadline_input = ui.input(label='Deadline (editable)').classes('w-full')
+
+        def sync_college_plan_fields():
+            selected_college = college_select.value
+            valid_plans = get_valid_application_plans(selected_college)
+            application_type_select.options = valid_plans
+            if valid_plans:
+                if application_type_select.value not in valid_plans:
+                    application_type_select.value = valid_plans[0]
+                deadline_input.value = get_deadline_for_college_plan(selected_college, application_type_select.value)
+            else:
+                application_type_select.value = None
+                deadline_input.value = 'TBD'
+            application_type_select.update()
+            deadline_input.update()
+
+        def on_college_change(_):
+            sync_college_plan_fields()
+
+        def on_application_type_change(_):
+            if college_select.value and application_type_select.value:
+                deadline_input.value = get_deadline_for_college_plan(college_select.value, application_type_select.value)
+                deadline_input.update()
+
+        college_select.on('update:model-value', on_college_change)
+        application_type_select.on('update:model-value', on_application_type_change)
+        sync_college_plan_fields()
+
+        def submit_college_selection():
+            if not college_select.value or not application_type_select.value:
+                ui.notify('Please select a college and application type.', color='negative')
+                return
+            selected_deadline = deadline_input.value.strip() if deadline_input.value else 'TBD'
+            add_or_update_college(
+                college_select.value,
+                application_type_select.value,
+                selected_deadline,
+            )
+            add_college_dialog.close()
+            render_page()
+
+        with ui.row().classes('w-full justify-end gap-2 mt-2'):
+            ui.button('Cancel', on_click=add_college_dialog.close).props('flat')
+            ui.button('Save college', on_click=submit_college_selection).classes('add-btn')
+
+    if square:
+        ui.button('+', on_click=add_college_dialog.open).classes('plus-square')
+    else:
+        ui.button('＋ Add college', on_click=add_college_dialog.open).classes('add-btn')
+
+
 def render_home_page():
     progress_average = int(sum(item['progress'] for item in widgets) / len(widgets)) if widgets else 0
-    dated_widgets = [item for item in widgets if days_until(item['deadline']) is not None]
+    deadline_view = [
+        {'name': item['name'], 'deadline': get_effective_deadline(item['name'])}
+        for item in widgets
+    ]
+    dated_widgets = [item for item in deadline_view if days_until(item['deadline']) is not None]
     upcoming = sorted(dated_widgets, key=lambda item: days_until(item['deadline']))
 
     ui.label('Welcome back, Sophie').classes('text-3xl font-bold')
@@ -1006,8 +1690,8 @@ def render_home_page():
             for task in priorities:
                 ui.label(f'• {task}').classes('text-sm')
 
-    with ui.row().classes('w-full gap-4 items-start'):
-        with ui.column().classes('w-2/3 gap-4'):
+    with ui.row().classes('split-layout'):
+        with ui.column().classes('split-main'):
             with ui.card().classes('card w-full p-5'):
                 with ui.row().classes('w-full justify-between items-center'):
                     ui.label('Colleges in progress').classes('section-title')
@@ -1022,37 +1706,20 @@ def render_home_page():
                                         item['name'],
                                         on_click=lambda college_name=item['name']: open_college_page(college_name),
                                     ).props('flat dense no-caps').classes('text-lg font-bold')
-                                    ui.label(f"Deadline: {item['deadline']} • {deadline_countdown(item['deadline'])}").classes('text-sm')
+                                    ui.label(
+                                        f"Deadline: {get_effective_deadline(item['name'])} • "
+                                        f"{deadline_countdown(get_effective_deadline(item['name']))}"
+                                    ).classes('text-sm')
                             ui.button('Resume where you left off', on_click=lambda college_name=item['name']: open_college_page(college_name)).props('outline no-caps').classes('text-xs')
 
             with ui.card().classes('card w-full p-5'):
                 ui.label('Quick add').classes('section-title')
                 with ui.row().classes('w-full gap-2 mt-2'):
-                    def add_college():
-                        college_name = f'New College {len(widgets)+1}'
-                        widgets.append({'name': college_name, 'progress': 0, 'deadline': 'TBD'})
-                        college_profiles[college_name] = {
-                            "application_type": "Not set",
-                            "status": "Not started",
-                            "major": "Undeclared",
-                            "notes": "Add quick notes for this college.",
-                            "links": [],
-                            "essays": [],
-                            "research": [],
-                            "requirements": [],
-                            "fees": [],
-                            "recs": [],
-                        }
-                        research_database[college_name] = default_research_entry(college_name)
-                        ensure_recommendation_row(college_name)
-                        ensure_fee_row(college_name)
-                        render_page()
-
-                    ui.button('＋ Add college', on_click=add_college).classes('add-btn')
+                    render_add_college_control(square=False)
                     ui.button('＋ Add essay').props('flat outline')
                     ui.button('＋ Add recommender').props('flat outline')
 
-        with ui.column().classes('w-1/3 gap-4'):
+        with ui.column().classes('split-side'):
             with ui.card().classes('card w-full p-5'):
                 ui.label('Essays due soon').classes('section-title')
                 for essay in essays_due:
@@ -1085,11 +1752,16 @@ def render_colleges_page():
                                 item['name'],
                                 on_click=lambda college_name=item['name']: open_college_page(college_name),
                             ).props('flat dense no-caps').classes('text-xl font-bold')
-                            ui.label(f"Deadline: {item['deadline']} • {deadline_countdown(item['deadline'])}").classes('text-sm')
+                            ui.label(
+                                f"Deadline: {get_effective_deadline(item['name'])} • "
+                                f"{deadline_countdown(get_effective_deadline(item['name']))}"
+                            ).classes('text-sm')
                     ui.button(
                         'Open college page',
                         on_click=lambda college_name=item['name']: open_college_page(college_name),
                     ).props('outline no-caps')
+    with ui.row().classes('w-full justify-center mt-1'):
+        render_add_college_control(square=True)
 
 
 def render_placeholder_page(title: str, subtitle: str):
@@ -1131,6 +1803,8 @@ with ui.row().classes('shell w-full no-wrap'):
     with ui.column().classes('p-8 gap-4 w-full max-w-5xl') as content_col:
         pass
 
+normalize_college_records()
+sync_widget_deadlines_from_college_data()
 set_active_sidebar()
 render_page()
 
