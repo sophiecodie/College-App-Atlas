@@ -1,7 +1,6 @@
 from nicegui import ui
 from datetime import datetime
 from pathlib import Path
-import difflib
 import json
 import re
 
@@ -14,6 +13,39 @@ THEME = {
     "muted": "#746A60",
     "border": "#E9DED1",
 }
+
+
+def hex_to_rgb(color: str):
+    cleaned = color.lstrip('#')
+    return tuple(int(cleaned[index:index + 2], 16) for index in (0, 2, 4))
+
+
+def mix_hex(color_a: str, color_b: str, ratio: float):
+    ratio = max(0.0, min(1.0, ratio))
+    red_a, green_a, blue_a = hex_to_rgb(color_a)
+    red_b, green_b, blue_b = hex_to_rgb(color_b)
+    mixed = (
+        round(red_a + (red_b - red_a) * ratio),
+        round(green_a + (green_b - green_a) * ratio),
+        round(blue_a + (blue_b - blue_a) * ratio),
+    )
+    return '#{:02X}{:02X}{:02X}'.format(*mixed)
+
+
+def theme_palette(accent: str):
+    red, green, blue = hex_to_rgb(accent)
+    return {
+        "bg": mix_hex(accent, "#FBF7F0", 0.92),
+        "surface": mix_hex(accent, "#FFFDF9", 0.96),
+        "primary": accent,
+        "primary_soft": mix_hex(accent, "#FFF4F1", 0.72),
+        "text": "#2F2A25",
+        "muted": "#746A60",
+        "border": mix_hex(accent, "#E9DED1", 0.82),
+        "primary_deep": mix_hex(accent, "#3E322B", 0.28),
+        "hover": mix_hex(accent, "#F6EEE6", 0.82),
+        "shadow": f"rgba({red}, {green}, {blue}, 0.16)",
+    }
 
 ui.add_head_html(f"""
 <style>
@@ -119,12 +151,570 @@ h1, h2, h3, .text-3xl, .text-xl {{ font-family: Fraunces, serif; letter-spacing:
   flex-direction: column;
   justify-content: space-between;
 }}
+.fees-grid {{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+}}
+.fee-card {{
+  padding: 14px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #fffdf9 0%, #fff9f2 100%);
+  box-shadow: 0 8px 24px rgba(80, 58, 40, 0.06);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}}
+.fee-card:hover {{
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(80, 58, 40, 0.10);
+  border-color: #dccab7;
+}}
+.fee-card-top {{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}}
+.fee-core-grid {{
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) repeat(3, minmax(140px, 0.8fr));
+  gap: 10px;
+  width: 100%;
+  align-items: end;
+}}
+.fee-inline-meta {{
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}}
+.fee-total-pill {{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: #f7ede5;
+  border: 1px solid #ead7c6;
+}}
+.fee-total-pill strong {{
+  font-family: Fraunces, serif;
+  font-size: 1.15rem;
+  color: #7F4B56;
+}}
+.fee-optional-grid {{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}}
+.fee-optional-item {{
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fffdfa;
+  padding: 10px 12px;
+}}
+.fee-toggle-row {{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}}
+.activities-layout {{
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}}
+.activities-board {{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}}
+.activity-final-list {{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}}
+.activity-card {{
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fffdf9 0%, #fff8ee 100%);
+  padding: 16px;
+  box-shadow: 0 10px 24px rgba(80, 58, 40, 0.07);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}}
+.activity-card:hover {{
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(80, 58, 40, 0.10);
+  border-color: #dccab7;
+}}
+.activity-card.brainstorm-card {{
+  background: linear-gradient(180deg, #fffaf4 0%, #fff4ea 100%);
+  border-color: #ecd9c7;
+  position: relative;
+  overflow: hidden;
+}}
+.activity-card.brainstorm-card::before {{
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, #d99b6d 0%, #efc9a8 100%);
+}}
+.activity-card.final-card {{
+  background: #fffdf9;
+  padding: 14px;
+}}
+.activity-card.drag-card {{
+  cursor: grab;
+}}
+.activity-card.drag-card:active {{
+  cursor: grabbing;
+}}
+.activity-card-top {{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}}
+.activity-fields-grid {{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}}
+.activity-fields-grid.final {{
+  grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr) repeat(3, minmax(110px, 0.7fr));
+}}
+.brainstorm-meta {{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}}
+.brainstorm-badge {{
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f5e6d6;
+  color: #8f5a2b;
+  font-size: 0.78rem;
+  font-weight: 600;
+}}
+.activity-rank-pill {{
+  min-width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #f3e8dc;
+  border: 1px solid #e3d2bf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #7F4B56;
+  font-family: Fraunces, serif;
+}}
+.activity-actions {{
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}}
+.activity-description textarea,
+.activity-notes textarea {{
+  min-height: 90px !important;
+}}
+.activity-description.compact textarea {{
+  min-height: 74px !important;
+}}
+.activity-insights-grid {{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}}
+.insight-card {{
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  background: #fffdfa;
+}}
+.insight-label {{
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}}
+.insight-value {{
+  font-family: Fraunces, serif;
+  font-size: 1.9rem;
+  color: #7F4B56;
+}}
+.category-chip-wrap {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}}
+.activity-bar-list {{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}}
+.activity-bar-row {{
+  display: grid;
+  grid-template-columns: 120px 1fr 36px;
+  gap: 10px;
+  align-items: center;
+}}
+.activity-bar-track {{
+  height: 10px;
+  border-radius: 999px;
+  background: #f2e8de;
+  overflow: hidden;
+}}
+.activity-bar-fill {{
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #d99b6d 0%, #b96b7a 100%);
+}}
+.essays-layout {{
+  display: grid;
+  grid-template-columns: minmax(240px, 0.95fr) minmax(420px, 1.7fr) minmax(280px, 1.05fr);
+  gap: 16px;
+  width: 100%;
+  align-items: start;
+}}
+.essay-panel {{
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fffdf9 0%, #fff8ef 100%);
+  box-shadow: 0 14px 28px rgba(80, 58, 40, 0.07);
+}}
+.essay-panel.compact {{
+  padding: 14px;
+}}
+.essay-panel.writer {{
+  padding: 18px;
+  min-height: 780px;
+}}
+.essay-panel.tools {{
+  padding: 14px;
+}}
+.essay-college-block {{
+  border-top: 1px solid #efe4d6;
+  padding-top: 12px;
+}}
+.essay-college-block:first-child {{
+  border-top: none;
+  padding-top: 0;
+}}
+.essay-college-head {{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}}
+.essay-college-name {{
+  font-weight: 700;
+  font-size: 0.95rem;
+}}
+.essay-prompt-card {{
+  border: 1px solid #e8dccf;
+  border-radius: 18px;
+  padding: 12px;
+  background: #fffdfa;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}}
+.essay-prompt-card:hover {{
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(80, 58, 40, 0.08);
+  border-color: #dbc7b3;
+}}
+.essay-prompt-card.active {{
+  border-color: #c88b98;
+  background: linear-gradient(180deg, #fff8fb 0%, #fff5f2 100%);
+  box-shadow: 0 14px 24px rgba(185, 107, 122, 0.10);
+}}
+.essay-prompt-meta {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}}
+.essay-mini-pill {{
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #f6efe6;
+  color: #6f6459;
+}}
+.essay-stage-brainstorm {{ background: #fff2df; color: #9a6126; }}
+.essay-stage-rough {{ background: #fde9dd; color: #9b5631; }}
+.essay-stage-revise {{ background: #f3e9fb; color: #724d99; }}
+.essay-stage-final {{ background: #e7f6eb; color: #2f7c48; }}
+.essay-header-row {{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}}
+.essay-tag {{
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  background: #f4ece2;
+  color: #6a5548;
+  padding: 5px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}}
+.essay-status-line {{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}}
+.essay-autosave {{
+  color: #6d655d;
+  font-size: 0.78rem;
+}}
+.essay-editor textarea {{
+  min-height: 520px !important;
+  font-size: 0.98rem;
+  line-height: 1.7;
+}}
+.essay-summary-grid {{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}}
+.essay-summary-card {{
+  border: 1px solid #ebdece;
+  border-radius: 18px;
+  background: #fffdfa;
+  padding: 12px;
+}}
+.essay-summary-label {{
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}}
+.essay-summary-value {{
+  font-family: Fraunces, serif;
+  color: #7F4B56;
+  font-size: 1.35rem;
+}}
+.essay-version-chip {{
+  border: 1px solid #e4d7c8;
+  border-radius: 14px;
+  padding: 8px 10px;
+  background: #fffdfa;
+}}
+.essay-version-chip.active {{
+  border-color: #c88b98;
+  background: #fff6f8;
+}}
+.essay-compare-grid {{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}}
+.essay-compare-card {{
+  border: 1px solid #eadfd3;
+  border-radius: 18px;
+  padding: 12px;
+  background: #fffdfa;
+}}
+.essay-compare-text {{
+  white-space: pre-wrap;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: #433b34;
+  max-height: 260px;
+  overflow: auto;
+}}
+.essay-list-stack {{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}}
+.essay-list-item {{
+  border: 1px solid #ebdfd2;
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: #fffdfa;
+}}
+.settings-layout {{
+  display: grid;
+  grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.65fr);
+  gap: 18px;
+  width: 100%;
+  align-items: start;
+}}
+.settings-sidebar {{
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fffdf9 0%, #f8f1e7 100%);
+  padding: 14px;
+  box-shadow: 0 12px 28px rgba(80, 58, 40, 0.07);
+}}
+.settings-content {{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}}
+.settings-nav-button {{
+  width: 100%;
+  justify-content: flex-start;
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: transparent;
+  border: 1px solid transparent;
+}}
+.settings-nav-button.active {{
+  background: #fff8fb;
+  border-color: #dcb5be;
+  box-shadow: inset 0 0 0 1px rgba(185, 107, 122, 0.10);
+}}
+.settings-hero {{
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 18px;
+  background: linear-gradient(135deg, #fffdf9 0%, #f7efe5 50%, #f5e3e4 100%);
+}}
+.settings-grid {{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+}}
+.settings-card {{
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: #fffdfa;
+  padding: 16px;
+  box-shadow: 0 10px 24px rgba(80, 58, 40, 0.06);
+}}
+.settings-card.full {{
+  grid-column: 1 / -1;
+}}
+.settings-card-title {{
+  font-weight: 700;
+  font-size: 1rem;
+}}
+.settings-card-subtitle {{
+  color: var(--muted);
+  font-size: 0.84rem;
+}}
+.settings-swatch-row {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}}
+.settings-swatch {{
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}}
+.settings-swatch:hover {{
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(80, 58, 40, 0.10);
+}}
+.settings-swatch.active {{
+  border-color: #4b4037;
+  box-shadow: 0 10px 20px rgba(80, 58, 40, 0.12);
+}}
+.settings-density-option {{
+  border: 1px solid #e8dccf;
+  border-radius: 18px;
+  padding: 12px;
+  background: #fffdfa;
+  cursor: pointer;
+}}
+.settings-density-option.active {{
+  border-color: #d4a0ac;
+  background: #fff8fb;
+}}
+.settings-preview {{
+  border-radius: 24px;
+  padding: 16px;
+  border: 1px solid #e5d7c9;
+  background: linear-gradient(180deg, #fffdf9 0%, #fff7ec 100%);
+}}
+.settings-preview-shell {{
+  border-radius: 18px;
+  border: 1px solid #eadbcc;
+  background: #fffdfa;
+  padding: 14px;
+}}
+.settings-preview-chip {{
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: white;
+  font-size: 0.76rem;
+  font-weight: 700;
+}}
+.settings-account-callout {{
+  border: 1px dashed #d9c7b4;
+  border-radius: 20px;
+  padding: 18px;
+  background: #fffaf4;
+}}
 @media (max-width: 1100px) {{
   .four-col {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
   .three-col {{ grid-template-columns: 1fr; }}
   .split-layout {{ flex-direction: column; }}
   .research-grid {{ grid-template-columns: 1fr; }}
   .research-cards-grid {{ grid-template-columns: 1fr; }}
+  .fee-core-grid {{ grid-template-columns: 1fr 1fr; }}
+  .fee-optional-grid {{ grid-template-columns: 1fr 1fr; }}
+  .activities-board {{ grid-template-columns: 1fr; }}
+  .activity-fields-grid.final {{ grid-template-columns: 1fr 1fr; }}
+  .activity-insights-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+  .essays-layout {{ grid-template-columns: 1fr; }}
+  .essay-summary-grid {{ grid-template-columns: 1fr; }}
+  .essay-compare-grid {{ grid-template-columns: 1fr; }}
+  .settings-layout {{ grid-template-columns: 1fr; }}
+  .settings-grid {{ grid-template-columns: 1fr; }}
+}}
+@media (max-width: 700px) {{
+  .fee-card-top {{ flex-direction: column; }}
+  .fee-core-grid {{ grid-template-columns: 1fr; }}
+  .fee-optional-grid {{ grid-template-columns: 1fr; }}
+  .activity-card-top {{ flex-direction: column; align-items: flex-start; }}
+  .activity-fields-grid {{ grid-template-columns: 1fr; }}
+  .activity-fields-grid.final {{ grid-template-columns: 1fr; }}
+  .activity-insights-grid {{ grid-template-columns: 1fr; }}
+  .activity-bar-row {{ grid-template-columns: 90px 1fr 32px; }}
+  .essay-header-row {{ flex-direction: column; }}
 }}
 @keyframes softFadeUp {{
   0% {{ opacity: 0; transform: translateY(8px); }}
@@ -133,6 +723,143 @@ h1, h2, h3, .text-3xl, .text-xl {{ font-family: Fraunces, serif; letter-spacing:
 .shell > div:last-child {{
   animation: softFadeUp .35s ease-out;
 }}
+</style>
+""")
+
+ui.add_head_html("""
+<style>
+:root {
+  --primary-deep: #6A3E48;
+  --hover: #F4ECE2;
+  --theme-shadow: rgba(185, 107, 122, 0.16);
+  --card-radius: 20px;
+  --panel-radius: 24px;
+  --nav-radius: 14px;
+  --field-radius: 12px;
+  --panel-gap: 16px;
+  --section-gap: 16px;
+}
+body.density-compact {
+  --card-radius: 18px;
+  --panel-radius: 22px;
+  --nav-radius: 13px;
+  --field-radius: 11px;
+  --panel-gap: 14px;
+  --section-gap: 14px;
+}
+body.density-cozy {
+  --card-radius: 24px;
+  --panel-radius: 28px;
+  --nav-radius: 16px;
+  --field-radius: 14px;
+  --panel-gap: 20px;
+  --section-gap: 18px;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+.sidebar {
+  background: linear-gradient(180deg, var(--surface) 0%, var(--primary-soft) 100%);
+  border-right: 1px solid var(--border);
+  border-radius: 0 var(--panel-radius) var(--panel-radius) 0;
+}
+.nav-item {
+  border-radius: var(--nav-radius);
+}
+.nav-item.active {
+  background: var(--primary-soft);
+  color: var(--primary-deep);
+}
+.nav-item:hover {
+  background: var(--hover);
+}
+.card,
+.essay-panel,
+.settings-sidebar,
+.settings-card,
+.settings-hero,
+.settings-preview,
+.fee-card,
+.activity-card,
+.research-list-card {
+  border-color: var(--border) !important;
+  border-radius: var(--card-radius);
+}
+.card,
+.fee-card,
+.activity-card,
+.research-list-card {
+  background: var(--surface);
+}
+.card:hover,
+.fee-card:hover,
+.activity-card:hover,
+.research-list-card:hover {
+  border-color: var(--primary-soft) !important;
+}
+.section-title,
+.stat-num,
+.progress-ring,
+.essay-summary-value {
+  color: var(--primary-deep);
+}
+.chip,
+.essay-tag,
+.essay-mini-pill,
+.status-pill,
+.fee-total-pill,
+.activity-rank-pill,
+.settings-preview-chip {
+  border-color: var(--border);
+}
+.q-tab--active,
+.settings-nav-button.active,
+.settings-density-option.active,
+.essay-prompt-card.active,
+.essay-version-chip.active {
+  background: var(--primary-soft) !important;
+  color: var(--primary-deep) !important;
+  border-color: var(--primary) !important;
+}
+.q-field__control,
+.q-tab,
+.q-btn,
+.q-expansion-item__container {
+  border-radius: var(--field-radius) !important;
+}
+.q-expansion-item__container,
+.settings-preview-shell,
+.essay-compare-card,
+.essay-list-item,
+.essay-version-chip,
+.fee-optional-item {
+  background: var(--surface);
+  border-color: var(--border);
+}
+.split-layout,
+.four-col,
+.three-col,
+.research-cards-grid,
+.fees-grid,
+.activities-board,
+.activity-final-list,
+.essay-summary-grid,
+.essays-layout,
+.settings-layout,
+.settings-grid,
+.essay-compare-grid {
+  gap: var(--panel-gap) !important;
+}
+.settings-sidebar,
+.settings-card,
+.settings-hero,
+.settings-preview,
+.essay-panel.writer,
+.essay-panel.tools,
+.essay-panel.compact {
+  padding: calc(var(--section-gap) - 2px) !important;
+}
 </style>
 """)
 
@@ -208,24 +935,114 @@ fees_status = [
 ]
 fee_tracker = {
     "Harvard": {
+        "college_name": "Harvard",
         "application_fee": 85,
-        "fee_waiver_status": "Not approved",
-        "submitted_payment": False,
-        "amount_paid": 0,
-        "score_report_fees": 14,
-        "css_fafsa_costs": 25,
-        "notes": "Waiting to decide whether to request fee waiver.",
+        "fee_waiver_status": "Requested",
+        "payment_status": "Not paid",
+        "notes": "Waiver request drafted. Keep an eye on the CSS deadline.",
+        "css_profile_required": True,
+        "css_profile_cost": 25,
+        "fafsa_required": False,
+        "fafsa_cost": 0,
+        "sat_score_send_required": True,
+        "sat_score_send_cost": 14,
+        "ap_score_send_required": False,
+        "ap_score_send_cost": 0,
     },
     "Duke": {
+        "college_name": "Duke",
         "application_fee": 75,
         "fee_waiver_status": "Approved",
-        "submitted_payment": True,
-        "amount_paid": 75,
-        "score_report_fees": 14,
-        "css_fafsa_costs": 16,
-        "notes": "Application fee waived; paid score report costs.",
+        "payment_status": "Paid",
+        "notes": "Application fee waived. Only tracking the remaining send costs.",
+        "css_profile_required": True,
+        "css_profile_cost": 16,
+        "fafsa_required": True,
+        "fafsa_cost": 0,
+        "sat_score_send_required": True,
+        "sat_score_send_cost": 14,
+        "ap_score_send_required": True,
+        "ap_score_send_cost": 15,
     },
 }
+ACTIVITY_CATEGORIES = [
+    "Leadership",
+    "Research",
+    "Community Service",
+    "Arts",
+    "Athletics",
+    "STEM",
+    "Work",
+    "Family Responsibilities",
+    "Academic Club",
+    "Other",
+]
+brainstorm_activities = [
+    {
+        "activity_name": "Girls Who Code chapter",
+        "category": "Leadership",
+        "notes": "Started chapter meetings, planned workshops, and mentored newer members.",
+        "years_involved": "10-12",
+        "hours_per_week": 3,
+    },
+    {
+        "activity_name": "University public-interest AI lab",
+        "category": "Research",
+        "notes": "Assisted with literature review and data cleaning for civic-tech research.",
+        "years_involved": "11-12",
+        "hours_per_week": 6,
+    },
+    {
+        "activity_name": "Weekend food pantry volunteer",
+        "category": "Community Service",
+        "notes": "Helped organize distributions and translated for Spanish-speaking families.",
+        "years_involved": "9-12",
+        "hours_per_week": 4,
+    },
+]
+final_activities = [
+    {
+        "activity_name": "Girls Who Code chapter",
+        "role_position": "Founder & President",
+        "organization": "Central High School",
+        "description": "Founded a 25-member coding club, led weekly lessons, and organized a district hack night for middle school students.",
+        "years_involved": "10-12",
+        "hours_per_week": 3,
+        "weeks_per_year": 30,
+        "category": "Leadership",
+    },
+    {
+        "activity_name": "Public-interest AI research",
+        "role_position": "Student Research Assistant",
+        "organization": "State University Lab",
+        "description": "Supported an AI fairness project through data prep, paper review, and weekly research meetings.",
+        "years_involved": "11-12",
+        "hours_per_week": 6,
+        "weeks_per_year": 24,
+        "category": "Research",
+    },
+    {
+        "activity_name": "Food pantry outreach",
+        "role_position": "Lead Volunteer",
+        "organization": "Neighborhood Food Pantry",
+        "description": "Coordinated volunteer shifts, stocked supplies, and translated for visiting families during distributions.",
+        "years_involved": "9-12",
+        "hours_per_week": 4,
+        "weeks_per_year": 40,
+        "category": "Community Service",
+    },
+    {
+        "activity_name": "Varsity soccer",
+        "role_position": "Captain",
+        "organization": "Central High School",
+        "description": "Led team practices, mentored younger players, and balanced athletics with school responsibilities.",
+        "years_involved": "9-12",
+        "hours_per_week": 8,
+        "weeks_per_year": 16,
+        "category": "Athletics",
+    },
+]
+activity_drag_state = {"final_index": None}
 college_profiles = {
     "Harvard": {
         "application_type": "Regular Decision",
@@ -263,17 +1080,30 @@ essay_data = {
         {
             "title": "How will you explore your academic interests at Harvard?",
             "prompt_text": "How do your intellectual interests align with Harvard, and how will you pursue them on campus?",
+            "prompt_type": "Why Major",
             "word_limit": 250,
-            "comments": ["Add one concrete program example."],
+            "due_date": "Mar 20, 2026",
+            "comments": [
+                {"version": "v1", "author": "Advisor", "text": "Add one concrete program example."},
+                {"version": "v2", "author": "You", "text": "Researching one lab and one public-interest tech angle."},
+            ],
             "drafts": [
                 {
                     "name": "v1",
+                    "label": "Academic fit baseline",
                     "status": "rough",
+                    "external_doc_url": "https://docs.google.com/document/d/harvard-why-major-v1/edit",
+                    "autosave_status": "Saved",
+                    "last_saved": "9:42 PM",
                     "text": "I want to study computer science and policy. At Harvard, I can connect technical coursework with social impact through interdisciplinary projects.",
                 },
                 {
                     "name": "v2",
+                    "label": "Specific programs pass",
                     "status": "revise",
+                    "external_doc_url": "https://docs.google.com/document/d/harvard-why-major-v2/edit",
+                    "autosave_status": "Saved",
+                    "last_saved": "10:18 PM",
                     "text": "My interests in computer science and policy fit Harvard's interdisciplinary ecosystem. I want to combine CS problem-solving with policy analysis and contribute to research labs focused on public-interest technology.",
                 },
             ],
@@ -281,10 +1111,22 @@ essay_data = {
         {
             "title": "Tell us about a community you belong to.",
             "prompt_text": "Describe a community that has shaped you and explain your role within it.",
+            "prompt_type": "Community",
             "word_limit": 200,
-            "comments": [],
+            "due_date": "Mar 24, 2026",
+            "comments": [
+                {"version": "v1", "author": "Counselor", "text": "Needs a clearer role and a stronger ending reflection."},
+            ],
             "drafts": [
-                {"name": "v1", "status": "brainstorm", "text": "I learned leadership through organizing tutoring for younger students."},
+                {
+                    "name": "v1",
+                    "label": "Tutoring community start",
+                    "status": "brainstorm",
+                    "external_doc_url": "",
+                    "autosave_status": "Saved",
+                    "last_saved": "8:05 PM",
+                    "text": "I learned leadership through organizing tutoring for younger students.",
+                },
             ],
         },
     ],
@@ -292,16 +1134,45 @@ essay_data = {
         {
             "title": "Why Duke?",
             "prompt_text": "Why are you interested in Duke and how does it match your goals?",
+            "prompt_type": "Why Us",
             "word_limit": 250,
-            "comments": ["Mention one specific Duke resource."],
+            "due_date": "Mar 24, 2026",
+            "comments": [
+                {"version": "v1", "author": "Advisor", "text": "Mention one specific Duke resource."},
+            ],
             "drafts": [
                 {
                     "name": "v1",
+                    "label": "Core fit draft",
                     "status": "rough",
+                    "external_doc_url": "https://docs.google.com/document/d/duke-why-us-v1/edit",
+                    "autosave_status": "Saved",
+                    "last_saved": "7:54 PM",
                     "text": "Duke fits my goals in policy and data-driven problem solving. I am excited by hands-on learning and interdisciplinary opportunities.",
                 }
             ],
-        }
+        },
+        {
+            "title": "What idea keeps pulling you back?",
+            "prompt_text": "Describe an intellectual question or topic you keep returning to and why it matters to you.",
+            "prompt_type": "Intellectual Curiosity",
+            "word_limit": 200,
+            "due_date": "Mar 24, 2026",
+            "comments": [
+                {"version": "v1", "author": "You", "text": "Could connect algorithmic fairness to public policy interests."},
+            ],
+            "drafts": [
+                {
+                    "name": "v1",
+                    "label": "Curiosity angle",
+                    "status": "rough",
+                    "external_doc_url": "",
+                    "autosave_status": "Saved",
+                    "last_saved": "6:33 PM",
+                    "text": "I keep returning to how algorithmic systems shape real decisions, especially when the data behind them reflects unequal access and opportunity.",
+                }
+            ],
+        },
     ],
 }
 ESSAY_STATUSES = ["brainstorm", "rough", "revise", "final"]
@@ -309,7 +1180,51 @@ essay_state = {
     "college": "Harvard",
     "prompt_index": 0,
     "draft_index": 0,
+    "compare_version": None,
 }
+theme_presets = [
+    {"name": "Rosewood", "color": "#B96B7A"},
+    {"name": "Forest", "color": "#6E8B74"},
+    {"name": "Navy", "color": "#506C8F"},
+    {"name": "Terracotta", "color": "#C97A5A"},
+    {"name": "Gold", "color": "#BA9158"},
+]
+settings_state = {
+    "category": "Profile",
+    "profile": {
+        "student_name": "Sophie Carter",
+        "graduation_year": "2027",
+        "high_school": "Riverview High School",
+        "intended_major": "Computer Science, Public Policy",
+        "time_zone": "America/New_York",
+    },
+    "appearance": {
+        "accent_theme": "Rosewood",
+        "layout_density": "Compact",
+        "dark_mode": False,
+    },
+}
+
+
+def current_theme_values():
+    accent_name = settings_state["appearance"].get("accent_theme", "Rosewood")
+    accent = next((theme for theme in theme_presets if theme["name"] == accent_name), theme_presets[0])
+    return theme_palette(accent["color"])
+
+
+def apply_theme_settings():
+    palette = current_theme_values()
+    density = settings_state["appearance"].get("layout_density", "Compact").lower()
+    ui.run_javascript(f"""
+    (() => {{
+      const root = document.documentElement;
+      const body = document.body;
+      const theme = {json.dumps(palette)};
+      Object.entries(theme).forEach(([key, value]) => root.style.setProperty(`--${{key.replace(/_/g, '-')}}`, value));
+      body.classList.remove('density-compact', 'density-cozy');
+      body.classList.add('density-{density}');
+    }})();
+    """)
 research_database = {
     "Harvard": {
         "location": "Cambridge, MA",
@@ -395,6 +1310,7 @@ recommendation_matrix = {
 SIDEBAR_PAGES = [
     ("home", "🏠 Home"),
     ("colleges", "🎓 Colleges"),
+    ("activities", "⭐ Activities"),
     ("essays", "📝 Essays"),
     ("research", "🔎 Research"),
     ("recs", "💌 Recommendations"),
@@ -402,7 +1318,7 @@ SIDEBAR_PAGES = [
     ("settings", "⚙️ Settings"),
 ]
 
-current_page = {'id': 'home', 'college': None}
+current_page = {'id': 'home', 'college': None, 'college_tab': 'overview'}
 sidebar_buttons = {}
 content_col = None
 
@@ -419,6 +1335,7 @@ def set_active_sidebar():
 def open_page(page_id: str):
     current_page['id'] = page_id
     current_page['college'] = None
+    current_page['college_tab'] = 'overview'
     research_state["college"] = None
     set_active_sidebar()
     render_page()
@@ -427,8 +1344,13 @@ def open_page(page_id: str):
 def open_college_page(college_name: str):
     current_page['id'] = 'college'
     current_page['college'] = college_name
+    current_page['college_tab'] = 'overview'
     set_active_sidebar()
     render_page()
+
+
+def set_college_tab(tab_name: str):
+    current_page['college_tab'] = tab_name
 
 
 def get_widget(college_name: str):
@@ -469,6 +1391,60 @@ def normalize_words(text: str):
     return set(re.findall(r"[a-zA-Z']+", text.lower()))
 
 
+def count_words(text: str):
+    return len(re.findall(r"\b\w+\b", text))
+
+
+PROMPT_TYPE_ELEMENTS = {
+    "Why Us": ["academic fit", "specific school resource", "campus/community fit", "future contribution"],
+    "Why Major": ["intellectual motivation", "academic path", "specific school resource", "future direction"],
+    "Community": ["community context", "your role", "impact on others", "reflection/growth"],
+    "Identity": ["identity context", "specific lived detail", "reflection", "perspective contribution"],
+    "Intellectual Curiosity": ["central question", "evidence of exploration", "why it matters", "next step on campus"],
+}
+
+PROMPT_TYPE_KEYWORDS = {
+    "Why Us": {
+        "academic fit": ["study", "major", "program", "class", "research"],
+        "specific school resource": ["lab", "center", "professor", "institute", "course", "program"],
+        "campus/community fit": ["community", "campus", "student", "collaborative", "team"],
+        "future contribution": ["contribute", "build", "bring", "create", "lead"],
+    },
+    "Why Major": {
+        "intellectual motivation": ["interested", "curious", "fascinated", "drawn", "want"],
+        "academic path": ["study", "coursework", "research", "learn", "major"],
+        "specific school resource": ["lab", "center", "professor", "program", "seminar"],
+        "future direction": ["future", "career", "impact", "apply", "solve"],
+    },
+    "Community": {
+        "community context": ["community", "group", "team", "students", "neighbors"],
+        "your role": ["organized", "led", "helped", "supported", "taught"],
+        "impact on others": ["others", "younger", "family", "students", "people"],
+        "reflection/growth": ["learned", "realized", "grew", "changed", "understood"],
+    },
+    "Identity": {
+        "identity context": ["identity", "background", "culture", "family", "language"],
+        "specific lived detail": ["remember", "when", "because", "during", "through"],
+        "reflection": ["realized", "understood", "learned", "questioned", "carried"],
+        "perspective contribution": ["bring", "perspective", "voice", "contribute", "share"],
+    },
+    "Intellectual Curiosity": {
+        "central question": ["question", "wonder", "why", "how", "idea"],
+        "evidence of exploration": ["read", "built", "researched", "tested", "studied"],
+        "why it matters": ["matters", "care", "impact", "important", "because"],
+        "next step on campus": ["college", "campus", "research", "lab", "course"],
+    },
+}
+
+PROMPT_TYPE_RELATIONSHIPS = {
+    "Why Us": ["Why Major", "Intellectual Curiosity"],
+    "Why Major": ["Why Us", "Intellectual Curiosity"],
+    "Community": ["Identity"],
+    "Identity": ["Community"],
+    "Intellectual Curiosity": ["Why Major", "Why Us"],
+}
+
+
 def prompt_coverage(prompt_text: str, draft_text: str):
     stopwords = {
         "the", "and", "for", "that", "with", "this", "your", "you", "how", "are",
@@ -481,6 +1457,47 @@ def prompt_coverage(prompt_text: str, draft_text: str):
     matched = [w for w in sorted(set(prompt_words)) if w in draft_words]
     score = int((len(matched) / len(set(prompt_words))) * 100)
     return score, matched
+
+
+def get_school_reference_terms(college_name: str):
+    research = research_database.get(college_name, {})
+    source = " ".join([
+        college_name,
+        research.get("major_program", ""),
+        research.get("why_this_school", ""),
+        research.get("academic_programs", ""),
+        research.get("clubs_professors_labs", ""),
+    ]).lower()
+    return {word for word in re.findall(r"[a-zA-Z']+", source) if len(word) > 4}
+
+
+def analyze_prompt_breakdown(college_name: str, prompt: dict, draft: dict):
+    prompt_type = prompt.get("prompt_type", "Why Us")
+    draft_text = draft.get("text", "")
+    draft_words = normalize_words(draft_text)
+    word_count = count_words(draft_text)
+    elements = PROMPT_TYPE_ELEMENTS.get(prompt_type, [])
+    keyword_map = PROMPT_TYPE_KEYWORDS.get(prompt_type, {})
+    detected = []
+    missing = []
+
+    for element in elements:
+        triggers = keyword_map.get(element, [])
+        if any(keyword in draft_words for keyword in triggers):
+            detected.append(element)
+        else:
+            missing.append(element)
+
+    school_terms = get_school_reference_terms(college_name)
+    school_specific = bool(draft_words & school_terms or college_name.lower() in draft_text.lower())
+    too_generic = word_count >= 70 and not school_specific and prompt_type in {"Why Us", "Why Major", "Intellectual Curiosity"}
+    school_specific_missing = prompt_type in {"Why Us", "Why Major", "Intellectual Curiosity"} and not school_specific
+    return {
+        "detected": detected,
+        "missing": missing,
+        "too_generic": too_generic,
+        "school_specific_missing": school_specific_missing,
+    }
 
 
 def find_reuse_matches(selected_college: str, selected_prompt_index: int, selected_draft_index: int):
@@ -504,21 +1521,70 @@ def find_reuse_matches(selected_college: str, selected_prompt_index: int, select
                     matches.append({
                         "college": college,
                         "prompt_title": prompt["title"],
+                        "prompt_type": prompt.get("prompt_type", "Essay"),
                         "version": draft["name"],
                         "similarity": int(similarity * 100),
                     })
     return sorted(matches, key=lambda m: m["similarity"], reverse=True)[:3]
 
 
+def get_prompt_comment_count(prompt: dict):
+    return len(prompt.get("comments", []))
+
+
+def get_prompt_overlap_indicator(college_name: str, prompt_index: int):
+    prompt = essay_data[college_name][prompt_index]
+    if not prompt.get("drafts"):
+        return None
+    matches = find_reuse_matches(college_name, prompt_index, 0)
+    return matches[0]["similarity"] if matches else None
+
+
+def find_adaptable_targets(selected_college: str, selected_prompt_index: int):
+    selected_prompt = essay_data[selected_college][selected_prompt_index]
+    selected_type = selected_prompt.get("prompt_type", "")
+    compatible_types = {selected_type, *PROMPT_TYPE_RELATIONSHIPS.get(selected_type, [])}
+    targets = []
+    for college, prompts in essay_data.items():
+        for idx, prompt in enumerate(prompts):
+            if college == selected_college and idx == selected_prompt_index:
+                continue
+            prompt_type = prompt.get("prompt_type", "")
+            if prompt_type not in compatible_types:
+                continue
+            relation = "same prompt type" if prompt_type == selected_type else f"adjacent to {selected_type}"
+            targets.append({
+                "college": college,
+                "prompt_title": prompt["title"],
+                "prompt_type": prompt_type,
+                "reason": relation,
+            })
+    return targets[:4]
+
+
 def render_essays_page():
     ui.label('Essays').classes('text-3xl font-bold')
-    ui.label('Write with full application context: college, prompt, versions, and readiness status.').classes('text-base')
+    ui.label('Strategy-first drafting: organize prompts, track reusable material, and keep versions moving toward submission.').classes('text-base')
 
-    layout = ui.row().classes('w-full no-wrap gap-4 items-start')
+    with ui.row().classes('essay-summary-grid mt-4'):
+        total_prompts = sum(len(prompts) for prompts in essay_data.values())
+        total_drafts = sum(len(prompt["drafts"]) for prompts in essay_data.values() for prompt in prompts)
+        reusable_pairs = sum(1 for college, prompts in essay_data.items() for idx, _ in enumerate(prompts) if get_prompt_overlap_indicator(college, idx))
+        for label, value, subtitle in [
+            ("Tracked prompts", str(total_prompts), "Across active colleges"),
+            ("Draft versions", str(total_drafts), "Multiple passes per essay"),
+            ("Reusable drafts", str(reusable_pairs), "Prompts with adaptation potential"),
+        ]:
+            with ui.column().classes('essay-summary-card'):
+                ui.label(label).classes('essay-summary-label')
+                ui.label(value).classes('essay-summary-value')
+                ui.label(subtitle).classes('text-sm text-[var(--muted)]')
+
+    layout = ui.row().classes('essays-layout mt-4')
     with layout:
-        left_col = ui.column().classes('w-1/4 card p-3')
-        center_col = ui.column().classes('w-2/4 card p-4')
-        right_col = ui.column().classes('w-1/4 card p-4')
+        left_col = ui.column().classes('essay-panel compact')
+        center_col = ui.column().classes('essay-panel writer')
+        right_col = ui.column().classes('essay-panel tools')
 
     def clamp_selection():
         colleges = list(essay_data.keys())
@@ -533,6 +1599,8 @@ def render_essays_page():
             essay_state["prompt_index"] = min(essay_state["prompt_index"], len(prompts) - 1)
             drafts = prompts[essay_state["prompt_index"]]["drafts"]
             essay_state["draft_index"] = min(essay_state["draft_index"], len(drafts) - 1)
+            if essay_state["compare_version"] not in [draft["name"] for draft in drafts]:
+                essay_state["compare_version"] = drafts[0]["name"] if len(drafts) > 1 else None
 
     def selected_prompt():
         return essay_data[essay_state["college"]][essay_state["prompt_index"]]
@@ -544,145 +1612,237 @@ def render_essays_page():
         left_col.clear()
         with left_col:
             ui.label('Colleges & Prompts').classes('section-title')
+            ui.label('Status, word count, comments, and overlap are visible without opening each draft.').classes('text-xs text-[var(--muted)]')
             for college, prompts in essay_data.items():
-                with ui.expansion(college, value=(college == essay_state["college"])).classes('w-full'):
+                with ui.column().classes('w-full essay-college-block gap-2'):
+                    with ui.row().classes('w-full essay-college-head'):
+                        ui.label(college).classes('essay-college-name')
+                        due_label = get_widget(college).get("deadline", "") if get_widget(college) else ""
+                        if due_label:
+                            ui.label(due_label).classes('essay-mini-pill')
                     for idx, prompt in enumerate(prompts):
                         active = college == essay_state["college"] and idx == essay_state["prompt_index"]
-                        btn = ui.button(
-                            prompt["title"],
-                            on_click=lambda college_name=college, prompt_idx=idx: select_prompt(college_name, prompt_idx),
-                        ).props('flat no-caps').classes('w-full text-left')
-                        if active:
-                            btn.classes(add='nav-item active')
-                        else:
-                            btn.classes(add='nav-item')
+                        latest = prompt["drafts"][-1]
+                        word_count = count_words(latest["text"])
+                        overlap = get_prompt_overlap_indicator(college, idx)
+                        with ui.card().classes(f"w-full essay-prompt-card {'active' if active else ''}").on('click', lambda college_name=college, prompt_idx=idx: select_prompt(college_name, prompt_idx)):
+                            ui.label(prompt["title"]).classes('text-sm font-semibold')
+                            with ui.row().classes('w-full justify-between items-center mt-1'):
+                                ui.label(prompt.get("prompt_type", "Essay")).classes('essay-tag')
+                                ui.label(f"{word_count}/{prompt['word_limit']} words").classes('text-xs text-[var(--muted)]')
+                            with ui.row().classes('essay-prompt-meta'):
+                                ui.label(latest["status"]).classes(f"essay-mini-pill essay-stage-{latest['status']}")
+                                ui.label(f"{get_prompt_comment_count(prompt)} comments").classes('essay-mini-pill')
+                                if overlap:
+                                    ui.label(f"{overlap}% overlap").classes('essay-mini-pill')
 
     def refresh_center():
         center_col.clear()
         prompt = selected_prompt()
         draft = selected_draft()
+        current_word_count = count_words(draft["text"])
+        compare_options = [item["name"] for item in prompt["drafts"] if item["name"] != draft["name"]]
+        if compare_options and essay_state["compare_version"] not in compare_options:
+            essay_state["compare_version"] = compare_options[0]
         with center_col:
-            with ui.row().classes('w-full justify-between items-center'):
-                ui.label(prompt["title"]).classes('section-title')
-                ui.label(f"{essay_state['college']}").classes('chip')
-            ui.label('Selected Draft Editor').classes('text-sm mt-1')
+            with ui.row().classes('w-full essay-header-row'):
+                with ui.column().classes('gap-1'):
+                    ui.label(prompt["title"]).classes('text-2xl font-semibold')
+                    with ui.row().classes('essay-status-line'):
+                        ui.label(essay_state['college']).classes('chip')
+                        ui.label(prompt.get("prompt_type", "Essay")).classes('essay-tag')
+                        ui.label(f"Autosave: {draft.get('autosave_status', 'Saved')} {draft.get('last_saved', '')}".strip()).classes('essay-autosave')
+                with ui.column().classes('items-end gap-1'):
+                    ui.label(f"Due {prompt.get('due_date', 'TBD')}").classes('essay-mini-pill')
+                    ui.label(f"{current_word_count}/{prompt['word_limit']} words").classes('text-sm text-[var(--muted)]')
+            ui.label(prompt["prompt_text"]).classes('text-sm text-[var(--muted)] mt-1')
 
             def on_text_change(e):
                 draft["text"] = e.value
+                draft["autosave_status"] = "Saved"
+                draft["last_saved"] = datetime.now().strftime("%I:%M %p").lstrip("0")
+                refresh_left()
+                refresh_center()
                 refresh_right()
 
-            ui.textarea(label='Essay Draft', value=draft["text"], on_change=on_text_change).props('autogrow outlined').classes('w-full min-h-[420px] mt-2')
+            ui.textarea(label='Draft workspace', value=draft["text"], on_change=on_text_change).props('autogrow outlined').classes('w-full mt-3 essay-editor')
+
+            ui.label('Versions').classes('section-title mt-4')
+            with ui.row().classes('w-full gap-2 items-center'):
+                for idx, version in enumerate(prompt["drafts"]):
+                    active = idx == essay_state["draft_index"]
+                    button = ui.button(
+                        f"{version['name']} • {version.get('label', version['name'])}",
+                        on_click=lambda version_idx=idx: select_version(version_idx),
+                    ).props('flat no-caps').classes(f"essay-version-chip {'active' if active else ''}")
+                    if active:
+                        button.classes(add='font-semibold')
+
+            with ui.row().classes('w-full items-center gap-2 mt-3'):
+                compare_value = essay_state["compare_version"] if compare_options else None
+
+                def on_compare_change(e):
+                    essay_state["compare_version"] = e.value
+                    refresh_center()
+
+                ui.select(compare_options, value=compare_value, on_change=on_compare_change, label='Compare against').classes('w-64')
+                ui.label('Side-by-side compare keeps older angles visible while you revise.').classes('text-xs text-[var(--muted)]')
+
+            if compare_options and essay_state["compare_version"]:
+                other = next(version for version in prompt["drafts"] if version["name"] == essay_state["compare_version"])
+                with ui.row().classes('essay-compare-grid mt-3'):
+                    with ui.column().classes('essay-compare-card'):
+                        ui.label(f"{draft['name']} • {draft.get('label', draft['name'])}").classes('font-semibold')
+                        ui.label(draft["status"]).classes(f"essay-mini-pill essay-stage-{draft['status']} mt-1")
+                        ui.label(draft["text"] or 'No text yet.').classes('essay-compare-text mt-2')
+                    with ui.column().classes('essay-compare-card'):
+                        ui.label(f"{other['name']} • {other.get('label', other['name'])}").classes('font-semibold')
+                        ui.label(other["status"]).classes(f"essay-mini-pill essay-stage-{other['status']} mt-1")
+                        ui.label(other["text"] or 'No text yet.').classes('essay-compare-text mt-2')
 
     def refresh_right():
         right_col.clear()
         prompt = selected_prompt()
         draft = selected_draft()
-        word_count = len(re.findall(r"\b\w+\b", draft["text"]))
+        word_count = count_words(draft["text"])
         coverage_score, matched_words = prompt_coverage(prompt["prompt_text"], draft["text"])
         reuse_matches = find_reuse_matches(essay_state["college"], essay_state["prompt_index"], essay_state["draft_index"])
+        adaptable_targets = find_adaptable_targets(essay_state["college"], essay_state["prompt_index"])
+        breakdown = analyze_prompt_breakdown(essay_state["college"], prompt, draft)
+        version_comments = [comment for comment in prompt.get("comments", []) if comment.get("version") in {draft["name"], None, ""}]
 
         with right_col:
             ui.label('Metadata & Tools').classes('section-title')
-            ui.label(f'Word count: {word_count}/{prompt["word_limit"]}').classes('text-sm mt-2')
-            if word_count > prompt["word_limit"]:
-                ui.label('Over word limit').classes('text-sm text-red-600')
-            ui.label(f"Status: {draft['status']}").classes('text-sm mt-1')
-            ui.label('Prompt').classes('section-title mt-3')
-            ui.label(prompt["prompt_text"]).classes('text-sm mt-1')
+            with ui.expansion('Prompt', value=True).classes('w-full'):
+                ui.label(prompt["prompt_text"]).classes('text-sm')
+                with ui.row().classes('w-full gap-2 mt-2'):
+                    ui.label(prompt.get("prompt_type", "Essay")).classes('essay-tag')
+                    ui.label(f"Due {prompt.get('due_date', 'TBD')}").classes('essay-mini-pill')
+                    if word_count > prompt["word_limit"]:
+                        ui.label('Over limit').classes('essay-mini-pill')
 
-            with ui.row().classes('w-full mt-3 items-center'):
-                ui.label('Draft status').classes('text-sm')
-
+            with ui.expansion('Draft details', value=True).classes('w-full mt-2'):
                 def on_status_change(e):
                     draft["status"] = e.value
+                    refresh_left()
+                    refresh_center()
                     refresh_right()
 
-                ui.select(ESSAY_STATUSES, value=draft["status"], on_change=on_status_change).classes('w-full')
-
-            ui.label('Draft versions').classes('section-title mt-3')
-            version_names = [d["name"] for d in prompt["drafts"]]
-
-            def on_version_change(e):
-                essay_state["draft_index"] = version_names.index(e.value)
-                refresh_center()
-                refresh_right()
-
-            ui.select(version_names, value=draft["name"], on_change=on_version_change).classes('w-full')
-
-            def add_version():
-                base = selected_draft()
-                new_version_name = f"v{len(prompt['drafts']) + 1}"
-                prompt["drafts"].append({
-                    "name": new_version_name,
-                    "status": "rough",
-                    "text": base["text"],
-                })
-                essay_state["draft_index"] = len(prompt["drafts"]) - 1
-                refresh_center()
-                refresh_right()
-
-            ui.button('＋ New version from current draft', on_click=add_version).props('outline no-caps').classes('w-full mt-2')
-
-            ui.label('Comments').classes('section-title mt-3')
-            if prompt["comments"]:
-                for comment in prompt["comments"]:
-                    ui.label(f'• {comment}').classes('text-sm mt-1')
-            else:
-                ui.label('No comments yet.').classes('text-sm mt-1')
-
-            comment_input = ui.input(placeholder='Add comment').classes('w-full mt-2')
-
-            def add_comment():
-                if comment_input.value:
-                    prompt["comments"].append(comment_input.value.strip())
-                    comment_input.value = ''
+                def on_label_change(e):
+                    draft["label"] = e.value
+                    refresh_center()
                     refresh_right()
 
-            ui.button('Add comment', on_click=add_comment).props('flat').classes('self-start')
+                def on_doc_change(e):
+                    draft["external_doc_url"] = e.value.strip()
+                    refresh_right()
 
-            ui.label('Did I answer the prompt?').classes('section-title mt-3')
-            ui.label(f'Coverage score: {coverage_score}%').classes('text-sm')
-            if matched_words:
-                ui.label(f"Matched keywords: {', '.join(matched_words[:8])}").classes('text-xs')
-            else:
-                ui.label('Matched keywords: none yet').classes('text-xs')
+                ui.select(ESSAY_STATUSES, value=draft["status"], on_change=on_status_change, label='Draft status').classes('w-full')
+                ui.input(label='Version label', value=draft.get("label", ""), on_change=on_label_change).classes('w-full mt-2')
+                ui.input(label='Google Doc link', value=draft.get("external_doc_url", ""), on_change=on_doc_change).classes('w-full mt-2')
+                if draft.get("external_doc_url"):
+                    ui.link('Open draft in Docs', draft["external_doc_url"], new_tab=True).classes('block text-sm mt-2')
+                ui.label(f"Autosave: {draft.get('autosave_status', 'Saved')} {draft.get('last_saved', '')}".strip()).classes('text-xs text-[var(--muted)] mt-2')
 
-            ui.label('Compare versions').classes('section-title mt-3')
-            compare_options = [name for name in version_names if name != draft["name"]]
-            compare_select = ui.select(compare_options, value=compare_options[0] if compare_options else None).classes('w-full')
-            compare_result = ui.markdown('').classes('w-full mt-1')
+                def add_version():
+                    base = selected_draft()
+                    new_version_name = f"v{len(prompt['drafts']) + 1}"
+                    prompt["drafts"].append({
+                        "name": new_version_name,
+                        "label": f"Derived from {base['name']}",
+                        "status": "rough",
+                        "external_doc_url": base.get("external_doc_url", ""),
+                        "autosave_status": "Saved",
+                        "last_saved": datetime.now().strftime("%I:%M %p").lstrip("0"),
+                        "text": base["text"],
+                    })
+                    essay_state["draft_index"] = len(prompt["drafts"]) - 1
+                    essay_state["compare_version"] = base["name"]
+                    refresh_left()
+                    refresh_center()
+                    refresh_right()
 
-            def compare_versions():
-                if not compare_select.value:
-                    compare_result.set_content('No other version to compare.')
-                    return
-                other = next(d for d in prompt["drafts"] if d["name"] == compare_select.value)
-                diff_lines = list(difflib.unified_diff(
-                    other["text"].splitlines(),
-                    draft["text"].splitlines(),
-                    fromfile=other["name"],
-                    tofile=draft["name"],
-                    lineterm='',
-                ))
-                preview = '\n'.join(diff_lines[:30]) if diff_lines else 'No differences.'
-                compare_result.set_content(f"```diff\n{preview}\n```")
+                ui.button('＋ New version from current draft', on_click=add_version).props('outline no-caps').classes('w-full mt-3')
 
-            ui.button('Compare now', on_click=compare_versions).props('outline no-caps').classes('w-full mt-1')
+            with ui.expansion('Comments', value=True).classes('w-full mt-2'):
+                if version_comments:
+                    with ui.column().classes('essay-list-stack'):
+                        for comment in version_comments:
+                            with ui.column().classes('essay-list-item'):
+                                ui.label(comment.get("author", "Comment")).classes('text-xs font-semibold text-[var(--muted)]')
+                                ui.label(comment.get("text", "")).classes('text-sm')
+                                ui.label(comment.get("version", draft["name"])).classes('text-xs text-[var(--muted)]')
+                else:
+                    ui.label('No comments on this version yet.').classes('text-sm')
 
-            ui.label('Cross-college reuse tracking').classes('section-title mt-3')
-            if reuse_matches:
-                for match in reuse_matches:
-                    ui.label(
-                        f"Overlap {match['similarity']}% with {match['prompt_title']} ({match['college']} - {match['version']})"
-                    ).classes('text-xs mt-1')
-            else:
-                ui.label('No strong overlaps detected.').classes('text-xs mt-1')
+                comment_input = ui.input(placeholder='Add a version-specific note').classes('w-full mt-2')
+
+                def add_comment():
+                    if comment_input.value:
+                        prompt["comments"].append({
+                            "version": draft["name"],
+                            "author": "You",
+                            "text": comment_input.value.strip(),
+                        })
+                        comment_input.value = ''
+                        refresh_left()
+                        refresh_right()
+
+                ui.button('Add comment', on_click=add_comment).props('flat').classes('self-start')
+
+            with ui.expansion('Prompt analysis', value=True).classes('w-full mt-2'):
+                ui.label(f'Prompt alignment: {coverage_score}%').classes('text-sm')
+                if matched_words:
+                    ui.label(f"Detected prompt language: {', '.join(matched_words[:8])}").classes('text-xs text-[var(--muted)] mt-1')
+                with ui.row().classes('w-full gap-2 mt-2'):
+                    ui.label('Too generic' if breakdown["too_generic"] else 'Specific enough').classes('essay-mini-pill')
+                    ui.label('School detail missing' if breakdown["school_specific_missing"] else 'School detail present').classes('essay-mini-pill')
+                ui.label('Detected prompt elements').classes('text-sm font-semibold mt-3')
+                if breakdown["detected"]:
+                    for item in breakdown["detected"]:
+                        ui.label(f'• {item}').classes('text-sm')
+                else:
+                    ui.label('No strong prompt elements detected yet.').classes('text-sm')
+                ui.label('Missing elements').classes('text-sm font-semibold mt-3')
+                if breakdown["missing"]:
+                    for item in breakdown["missing"]:
+                        ui.label(f'• {item}').classes('text-sm')
+                else:
+                    ui.label('This draft touches all expected elements for this prompt type.').classes('text-sm')
+
+            with ui.expansion('Cross-college reuse', value=True).classes('w-full mt-2'):
+                ui.label('Current overlap').classes('text-sm font-semibold')
+                if reuse_matches:
+                    with ui.column().classes('essay-list-stack mt-2'):
+                        for match in reuse_matches:
+                            with ui.column().classes('essay-list-item'):
+                                ui.label(f"{match['similarity']}% overlap").classes('text-sm font-semibold')
+                                ui.label(f"{match['college']} • {match['prompt_title']}").classes('text-sm')
+                                ui.label(f"{match['prompt_type']} • {match['version']}").classes('text-xs text-[var(--muted)]')
+                else:
+                    ui.label('No strong overlaps detected yet.').classes('text-sm mt-1')
+
+                ui.label('Can be adapted to').classes('text-sm font-semibold mt-3')
+                if adaptable_targets:
+                    with ui.column().classes('essay-list-stack mt-2'):
+                        for target in adaptable_targets:
+                            with ui.column().classes('essay-list-item'):
+                                ui.label(f"{target['college']} • {target['prompt_title']}").classes('text-sm')
+                                ui.label(f"{target['prompt_type']} • {target['reason']}").classes('text-xs text-[var(--muted)]')
+                else:
+                    ui.label('No clear adaptation targets yet.').classes('text-sm mt-1')
 
     def select_prompt(college_name: str, prompt_idx: int):
         essay_state["college"] = college_name
         essay_state["prompt_index"] = prompt_idx
         essay_state["draft_index"] = 0
+        essay_state["compare_version"] = None
         refresh_left()
+        refresh_center()
+        refresh_right()
+
+    def select_version(version_idx: int):
+        essay_state["draft_index"] = version_idx
         refresh_center()
         refresh_right()
 
@@ -690,6 +1850,255 @@ def render_essays_page():
     refresh_left()
     refresh_center()
     refresh_right()
+
+
+def render_settings_page():
+    ui.label('Settings').classes('text-3xl font-bold')
+    ui.label('Customize the workspace once and let the rest of the app follow it.').classes('text-base')
+
+    categories = ['Profile', 'Appearance', 'Account']
+
+    def selected_accent():
+        theme_name = settings_state["appearance"].get("accent_theme", "Rosewood")
+        return next((theme for theme in theme_presets if theme["name"] == theme_name), theme_presets[0])
+
+    layout = ui.row().classes('settings-layout mt-4')
+    with layout:
+        left_col = ui.column().classes('settings-sidebar')
+        right_col = ui.column().classes('settings-content')
+
+    def refresh_sidebar():
+        left_col.clear()
+        with left_col:
+            accent = selected_accent()
+            ui.label('Preferences').classes('section-title')
+            ui.label('Profile, appearance, and account settings stay separate so this page can grow cleanly.').classes('text-sm text-[var(--muted)]')
+            with ui.column().classes('settings-preview-shell mt-4'):
+                ui.label('Current workspace').classes('text-xs uppercase tracking-wide text-[var(--muted)]')
+                ui.label(settings_state["profile"]["student_name"]).classes('text-lg font-semibold mt-1')
+                ui.label(f"{settings_state['appearance']['layout_density']} density").classes('text-sm text-[var(--muted)]')
+                ui.html(f'<span class="settings-preview-chip mt-2" style="background:{accent["color"]}">{accent["name"]}</span>')
+            with ui.column().classes('w-full gap-2 mt-4'):
+                for category in categories:
+                    active = settings_state["category"] == category
+                    button = ui.button(
+                        category,
+                        on_click=lambda selected=category: select_category(selected),
+                    ).props('flat no-caps').classes(f'settings-nav-button {"active" if active else ""}')
+                    if active:
+                        button.classes(add='font-semibold')
+            with ui.column().classes('settings-account-callout mt-4'):
+                ui.label('Future-ready').classes('text-sm font-semibold')
+                ui.label('Authentication and synced preferences can slot into this rail later without changing the page structure.').classes('text-sm text-[var(--muted)]')
+
+    def render_profile_content():
+        profile = settings_state["profile"]
+        with right_col:
+            with ui.column().classes('settings-hero'):
+                ui.label('Profile').classes('text-2xl font-semibold')
+                ui.label('Set the student details that should quietly shape defaults across planning, essays, and future reminders.').classes('text-sm text-[var(--muted)]')
+                with ui.row().classes('w-full gap-2 mt-3'):
+                    ui.label(profile["graduation_year"]).classes('chip')
+                    ui.label(profile["time_zone"]).classes('chip')
+
+            with ui.row().classes('settings-grid'):
+                with ui.column().classes('settings-card'):
+                    ui.label('Student details').classes('settings-card-title')
+                    ui.label('Core identity fields used throughout the planner.').classes('settings-card-subtitle')
+
+                    def set_name(e):
+                        settings_state["profile"]["student_name"] = e.value
+                        refresh_content()
+
+                    def set_year(e):
+                        settings_state["profile"]["graduation_year"] = e.value
+                        refresh_content()
+
+                    ui.input(label='Student name', value=profile["student_name"], on_change=set_name).classes('w-full mt-3')
+                    ui.input(label='Graduation year', value=profile["graduation_year"], on_change=set_year).classes('w-full mt-2')
+
+                with ui.column().classes('settings-card'):
+                    ui.label('School context').classes('settings-card-title')
+                    ui.label('Academic defaults that future autofill and suggestions can reuse.').classes('settings-card-subtitle')
+
+                    def set_school(e):
+                        settings_state["profile"]["high_school"] = e.value
+                        refresh_content()
+
+                    def set_major(e):
+                        settings_state["profile"]["intended_major"] = e.value
+                        refresh_content()
+
+                    ui.input(label='High school', value=profile["high_school"], on_change=set_school).classes('w-full mt-3')
+                    ui.input(label='Default intended major / interests', value=profile["intended_major"], on_change=set_major).classes('w-full mt-2')
+
+                with ui.column().classes('settings-card full'):
+                    ui.label('Planning defaults').classes('settings-card-title')
+                    ui.label('Time zone and summary preview keep planning behavior understandable instead of hidden.').classes('settings-card-subtitle')
+
+                    def set_timezone(e):
+                        settings_state["profile"]["time_zone"] = e.value
+                        refresh_content()
+
+                    timezone_options = [
+                        'America/New_York',
+                        'America/Chicago',
+                        'America/Denver',
+                        'America/Los_Angeles',
+                        'America/Phoenix',
+                        'Pacific/Honolulu',
+                    ]
+                    ui.select(timezone_options, value=profile["time_zone"], on_change=set_timezone, label='Time zone').classes('w-full mt-3')
+                    with ui.row().classes('w-full gap-3 mt-4'):
+                        with ui.column().classes('settings-preview-shell grow'):
+                            ui.label('Profile preview').classes('text-sm font-semibold')
+                            ui.label(profile["student_name"]).classes('text-lg font-semibold mt-1')
+                            ui.label(f"{profile['high_school']} • Class of {profile['graduation_year']}").classes('text-sm text-[var(--muted)]')
+                            ui.label(profile["intended_major"]).classes('text-sm mt-2')
+                        with ui.column().classes('settings-preview-shell grow'):
+                            ui.label('Where this matters').classes('text-sm font-semibold')
+                            ui.label('These values can prefill forms, tailor essay defaults, and anchor future scheduling features.').classes('text-sm text-[var(--muted)] mt-1')
+
+    def render_appearance_content():
+        appearance = settings_state["appearance"]
+        accent = selected_accent()
+        preview_padding = '12px' if appearance["layout_density"] == 'Compact' else '18px'
+        with right_col:
+            with ui.column().classes('settings-hero'):
+                ui.label('Appearance').classes('text-2xl font-semibold')
+                ui.label('Choose an accent and density, then let those choices apply across the workspace.').classes('text-sm text-[var(--muted)]')
+                with ui.row().classes('w-full gap-2 mt-3'):
+                    ui.html(f'<span class="settings-preview-chip" style="background:{accent["color"]}">{accent["name"]}</span>')
+                    ui.label(appearance["layout_density"]).classes('chip')
+                    ui.label('Global theme enabled').classes('chip')
+
+            with ui.row().classes('settings-grid'):
+                with ui.column().classes('settings-card'):
+                    ui.label('Accent color').classes('settings-card-title')
+                    ui.label('The accent color now updates navigation, cards, chips, and highlights across the app.').classes('settings-card-subtitle')
+                    with ui.row().classes('settings-swatch-row mt-3'):
+                        for theme in theme_presets:
+                            active = theme["name"] == appearance["accent_theme"]
+                            swatch = ui.element('button').classes(f'settings-swatch {"active" if active else ""}')
+                            swatch.style(f'background:{theme["color"]}')
+                            swatch.on('click', lambda _, theme_name=theme["name"]: set_accent(theme_name))
+                    ui.label(f"Current theme: {accent['name']}").classes('text-sm mt-3')
+
+                with ui.column().classes('settings-card'):
+                    ui.label('Layout density').classes('settings-card-title')
+                    ui.label('Density adjusts spacing and card rhythm on the rest of the pages too.').classes('settings-card-subtitle')
+                    with ui.row().classes('w-full gap-3 mt-3'):
+                        for density in ['Compact', 'Cozy']:
+                            active = appearance["layout_density"] == density
+                            with ui.card().classes(f'grow settings-density-option {"active" if active else ""}').on('click', lambda density_value=density: set_density(density_value)):
+                                ui.label(density).classes('font-semibold')
+                                ui.label('Higher information density' if density == 'Compact' else 'More relaxed spacing').classes('text-xs text-[var(--muted)]')
+
+                with ui.column().classes('settings-card full'):
+                    ui.label('Light / dark mode').classes('settings-card-title')
+                    ui.label('The app is currently optimized for a light academic workspace. Dark mode remains a placeholder for a later pass.').classes('settings-card-subtitle')
+
+                    def toggle_dark_mode(e):
+                        settings_state["appearance"]["dark_mode"] = bool(e.value)
+                        refresh_content()
+
+                    ui.switch('Enable dark mode when available', value=appearance["dark_mode"], on_change=toggle_dark_mode).classes('mt-3')
+                    ui.label('Placeholder only. This toggle is intentionally non-functional for now.').classes('text-xs text-[var(--muted)] mt-2')
+
+                with ui.column().classes('settings-card full'):
+                    ui.label('Workspace preview').classes('settings-card-title')
+                    ui.label('This mirrors the updated app theme so the settings page and the rest of the product stay aligned.').classes('settings-card-subtitle')
+                    with ui.column().classes('settings-preview mt-3'):
+                        ui.html(f'''
+                        <div class="settings-preview-shell" style="padding:{preview_padding}">
+                          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;">
+                            <div>
+                              <div style="font-weight:700;color:#2F2A25;">Essay Strategy Workspace</div>
+                              <div style="font-size:0.82rem;color:#746A60;">Preview of cards, chips, and density</div>
+                            </div>
+                            <span class="settings-preview-chip" style="background:{accent["color"]};">Active theme</span>
+                          </div>
+                          <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:12px;">
+                            <div style="border:1px solid #e7dacd;border-radius:16px;padding:{preview_padding};background:#fffdfa;">
+                              <div style="font-size:0.78rem;color:#746A60;margin-bottom:8px;">Prompt list</div>
+                              <div style="display:flex;flex-direction:column;gap:{'8px' if appearance["layout_density"] == "Compact" else '14px'};">
+                                <div style="border:1px solid #e3d3c4;border-radius:14px;padding:10px;background:#fff8fb;">
+                                  <div style="font-weight:600;">Why Duke?</div>
+                                  <div style="font-size:0.78rem;color:#746A60;">rough • 142/250 words</div>
+                                </div>
+                                <div style="border:1px solid #e3d3c4;border-radius:14px;padding:10px;background:#fffdfa;">
+                                  <div style="font-weight:600;">Community essay</div>
+                                  <div style="font-size:0.78rem;color:#746A60;">revise • 184/200 words</div>
+                                </div>
+                              </div>
+                            </div>
+                            <div style="border:1px solid #e7dacd;border-radius:16px;padding:{preview_padding};background:#fffdfa;">
+                              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                <div style="font-weight:600;">Draft editor</div>
+                                <span style="font-size:0.78rem;color:#746A60;">Autosaved</span>
+                              </div>
+                              <div style="height:120px;border-radius:14px;background:linear-gradient(180deg, #fffdf9 0%, #f8f1e7 100%);border:1px solid #ecdece;padding:12px;font-size:0.84rem;color:#564d46;line-height:1.6;">
+                                I want a workspace that feels purposeful, calm, and clear while I draft.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        ''').classes('w-full')
+
+    def render_account_content():
+        with right_col:
+            with ui.column().classes('settings-hero'):
+                ui.label('Account').classes('text-2xl font-semibold')
+                ui.label('This section reserves space for authentication and cloud-backed preferences.').classes('text-sm text-[var(--muted)]')
+
+            with ui.row().classes('settings-grid'):
+                with ui.column().classes('settings-card full'):
+                    ui.label('Authentication').classes('settings-card-title')
+                    ui.label('Authentication and cloud sync coming soon').classes('text-base mt-2')
+                    with ui.column().classes('settings-account-callout mt-4'):
+                        ui.label('Planned').classes('text-sm font-semibold')
+                        ui.label('Sign-in, synced settings, saved colleges across devices, and account recovery can live here later without changing the overall layout.').classes('text-sm text-[var(--muted)]')
+                        ui.button('Join waitlist').props('outline no-caps').classes('self-start mt-3')
+
+                with ui.column().classes('settings-card'):
+                    ui.label('Local mode').classes('settings-card-title')
+                    ui.label('Settings are currently stored in local app state for this prototype.').classes('settings-card-subtitle mt-1')
+
+                with ui.column().classes('settings-card'):
+                    ui.label('Cloud sync status').classes('settings-card-title')
+                    ui.label('Not connected').classes('text-sm mt-2')
+                    ui.label('Will appear here once authentication exists.').classes('settings-card-subtitle')
+
+    def refresh_content():
+        right_col.clear()
+        category = settings_state["category"]
+        if category == 'Profile':
+            render_profile_content()
+        elif category == 'Appearance':
+            render_appearance_content()
+        else:
+            render_account_content()
+
+    def select_category(category: str):
+        settings_state["category"] = category
+        refresh_sidebar()
+        refresh_content()
+
+    def set_accent(theme_name: str):
+        settings_state["appearance"]["accent_theme"] = theme_name
+        apply_theme_settings()
+        refresh_content()
+        refresh_sidebar()
+
+    def set_density(density: str):
+        settings_state["appearance"]["layout_density"] = density
+        apply_theme_settings()
+        refresh_content()
+        refresh_sidebar()
+
+    apply_theme_settings()
+    refresh_sidebar()
+    refresh_content()
 
 
 def default_research_entry(college_name: str, deadline: str = 'TBD'):
@@ -1066,14 +2475,75 @@ def ensure_recommendation_row(college_name: str):
 
 def default_fee_entry():
     return {
+        "college_name": "",
         "application_fee": 0,
         "fee_waiver_status": "Not requested",
-        "submitted_payment": False,
-        "amount_paid": 0,
-        "score_report_fees": 0,
-        "css_fafsa_costs": 0,
+        "payment_status": "Not paid",
         "notes": "",
+        "css_profile_required": False,
+        "css_profile_cost": 0,
+        "fafsa_required": False,
+        "fafsa_cost": 0,
+        "sat_score_send_required": False,
+        "sat_score_send_cost": 0,
+        "ap_score_send_required": False,
+        "ap_score_send_cost": 0,
     }
+
+
+FEE_WAIVER_OPTIONS = ["Not requested", "Requested", "Approved", "Denied"]
+PAYMENT_STATUS_OPTIONS = ["Not paid", "Paid"]
+OPTIONAL_FEE_FIELDS = [
+    ("css_profile_required", "CSS Profile", "css_profile_cost"),
+    ("fafsa_required", "FAFSA", "fafsa_cost"),
+    ("sat_score_send_required", "SAT score send", "sat_score_send_cost"),
+    ("ap_score_send_required", "AP score send", "ap_score_send_cost"),
+]
+
+
+def normalize_fee_tracker():
+    for college_name, row in fee_tracker.items():
+        normalized = default_fee_entry()
+        normalized.update(row)
+        normalized["college_name"] = normalized["college_name"] or college_name
+
+        if "submitted_payment" in row and "payment_status" not in row:
+            normalized["payment_status"] = "Paid" if row.get("submitted_payment") else "Not paid"
+
+        if "score_report_fees" in row:
+            if not normalized["sat_score_send_required"] and row.get("score_report_fees", 0):
+                normalized["sat_score_send_required"] = True
+            if not normalized["sat_score_send_cost"]:
+                normalized["sat_score_send_cost"] = row.get("score_report_fees", 0)
+
+        if "css_fafsa_costs" in row:
+            legacy_cost = row.get("css_fafsa_costs", 0)
+            if not normalized["css_profile_required"] and legacy_cost:
+                normalized["css_profile_required"] = True
+            if not normalized["css_profile_cost"]:
+                normalized["css_profile_cost"] = legacy_cost
+
+        legacy_status = row.get("fee_waiver_status", normalized["fee_waiver_status"])
+        if legacy_status == "Not approved":
+            normalized["fee_waiver_status"] = "Denied"
+
+        fee_tracker[college_name] = normalized
+
+
+def application_fee_due(row: dict):
+    return 0 if row["fee_waiver_status"] == "Approved" else row["application_fee"]
+
+
+def optional_fee_total(row: dict):
+    total = 0
+    for toggle_key, _, cost_key in OPTIONAL_FEE_FIELDS:
+        if row.get(toggle_key):
+            total += row.get(cost_key, 0) or 0
+    return total
+
+
+def fee_expected_total(row: dict):
+    return application_fee_due(row) + optional_fee_total(row)
 
 
 def waiver_savings(row: dict):
@@ -1083,6 +2553,262 @@ def waiver_savings(row: dict):
 def ensure_fee_row(college_name: str):
     if college_name not in fee_tracker:
         fee_tracker[college_name] = default_fee_entry()
+    fee_tracker[college_name]["college_name"] = fee_tracker[college_name].get("college_name") or college_name
+
+
+def set_fee_value(college_name: str, key: str, value):
+    ensure_fee_row(college_name)
+    fee_tracker[college_name][key] = value
+
+
+def set_fee_number(college_name: str, key: str, value):
+    try:
+        numeric_value = int(float(value or 0))
+    except (TypeError, ValueError):
+        numeric_value = 0
+    set_fee_value(college_name, key, max(0, numeric_value))
+
+
+def default_brainstorm_activity():
+    return {
+        "activity_name": "",
+        "category": "Other",
+        "notes": "",
+        "years_involved": "",
+        "hours_per_week": 0,
+    }
+
+
+def default_final_activity():
+    return {
+        "activity_name": "",
+        "role_position": "",
+        "organization": "",
+        "description": "",
+        "years_involved": "",
+        "hours_per_week": 0,
+        "weeks_per_year": 0,
+        "category": "Other",
+    }
+
+
+def set_activity_value(collection: str, index: int, key: str, value):
+    target = brainstorm_activities if collection == 'brainstorm' else final_activities
+    if 0 <= index < len(target):
+        target[index][key] = value
+
+
+def set_activity_number(collection: str, index: int, key: str, value):
+    try:
+        numeric_value = int(float(value or 0))
+    except (TypeError, ValueError):
+        numeric_value = 0
+    set_activity_value(collection, index, key, max(0, numeric_value))
+
+
+def add_brainstorm_activity():
+    brainstorm_activities.append(default_brainstorm_activity())
+    render_page()
+
+
+def remove_brainstorm_activity(index: int):
+    if 0 <= index < len(brainstorm_activities):
+        del brainstorm_activities[index]
+        render_page()
+
+
+def confirm_remove_brainstorm_activity(index: int):
+    if not (0 <= index < len(brainstorm_activities)):
+        return
+
+    activity_name = brainstorm_activities[index].get('activity_name') or f'Idea {index + 1}'
+    dialog = ui.dialog()
+    with dialog, ui.card().classes('card w-[420px] p-5'):
+        ui.label('Remove Brainstorm Activity?').classes('text-xl font-bold')
+        ui.label(f'Are you sure you want to remove "{activity_name}" from the brainstorm board?').classes('text-sm')
+
+        with ui.row().classes('w-full justify-end gap-2 mt-3'):
+            ui.button('Cancel', on_click=dialog.close).props('flat')
+
+            def do_remove():
+                dialog.close()
+                remove_brainstorm_activity(index)
+
+            ui.button('Remove', on_click=do_remove).props('color=negative no-caps')
+
+    dialog.open()
+
+
+def add_final_activity():
+    if len(final_activities) >= 10:
+        ui.notify('The final activities list is limited to 10 entries.', color='warning')
+        return
+    final_activities.append(default_final_activity())
+    render_page()
+
+
+def remove_final_activity(index: int):
+    if 0 <= index < len(final_activities):
+        del final_activities[index]
+        render_page()
+
+
+def confirm_remove_final_activity(index: int):
+    if not (0 <= index < len(final_activities)):
+        return
+
+    activity_name = final_activities[index].get('activity_name') or f'Ranked Activity {index + 1}'
+    dialog = ui.dialog()
+    with dialog, ui.card().classes('card w-[420px] p-5'):
+        ui.label('Remove Final Activity?').classes('text-xl font-bold')
+        ui.label(f'Are you sure you want to remove "{activity_name}" from the final activities list?').classes('text-sm')
+
+        with ui.row().classes('w-full justify-end gap-2 mt-3'):
+            ui.button('Cancel', on_click=dialog.close).props('flat')
+
+            def do_remove():
+                dialog.close()
+                remove_final_activity(index)
+
+            ui.button('Remove', on_click=do_remove).props('color=negative no-caps')
+
+    dialog.open()
+
+
+def move_final_activity(index: int, direction: int):
+    new_index = index + direction
+    if 0 <= index < len(final_activities) and 0 <= new_index < len(final_activities):
+        final_activities[index], final_activities[new_index] = final_activities[new_index], final_activities[index]
+        render_page()
+
+
+def start_final_activity_drag(index: int):
+    activity_drag_state["final_index"] = index
+
+
+def drop_final_activity(index: int):
+    from_index = activity_drag_state.get("final_index")
+    activity_drag_state["final_index"] = None
+    if from_index is None or from_index == index:
+        return
+    if not (0 <= from_index < len(final_activities) and 0 <= index < len(final_activities)):
+        return
+    item = final_activities.pop(from_index)
+    final_activities.insert(index, item)
+    render_page()
+
+
+def activity_insights():
+    leadership_keywords = {"president", "captain", "founder", "lead", "leader", "chair", "director", "editor"}
+    leadership_count = 0
+    research_count = 0
+    community_service_hours = 0
+    categories = []
+    category_counts = {}
+
+    for item in brainstorm_activities + final_activities:
+        category = item.get("category", "Other") or "Other"
+        categories.append(category)
+        category_counts[category] = category_counts.get(category, 0) + 1
+
+    for item in final_activities:
+        category = item.get("category", "")
+        role_text = (item.get("role_position", "") or "").lower()
+        if category == "Leadership" or any(keyword in role_text for keyword in leadership_keywords):
+            leadership_count += 1
+        if category == "Research":
+            research_count += 1
+        if category == "Community Service":
+            community_service_hours += (item.get("hours_per_week", 0) or 0) * (item.get("weeks_per_year", 0) or 0)
+
+    represented_categories = sorted(set(categories))
+    max_count = max(category_counts.values(), default=1)
+    bars = [
+        {
+            "category": category,
+            "count": count,
+            "percent": int((count / max_count) * 100) if max_count else 0,
+        }
+        for category, count in sorted(category_counts.items(), key=lambda entry: (-entry[1], entry[0]))
+    ]
+
+    return {
+        "leadership_count": leadership_count,
+        "research_count": research_count,
+        "community_service_hours": community_service_hours,
+        "represented_categories": represented_categories,
+        "category_bars": bars,
+    }
+
+
+def render_fee_editor(college_name: str, show_college_name: bool = True):
+    ensure_fee_row(college_name)
+    row = fee_tracker[college_name]
+    college_title = row.get("college_name") or college_name
+
+    with ui.column().classes('w-full gap-3'):
+        with ui.element('div').classes('fee-card-top'):
+            with ui.column().classes('grow gap-2'):
+                with ui.element('div').classes('fee-core-grid'):
+                    if show_college_name:
+                        ui.input(
+                            label='College name',
+                            value=college_title,
+                            on_change=lambda e, c=college_name: (set_fee_value(c, 'college_name', (e.value or '').strip()), render_page()),
+                        ).props('dense outlined').classes('w-full')
+
+                    ui.number(
+                        label='Application fee',
+                        value=row["application_fee"],
+                        min=0,
+                        step=1,
+                        on_change=lambda e, c=college_name: (set_fee_number(c, 'application_fee', e.value), render_page()),
+                    ).props('dense outlined').classes('w-full')
+
+                    ui.select(
+                        FEE_WAIVER_OPTIONS,
+                        value=row["fee_waiver_status"],
+                        label='Fee waiver',
+                        on_change=lambda e, c=college_name: (set_fee_value(c, 'fee_waiver_status', e.value), render_page()),
+                    ).props('dense outlined').classes('w-full')
+
+                    ui.select(
+                        PAYMENT_STATUS_OPTIONS,
+                        value=row["payment_status"],
+                        label='Payment status',
+                        on_change=lambda e, c=college_name: (set_fee_value(c, 'payment_status', e.value), render_page()),
+                    ).props('dense outlined').classes('w-full')
+
+                with ui.row().classes('fee-inline-meta'):
+                    ui.label(f'Expected total: ${fee_expected_total(row)}').classes('chip')
+                    if row["fee_waiver_status"] == "Approved":
+                        ui.label(f'Waiver saved ${waiver_savings(row)}').classes('chip')
+                    ui.label('Paid' if row["payment_status"] == "Paid" else 'Still to pay').classes('chip')
+
+            with ui.element('div').classes('fee-total-pill'):
+                with ui.column().classes('gap-0'):
+                    ui.label('College total').classes('text-xs uppercase tracking-wide')
+                    ui.html(f'<strong>${fee_expected_total(row)}</strong>')
+
+        with ui.element('div').classes('fee-optional-grid'):
+            for toggle_key, label, cost_key in OPTIONAL_FEE_FIELDS:
+                with ui.element('div').classes('fee-optional-item'):
+                    with ui.element('div').classes('fee-toggle-row'):
+                        ui.label(label).classes('text-sm font-medium')
+                        ui.switch(
+                            value=row.get(toggle_key, False),
+                            on_change=lambda e, c=college_name, t=toggle_key: (set_fee_value(c, t, bool(e.value)), render_page()),
+                        ).props('dense size=sm color=primary')
+
+                    cost_input = ui.number(
+                        label='Cost',
+                        value=row.get(cost_key, 0),
+                        min=0,
+                        step=1,
+                        on_change=lambda e, c=college_name, ck=cost_key: (set_fee_number(c, ck, e.value), render_page()),
+                    ).props('dense outlined').classes('w-full')
+                    if not row.get(toggle_key):
+                        cost_input.props('disable')
 
 
 def matrix_status_symbol(status: str):
@@ -1293,16 +3019,18 @@ def render_fees_page():
     for item in widgets:
         college = item["name"]
         row = fee_tracker[college]
-        expected_total += row["application_fee"] + row["score_report_fees"] + row["css_fafsa_costs"]
-        total_paid += row["amount_paid"]
+        college_total = fee_expected_total(row)
+        expected_total += college_total
+        if row["payment_status"] == "Paid":
+            total_paid += college_total
         total_waiver_saved += waiver_savings(row)
 
     ui.label('Fees').classes('text-3xl font-bold')
-    ui.label('Track costs, waivers, and payments in one place.').classes('text-base')
+    ui.label('Everything stays visible on the card so you can update fees quickly without opening extra panels.').classes('text-base')
 
     with ui.row().classes('w-full gap-4'):
         with ui.card().classes('card p-4 grow'):
-            ui.label('Total expected cost').classes('section-title')
+            ui.label('Total expected').classes('section-title')
             ui.label(f'${expected_total}').classes('stat-num')
         with ui.card().classes('card p-4 grow'):
             ui.label('Total paid').classes('section-title')
@@ -1311,26 +3039,12 @@ def render_fees_page():
             ui.label('Fee waivers saved').classes('section-title')
             ui.label(f'${total_waiver_saved}').classes('stat-num')
 
-    with ui.card().classes('card w-full p-4'):
-        with ui.row().classes('w-full no-wrap text-sm font-bold mt-1'):
-            for header in [
-                "College", "Application Fee", "Fee Waiver Status", "Submitted Payment?",
-                "Amount Paid", "Score Report Fees", "CSS/FAFSA Costs", "Notes"
-            ]:
-                ui.label(header).classes('w-40')
-
+    with ui.column().classes('fees-grid'):
         for item in widgets:
             college = item["name"]
-            row = fee_tracker[college]
-            with ui.row().classes('w-full no-wrap items-center text-sm py-2'):
-                ui.label(college).classes('w-40 font-semibold')
-                ui.label(f"${row['application_fee']}").classes('w-40')
-                ui.label(row["fee_waiver_status"]).classes('w-40')
-                ui.label("Yes" if row["submitted_payment"] else "No").classes('w-40')
-                ui.label(f"${row['amount_paid']}").classes('w-40')
-                ui.label(f"${row['score_report_fees']}").classes('w-40')
-                ui.label(f"${row['css_fafsa_costs']}").classes('w-40')
-                ui.label(row["notes"] or "-").classes('w-40')
+
+            with ui.card().classes('fee-card w-full'):
+                render_fee_editor(college, show_college_name=True)
 
 
 def render_college_page(college_name: str):
@@ -1349,13 +3063,28 @@ def render_college_page(college_name: str):
 
     with ui.tabs().classes('w-full') as tabs:
         overview_tab = ui.tab('Overview')
+        overview_tab.on('click', lambda: set_college_tab('overview'))
         essays_tab = ui.tab('Essays')
+        essays_tab.on('click', lambda: set_college_tab('essays'))
         research_tab = ui.tab('Research')
+        research_tab.on('click', lambda: set_college_tab('research'))
         requirements_tab = ui.tab('Requirements')
+        requirements_tab.on('click', lambda: set_college_tab('requirements'))
         fees_tab = ui.tab('Fees')
+        fees_tab.on('click', lambda: set_college_tab('fees'))
         recs_tab = ui.tab('Recommendations')
+        recs_tab.on('click', lambda: set_college_tab('recs'))
 
-    with ui.tab_panels(tabs, value=overview_tab).classes('w-full'):
+    active_tab = {
+        'overview': overview_tab,
+        'essays': essays_tab,
+        'research': research_tab,
+        'requirements': requirements_tab,
+        'fees': fees_tab,
+        'recs': recs_tab,
+    }.get(current_page.get('college_tab', 'overview'), overview_tab)
+
+    with ui.tab_panels(tabs, value=active_tab).classes('w-full'):
         with ui.tab_panel(overview_tab):
             with ui.row().classes('four-col'):
                 with ui.card().classes('card p-5 grow'):
@@ -1366,6 +3095,7 @@ def render_college_page(college_name: str):
                         record['selected_application_type'] = e.value
                         deadline_value = get_deadline_for_college_plan(college_name, e.value)
                         add_or_update_college(college_name, e.value, deadline_value)
+                        render_page()
 
                     ui.select(application_types, value=record.get('selected_application_type'), on_change=update_application_type).classes('w-full mt-2')
 
@@ -1373,18 +3103,7 @@ def render_college_page(college_name: str):
                     ui.label('Deadline').classes('section-title')
                     selected_plan = record.get('selected_application_type')
                     current_deadline = get_deadline_for_college_plan(college_name, selected_plan) if selected_plan else 'TBD'
-
-                    def update_deadline(e):
-                        deadline_text = e.value.strip() if e.value else 'TBD'
-                        selected_type = record.get('selected_application_type')
-                        if selected_type:
-                            add_or_update_college(college_name, selected_type, deadline_text)
-                        else:
-                            existing_widget = get_widget(college_name)
-                            if existing_widget:
-                                existing_widget['deadline'] = deadline_text
-
-                    ui.input(value=current_deadline, on_change=update_deadline).classes('w-full mt-2')
+                    ui.input(value=current_deadline).props('outlined readonly').classes('w-full mt-2')
                     ui.label(f'Countdown: {deadline_countdown(current_deadline)}').classes('text-sm mt-2')
 
                 with ui.card().classes('card p-5 grow'):
@@ -1488,7 +3207,9 @@ def render_college_page(college_name: str):
         with ui.tab_panel(fees_tab):
             with ui.card().classes('card w-full p-5'):
                 ui.label('Fees').classes('section-title')
-                render_simple_list(profile['fees'], 'No fee data yet.')
+                ui.label('This uses the same fee tracker data shown on the main Fees page.').classes('text-sm mt-1')
+                with ui.card().classes('fee-card w-full mt-3'):
+                    render_fee_editor(college_name, show_college_name=False)
 
         with ui.tab_panel(recs_tab):
             with ui.card().classes('card w-full p-5'):
@@ -1583,9 +3304,10 @@ def deadline_countdown(date_text: str):
 
 def progress_ring(progress: int):
     safe_progress = max(0, min(progress, 100))
+    palette = current_theme_values()
     return (
         "<div class='progress-ring' style=\""
-        f"background: conic-gradient({THEME['primary']} {safe_progress * 3.6}deg, #F4E8EF 0deg);\">"
+        f"background: conic-gradient({palette['primary']} {safe_progress * 3.6}deg, {palette['primary_soft']} 0deg);\">"
         f"<div style='width:48px;height:48px;border-radius:999px;background:#fff;display:flex;align-items:center;justify-content:center'>{safe_progress}%</div>"
         "</div>"
     )
@@ -1653,6 +3375,175 @@ def render_add_college_control(square: bool = False):
         ui.button('+', on_click=add_college_dialog.open).classes('plus-square')
     else:
         ui.button('＋ Add college', on_click=add_college_dialog.open).classes('add-btn')
+
+
+def render_activities_page():
+    insights = activity_insights()
+
+    ui.label('Activities').classes('text-3xl font-bold')
+    ui.label('Brainstorm broadly, refine the strongest entries, and rank the final list the way colleges will see it.').classes('text-base')
+
+    with ui.column().classes('activities-layout'):
+        with ui.card().classes('card w-full p-5'):
+            with ui.row().classes('w-full justify-between items-center'):
+                with ui.column().classes('gap-0'):
+                    ui.label('Brainstorm Board').classes('section-title')
+                    ui.label('Capture possible extracurriculars quickly before deciding what makes the final application list.').classes('text-sm')
+                ui.button('＋ Add brainstorm card', on_click=add_brainstorm_activity).classes('add-btn')
+
+            with ui.element('div').classes('activities-board mt-3'):
+                for index, activity in enumerate(brainstorm_activities):
+                    with ui.card().classes('activity-card brainstorm-card'):
+                        with ui.element('div').classes('activity-card-top'):
+                            with ui.column().classes('gap-0 pl-2'):
+                                ui.label(activity.get('activity_name') or f'Idea {index + 1}').classes('text-lg font-bold')
+                                ui.label('Quick idea card').classes('text-xs uppercase tracking-wide')
+                            ui.button('Remove', on_click=lambda i=index: confirm_remove_brainstorm_activity(i)).props('flat color=negative no-caps')
+
+                        with ui.element('div').classes('activity-fields-grid'):
+                            ui.input(
+                                label='Activity name',
+                                value=activity.get('activity_name', ''),
+                                on_change=lambda e, i=index: set_activity_value('brainstorm', i, 'activity_name', e.value or ''),
+                            ).props('dense outlined').classes('w-full')
+                            ui.select(
+                                ACTIVITY_CATEGORIES,
+                                value=activity.get('category', 'Other'),
+                                label='Category',
+                                on_change=lambda e, i=index: set_activity_value('brainstorm', i, 'category', e.value or 'Other'),
+                            ).props('dense outlined').classes('w-full')
+                            ui.input(
+                                label='Years involved',
+                                value=activity.get('years_involved', ''),
+                                on_change=lambda e, i=index: set_activity_value('brainstorm', i, 'years_involved', e.value or ''),
+                            ).props('dense outlined').classes('w-full')
+                            ui.number(
+                                label='Hours/week',
+                                value=activity.get('hours_per_week', 0),
+                                min=0,
+                                step=1,
+                                on_change=lambda e, i=index: set_activity_number('brainstorm', i, 'hours_per_week', e.value),
+                            ).props('dense outlined').classes('w-full')
+                        ui.textarea(
+                            label='Notes',
+                            value=activity.get('notes', ''),
+                            on_change=lambda e, i=index: set_activity_value('brainstorm', i, 'notes', e.value or ''),
+                        ).props('autogrow outlined').classes('w-full mt-2 activity-notes pl-2')
+
+        with ui.card().classes('card w-full p-5'):
+            with ui.row().classes('w-full justify-between items-center'):
+                with ui.column().classes('gap-0'):
+                    ui.label('Final Activities List').classes('section-title')
+                    ui.label('Limit this list to 10 entries and rank the strongest items first. Drag cards to reorder or use the arrow controls.').classes('text-sm')
+                ui.button(
+                    f'＋ Add final activity ({len(final_activities)}/10)',
+                    on_click=add_final_activity,
+                ).classes('add-btn')
+
+            with ui.column().classes('activity-final-list mt-3'):
+                for index, activity in enumerate(final_activities):
+                    card = ui.card().classes('activity-card final-card drag-card w-full').props('draggable=true ondragover="event.preventDefault()"')
+                    card.on('dragstart', lambda _, i=index: start_final_activity_drag(i))
+                    card.on('drop', lambda _, i=index: drop_final_activity(i))
+                    with card:
+                        with ui.element('div').classes('activity-card-top'):
+                            with ui.row().classes('items-center gap-3'):
+                                with ui.element('div').classes('activity-rank-pill'):
+                                    ui.label(str(index + 1))
+                                with ui.column().classes('gap-0'):
+                                    ui.label(activity.get('activity_name') or f'Ranked Activity {index + 1}').classes('text-lg font-bold')
+                                    ui.label(activity.get('organization') or 'Add organization').classes('text-sm')
+                            with ui.element('div').classes('activity-actions'):
+                                ui.button(icon='drag_indicator').props('flat round dense')
+                                ui.button(icon='keyboard_arrow_up', on_click=lambda i=index: move_final_activity(i, -1)).props('flat round dense')
+                                ui.button(icon='keyboard_arrow_down', on_click=lambda i=index: move_final_activity(i, 1)).props('flat round dense')
+                                ui.button('Remove', on_click=lambda i=index: confirm_remove_final_activity(i)).props('flat color=negative no-caps')
+
+                        with ui.element('div').classes('activity-fields-grid final'):
+                            ui.input(
+                                label='Activity name',
+                                value=activity.get('activity_name', ''),
+                                on_change=lambda e, i=index: set_activity_value('final', i, 'activity_name', e.value or ''),
+                            ).props('dense outlined').classes('w-full')
+                            ui.input(
+                                label='Role / position',
+                                value=activity.get('role_position', ''),
+                                on_change=lambda e, i=index: set_activity_value('final', i, 'role_position', e.value or ''),
+                            ).props('dense outlined').classes('w-full')
+                            ui.input(
+                                label='Organization',
+                                value=activity.get('organization', ''),
+                                on_change=lambda e, i=index: set_activity_value('final', i, 'organization', e.value or ''),
+                            ).props('dense outlined').classes('w-full')
+                            ui.input(
+                                label='Years involved',
+                                value=activity.get('years_involved', ''),
+                                on_change=lambda e, i=index: set_activity_value('final', i, 'years_involved', e.value or ''),
+                            ).props('dense outlined').classes('w-full')
+                            ui.number(
+                                label='Hours/week',
+                                value=activity.get('hours_per_week', 0),
+                                min=0,
+                                step=1,
+                                on_change=lambda e, i=index: set_activity_number('final', i, 'hours_per_week', e.value),
+                            ).props('dense outlined').classes('w-full')
+                            ui.number(
+                                label='Weeks/year',
+                                value=activity.get('weeks_per_year', 0),
+                                min=0,
+                                step=1,
+                                on_change=lambda e, i=index: set_activity_number('final', i, 'weeks_per_year', e.value),
+                            ).props('dense outlined').classes('w-full')
+                        with ui.row().classes('w-full gap-3 mt-2'):
+                            ui.select(
+                                ACTIVITY_CATEGORIES,
+                                value=activity.get('category', 'Other'),
+                                label='Category',
+                                on_change=lambda e, i=index: set_activity_value('final', i, 'category', e.value or 'Other'),
+                            ).props('dense outlined').classes('w-56 max-w-full')
+                        ui.textarea(
+                            label='Description',
+                            value=activity.get('description', ''),
+                            on_change=lambda e, i=index: set_activity_value('final', i, 'description', e.value or ''),
+                        ).props('autogrow outlined').classes('w-full mt-2 activity-description compact')
+
+        with ui.card().classes('card w-full p-5'):
+            ui.label('Activity Insights').classes('section-title')
+            ui.label('Use these quick signals to spot gaps before you finalize the top 10.').classes('text-sm mt-1')
+
+            with ui.element('div').classes('activity-insights-grid mt-3'):
+                for label, value in [
+                    ('Leadership activities', insights['leadership_count']),
+                    ('Research activities', insights['research_count']),
+                    ('Community service hours', insights['community_service_hours']),
+                    ('Categories represented', len(insights['represented_categories'])),
+                ]:
+                    with ui.element('div').classes('insight-card'):
+                        ui.label(label).classes('insight-label')
+                        ui.label(str(value)).classes('insight-value')
+
+            with ui.row().classes('w-full gap-4 mt-4 items-start'):
+                with ui.card().classes('card p-4 grow'):
+                    ui.label('Category coverage').classes('section-title')
+                    with ui.element('div').classes('category-chip-wrap mt-3'):
+                        if insights['represented_categories']:
+                            for category in insights['represented_categories']:
+                                ui.label(category).classes('chip')
+                        else:
+                            ui.label('No categories yet.').classes('text-sm')
+
+                with ui.card().classes('card p-4 grow'):
+                    ui.label('Distribution').classes('section-title')
+                    with ui.element('div').classes('activity-bar-list mt-3'):
+                        if insights['category_bars']:
+                            for bar in insights['category_bars']:
+                                with ui.element('div').classes('activity-bar-row'):
+                                    ui.label(bar['category']).classes('text-sm')
+                                    with ui.element('div').classes('activity-bar-track'):
+                                        ui.element('div').classes('activity-bar-fill').style(f'width: {max(10, bar["percent"])}%')
+                                    ui.label(str(bar['count'])).classes('text-sm text-right')
+                        else:
+                            ui.label('Add activities to see the distribution.').classes('text-sm')
 
 
 def render_home_page():
@@ -1771,12 +3662,15 @@ def render_placeholder_page(title: str, subtitle: str):
 
 
 def render_page():
+    apply_theme_settings()
     content_col.clear()
     with content_col:
         if current_page['id'] == 'home':
             render_home_page()
         elif current_page['id'] == 'colleges':
             render_colleges_page()
+        elif current_page['id'] == 'activities':
+            render_activities_page()
         elif current_page['id'] == 'research':
             render_research_page()
         elif current_page['id'] == 'essays':
@@ -1786,7 +3680,7 @@ def render_page():
         elif current_page['id'] == 'fees':
             render_fees_page()
         elif current_page['id'] == 'settings':
-            render_placeholder_page('Settings', 'Adjust app preferences, reminders, and account details.')
+            render_settings_page()
         elif current_page['id'] == 'college':
             render_college_page(current_page['college'] or 'College')
 
@@ -1804,6 +3698,7 @@ with ui.row().classes('shell w-full no-wrap'):
         pass
 
 normalize_college_records()
+normalize_fee_tracker()
 sync_widget_deadlines_from_college_data()
 set_active_sidebar()
 render_page()
