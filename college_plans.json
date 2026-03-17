@@ -12,7 +12,7 @@
           "deadline": "Jan 01, 2027"
         }
       ],
-      "selected_application_type": "Regular Decision",
+      "selected_application_type": "Restrictive Early Action",
       "status": "In Progress",
       "major": "CS",
       "quick_notes": "Refine leadership example in personal statement.",
@@ -59,7 +59,25 @@
           "label": "Optional Recommender",
           "assigned_recommender": "Mr. Johnson"
         }
-      ]
+      ],
+      "requirements_checklist": {
+        "common_app_submitted": false,
+        "supplement_submitted": false,
+        "sat_requirement": "Not required",
+        "sat_submission_method": "Not required",
+        "act_accepted": "Not required",
+        "ap_requirement": "Not required",
+        "ap_submission_method": "Not required",
+        "transcript": false,
+        "school_report": false,
+        "counselor_recommendation": false,
+        "teacher_recommendations": false,
+        "midyear_report": false,
+        "fafsa": false,
+        "css_profile": false,
+        "interview": false,
+        "portfolio": false
+      }
     },
     {
       "name": "Duke",
@@ -119,7 +137,25 @@
           "label": "Optional Recommender",
           "assigned_recommender": ""
         }
-      ]
+      ],
+      "requirements_checklist": {
+        "common_app_submitted": false,
+        "supplement_submitted": false,
+        "sat_requirement": "Not required",
+        "sat_submission_method": "Not required",
+        "act_accepted": "Not required",
+        "ap_requirement": "Not required",
+        "ap_submission_method": "Not required",
+        "transcript": false,
+        "school_report": false,
+        "counselor_recommendation": false,
+        "teacher_recommendations": false,
+        "midyear_report": false,
+        "fafsa": false,
+        "css_profile": false,
+        "interview": false,
+        "portfolio": false
+      }
     },
     {
       "name": "Stanford",
@@ -133,7 +169,7 @@
           "deadline": "Jan 05, 2027"
         }
       ],
-      "selected_application_type": "Regular Decision",
+      "selected_application_type": "Restrictive Early Action",
       "status": "In Progress",
       "major": "Symbolic Systems",
       "quick_notes": "Research AI + society labs and faculty fit.",
@@ -171,7 +207,25 @@
           "label": "Optional Recommender",
           "assigned_recommender": ""
         }
-      ]
+      ],
+      "requirements_checklist": {
+        "common_app_submitted": false,
+        "supplement_submitted": false,
+        "sat_requirement": "Not required",
+        "sat_submission_method": "Not required",
+        "act_accepted": "Not required",
+        "ap_requirement": "Not required",
+        "ap_submission_method": "Not required",
+        "transcript": false,
+        "school_report": false,
+        "counselor_recommendation": false,
+        "teacher_recommendations": false,
+        "midyear_report": false,
+        "fafsa": false,
+        "css_profile": false,
+        "interview": false,
+        "portfolio": false
+      }
     },
     {
       "name": "Princeton",
@@ -185,7 +239,7 @@
           "deadline": "Jan 01, 2027"
         }
       ],
-      "selected_application_type": "Regular Decision",
+      "selected_application_type": "Single-Choice Early Action",
       "status": "In Progress",
       "major": "Economics",
       "quick_notes": "Strengthen community leadership examples.",
@@ -223,7 +277,25 @@
           "label": "Optional Recommender",
           "assigned_recommender": ""
         }
-      ]
+      ],
+      "requirements_checklist": {
+        "common_app_submitted": false,
+        "supplement_submitted": false,
+        "sat_requirement": "Not required",
+        "sat_submission_method": "Not required",
+        "act_accepted": "Not required",
+        "ap_requirement": "Not required",
+        "ap_submission_method": "Not required",
+        "transcript": false,
+        "school_report": false,
+        "counselor_recommendation": false,
+        "teacher_recommendations": false,
+        "midyear_report": false,
+        "fafsa": false,
+        "css_profile": false,
+        "interview": false,
+        "portfolio": false
+      }
     },
     {
       "name": "Yale",
@@ -275,7 +347,48 @@
           "label": "Optional Recommender",
           "assigned_recommender": ""
         }
-      ]
+      ],
+      "requirements_checklist": {
+        "common_app_submitted": false,
+        "supplement_submitted": false,
+        "sat_requirement": "Not required",
+        "sat_submission_method": "Not required",
+        "act_accepted": "Not required",
+        "ap_requirement": "Not required",
+        "ap_submission_method": "Not required",
+        "transcript": false,
+        "school_report": false,
+        "counselor_recommendation": false,
+        "teacher_recommendations": false,
+        "midyear_report": false,
+        "fafsa": false,
+        "css_profile": false,
+        "interview": false,
+        "portfolio": false
+      }
+    }
+  ],
+  "home_tasks": [
+    {
+      "id": 1,
+      "title": "Finish Harvard supplemental draft",
+      "completed": true,
+      "due_date": "2026-03-20",
+      "priority": "High"
+    },
+    {
+      "id": 2,
+      "title": "Follow up with Ms. Patel about recommendation letter",
+      "completed": true,
+      "due_date": "2026-03-18",
+      "priority": "Medium"
+    },
+    {
+      "id": 3,
+      "title": "Pay Duke application fee",
+      "completed": true,
+      "due_date": "",
+      "priority": ""
     }
   ]
 }

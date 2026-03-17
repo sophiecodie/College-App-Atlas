@@ -223,6 +223,54 @@ h1, h2, h3, .text-3xl, .text-xl {{ font-family: Fraunces, serif; letter-spacing:
   gap: 10px;
   margin-bottom: 8px;
 }}
+.requirements-grid {{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}}
+.requirements-card {{
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fffdf9 0%, #fff8ef 100%);
+  padding: 16px;
+}}
+.requirements-card-title {{
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a5a45;
+}}
+.requirements-list {{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}}
+.requirement-row {{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #efe4d6;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.76);
+}}
+.requirement-row.checkbox-only {{
+  grid-template-columns: 1fr;
+}}
+.requirement-label {{
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}}
+.requirement-hint {{
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 2px;
+}}
 .activities-layout {{
   display: flex;
   flex-direction: column;
@@ -387,182 +435,225 @@ h1, h2, h3, .text-3xl, .text-xl {{ font-family: Fraunces, serif; letter-spacing:
 }}
 .essays-layout {{
   display: grid;
-  grid-template-columns: minmax(240px, 0.95fr) minmax(420px, 1.7fr) minmax(280px, 1.05fr);
-  gap: 16px;
+  grid-template-columns: minmax(220px, 0.78fr) minmax(540px, 1.95fr) minmax(260px, 0.9fr);
+  gap: 14px;
   width: 100%;
   align-items: start;
 }}
 .essay-panel {{
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  background: linear-gradient(180deg, #fffdf9 0%, #fff8ef 100%);
-  box-shadow: 0 14px 28px rgba(80, 58, 40, 0.07);
+  border: 1px solid #efe7dd;
+  border-radius: 20px;
+  background: #fffdfa;
+  box-shadow: 0 6px 18px rgba(80, 58, 40, 0.04);
 }}
 .essay-panel.compact {{
-  padding: 14px;
+  padding: 12px;
 }}
 .essay-panel.writer {{
-  padding: 18px;
-  min-height: 780px;
+  padding: 14px 16px 16px 16px;
+  min-height: 760px;
+  background: #fffefd;
 }}
 .essay-panel.tools {{
-  padding: 14px;
+  padding: 12px;
 }}
-.essay-college-block {{
-  border-top: 1px solid #efe4d6;
-  padding-top: 12px;
+.essay-sidebar-top {{
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }}
-.essay-college-block:first-child {{
+.essay-sidebar-toggle {{
+  flex: 1 1 auto;
+}}
+.essay-tree-block {{
+  border-top: 1px solid #f0e7dc;
+  padding-top: 7px;
+}}
+.essay-tree-block:first-child {{
   border-top: none;
   padding-top: 0;
 }}
-.essay-college-head {{
+.essay-tree-header {{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 4px;
+}}
+.essay-tree-title {{
+  font-size: 0.88rem;
+  font-weight: 700;
+}}
+.essay-tree-chevron {{
+  font-size: 0.78rem;
+  color: var(--muted);
+  width: 14px;
+}}
+.essay-tree-items {{
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+}}
+.essay-tree-item {{
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-}}
-.essay-college-name {{
-  font-weight: 700;
-  font-size: 0.95rem;
-}}
-.essay-prompt-card {{
-  border: 1px solid #e8dccf;
-  border-radius: 18px;
-  padding: 12px;
-  background: #fffdfa;
+  padding: 6px 8px 6px 16px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: #4d433a;
   cursor: pointer;
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  transition: background-color .16s ease, color .16s ease;
 }}
-.essay-prompt-card:hover {{
-  transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(80, 58, 40, 0.08);
-  border-color: #dbc7b3;
+.essay-tree-item:hover {{
+  background: #f8f3ec;
 }}
-.essay-prompt-card.active {{
-  border-color: #c88b98;
-  background: linear-gradient(180deg, #fff8fb 0%, #fff5f2 100%);
-  box-shadow: 0 14px 24px rgba(185, 107, 122, 0.10);
+.essay-tree-item.active {{
+  background: #f5eaeb;
+  color: #6a3e48;
+  font-weight: 600;
 }}
-.essay-prompt-meta {{
-  display: flex;
-  flex-wrap: wrap;
+.essay-tree-item-text {{
+  min-width: 0;
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}}
+.essay-tree-item-meta {{
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
-  margin-top: 10px;
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  color: var(--muted);
+}}
+.essay-tree-dot {{
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #d4c7b8;
+}}
+.essay-tree-dot.not-started {{ background: #d4c7b8; }}
+.essay-tree-dot.drafting {{ background: #d89a69; }}
+.essay-tree-dot.revise {{ background: #a687c4; }}
+.essay-tree-dot.final {{ background: #61a97c; }}
+.essay-header-row {{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}}
+.essay-meta-row {{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.82rem;
+}}
+.essay-meta-separator {{
+  color: #b6a696;
 }}
 .essay-mini-pill {{
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
+  padding: 3px 8px;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
   background: #f6efe6;
   color: #6f6459;
-}}
-.essay-stage-brainstorm {{ background: #fff2df; color: #9a6126; }}
-.essay-stage-rough {{ background: #fde9dd; color: #9b5631; }}
-.essay-stage-revise {{ background: #f3e9fb; color: #724d99; }}
-.essay-stage-final {{ background: #e7f6eb; color: #2f7c48; }}
-.essay-header-row {{
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
 }}
 .essay-tag {{
   display: inline-flex;
   align-items: center;
   width: fit-content;
   border-radius: 999px;
-  background: #f4ece2;
+  background: #f3eee7;
   color: #6a5548;
-  padding: 5px 10px;
-  font-size: 0.76rem;
+  padding: 4px 9px;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}}
-.essay-status-line {{
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  letter-spacing: 0.02em;
 }}
 .essay-autosave {{
   color: #6d655d;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}}
+.essay-autosave::before {{
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #67a77a;
 }}
 .essay-editor textarea {{
-  min-height: 520px !important;
-  font-size: 0.98rem;
-  line-height: 1.7;
-}}
-.essay-summary-grid {{
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  width: 100%;
-}}
-.essay-summary-card {{
-  border: 1px solid #ebdece;
-  border-radius: 18px;
-  background: #fffdfa;
-  padding: 12px;
-}}
-.essay-summary-label {{
-  font-size: 0.76rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-}}
-.essay-summary-value {{
-  font-family: Fraunces, serif;
-  color: #7F4B56;
-  font-size: 1.35rem;
+  min-height: 640px !important;
+  font-size: 1rem;
+  line-height: 1.75;
+  border-width: 1px !important;
+  border-color: #eee4d8 !important;
+  background: #fffefd !important;
+  box-shadow: 0 8px 22px rgba(80, 58, 40, 0.04);
 }}
 .essay-version-chip {{
-  border: 1px solid #e4d7c8;
-  border-radius: 14px;
-  padding: 8px 10px;
-  background: #fffdfa;
+  width: 100%;
+  justify-content: flex-start;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: transparent;
+  color: #4d433a;
+  transition: background-color .16s ease, color .16s ease;
+}}
+.essay-version-chip:hover {{
+  background: #f7f1ea;
 }}
 .essay-version-chip.active {{
-  border-color: #c88b98;
-  background: #fff6f8;
+  border-color: #d7b3bc;
+  background: #f8eff1;
 }}
-.essay-compare-grid {{
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+.essay-utility-tabs {{
   width: 100%;
-}}
-.essay-compare-card {{
-  border: 1px solid #eadfd3;
-  border-radius: 18px;
-  padding: 12px;
-  background: #fffdfa;
-}}
-.essay-compare-text {{
-  white-space: pre-wrap;
-  font-size: 0.86rem;
-  line-height: 1.55;
-  color: #433b34;
-  max-height: 260px;
-  overflow: auto;
 }}
 .essay-list-stack {{
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
 }}
 .essay-list-item {{
-  border: 1px solid #ebdfd2;
-  border-radius: 16px;
-  padding: 10px 12px;
+  border: 1px solid #eee5da;
+  border-radius: 12px;
+  padding: 9px 10px;
   background: #fffdfa;
+}}
+.essay-tab-panel {{
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}}
+.essay-small-button {{
+  font-size: 0.76rem;
+  padding: 0 10px;
+}}
+.essay-item-meta {{
+  font-size: 0.72rem;
+  color: var(--muted);
+}}
+.essay-word-count.over {{
+  color: #9a5a44;
+  background: #f9eee8;
+}}
+.essay-input-compact .q-field__control {{
+  min-height: 40px !important;
 }}
 .settings-layout {{
   display: grid;
@@ -860,6 +951,118 @@ body {
 .essay-panel.compact {
   padding: calc(var(--section-gap) - 2px) !important;
 }
+.todo-card {
+  background: linear-gradient(180deg, #fffdf9 0%, #fff7ee 100%);
+}
+.todo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.todo-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.todo-quick-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(150px, 0.7fr) minmax(130px, 0.6fr) auto;
+  gap: 8px;
+  width: 100%;
+  align-items: end;
+}
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.todo-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.78);
+}
+.todo-item.completed {
+  background: #fbf6f0;
+}
+.todo-item-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.todo-item-title {
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+  word-break: break-word;
+}
+.todo-item-title.completed {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.todo-meta {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.todo-priority-high {
+  background: #fde7e9;
+  color: #a1303e;
+}
+.todo-priority-medium {
+  background: #fff3d6;
+  color: #8e6718;
+}
+.todo-priority-low {
+  background: #edf5e9;
+  color: #47703b;
+}
+.todo-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.todo-empty {
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.55);
+}
+@media (max-width: 900px) {
+  .todo-quick-add {
+    grid-template-columns: 1fr;
+  }
+  .todo-header {
+    align-items: flex-start;
+  }
+  .todo-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .todo-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+  .requirements-grid {
+    grid-template-columns: 1fr;
+  }
+  .requirement-row {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
 """)
 
@@ -871,18 +1074,139 @@ widgets = [
 
 COLLEGE_DATA_PATH = Path(__file__).with_name('college_plans.json')
 APPLICATION_STATUS_OPTIONS = ['In Progress', 'Ready to Submit', 'Submitted']
+TASK_PRIORITY_OPTIONS = ['', 'High', 'Medium', 'Low']
+TASK_VIEW_OPTIONS = ['Due Soon', 'Incomplete', 'Completed']
+TESTING_POLICY_OPTIONS = ['Not required', 'Self-report', 'Official report required']
+REQUIREMENT_SECTIONS = [
+    {
+        'title': 'Application',
+        'items': [
+            {'key': 'common_app_submitted', 'label': 'Common App submitted', 'type': 'checkbox'},
+            {'key': 'supplement_submitted', 'label': 'Supplement submitted', 'type': 'checkbox'},
+        ],
+    },
+    {
+        'title': 'Testing',
+        'items': [
+            {'key': 'sat_requirement', 'label': 'SAT requirement', 'type': 'select'},
+            {'key': 'sat_submission_method', 'label': 'SAT self-report vs official send', 'type': 'select'},
+            {'key': 'act_accepted', 'label': 'ACT accepted', 'type': 'select'},
+            {'key': 'ap_requirement', 'label': 'AP score requirement', 'type': 'select'},
+            {'key': 'ap_submission_method', 'label': 'AP self-report vs official send', 'type': 'select'},
+        ],
+    },
+    {
+        'title': 'Documents',
+        'items': [
+            {'key': 'transcript', 'label': 'Transcript', 'type': 'checkbox'},
+            {'key': 'school_report', 'label': 'School report', 'type': 'checkbox'},
+            {'key': 'counselor_recommendation', 'label': 'Counselor recommendation', 'type': 'checkbox'},
+            {'key': 'teacher_recommendations', 'label': 'Teacher recommendations', 'type': 'checkbox'},
+            {'key': 'midyear_report', 'label': 'Midyear report', 'type': 'checkbox'},
+        ],
+    },
+    {
+        'title': 'Financial Aid',
+        'items': [
+            {'key': 'fafsa', 'label': 'FAFSA', 'type': 'checkbox'},
+            {'key': 'css_profile', 'label': 'CSS Profile', 'type': 'checkbox'},
+        ],
+    },
+    {
+        'title': 'Extras',
+        'items': [
+            {'key': 'interview', 'label': 'Interview', 'type': 'checkbox'},
+            {'key': 'portfolio', 'label': 'Portfolio', 'type': 'checkbox'},
+        ],
+    },
+]
+
+
+def parse_iso_date(date_text: str):
+    if not date_text:
+        return None
+    try:
+        return datetime.strptime(date_text, '%Y-%m-%d').date()
+    except ValueError:
+        return None
+
+
+def default_home_tasks():
+    return [
+        {
+            'id': 1,
+            'title': 'Finish Harvard supplemental draft',
+            'completed': False,
+            'due_date': '2026-03-20',
+            'priority': 'High',
+        },
+        {
+            'id': 2,
+            'title': 'Follow up with Ms. Patel about recommendation letter',
+            'completed': False,
+            'due_date': '2026-03-18',
+            'priority': 'Medium',
+        },
+        {
+            'id': 3,
+            'title': 'Pay Duke application fee',
+            'completed': True,
+            'due_date': '',
+            'priority': '',
+        },
+    ]
+
+
+def normalize_home_tasks(raw_tasks):
+    if not isinstance(raw_tasks, list):
+        return default_home_tasks()
+
+    normalized = []
+
+    for index, item in enumerate(raw_tasks, start=1):
+        if isinstance(item, str):
+            task = {
+                'id': index,
+                'title': item.strip(),
+                'completed': False,
+                'due_date': '',
+                'priority': '',
+            }
+        elif isinstance(item, dict):
+            task = {
+                'id': item.get('id', index),
+                'title': str(item.get('title', '')).strip(),
+                'completed': bool(item.get('completed', False)),
+                'due_date': str(item.get('due_date', '') or ''),
+                'priority': str(item.get('priority', '') or ''),
+            }
+        else:
+            continue
+
+        if not task['title']:
+            continue
+        if task['priority'] not in TASK_PRIORITY_OPTIONS:
+            task['priority'] = ''
+        if parse_iso_date(task['due_date']) is None:
+            task['due_date'] = ''
+        normalized.append(task)
+
+    return normalized
 
 
 def load_college_catalog():
+    global home_tasks
     try:
         with COLLEGE_DATA_PATH.open('r', encoding='utf-8') as file:
             data = json.load(file)
     except (FileNotFoundError, json.JSONDecodeError, OSError) as error:
         print(f'Could not load college catalog from {COLLEGE_DATA_PATH}: {error}')
+        home_tasks = default_home_tasks()
         return {}
 
     # Backward compatibility: old format was {college_name: {plans: {...}}}
     if isinstance(data, dict) and 'colleges' not in data:
+        home_tasks = default_home_tasks()
         converted = {}
         for college_name, value in data.items():
             plans = value.get('plans', {}) if isinstance(value, dict) else {}
@@ -908,6 +1232,7 @@ def load_college_catalog():
         return converted
 
     colleges = data.get('colleges', []) if isinstance(data, dict) else []
+    home_tasks = normalize_home_tasks(data.get('home_tasks', default_home_tasks()) if isinstance(data, dict) else default_home_tasks())
     by_name = {}
     for college in colleges:
         if isinstance(college, dict) and college.get('name'):
@@ -916,7 +1241,7 @@ def load_college_catalog():
 
 
 def save_college_catalog():
-    payload = {'colleges': list(college_data.values())}
+    payload = {'colleges': list(college_data.values()), 'home_tasks': home_tasks}
     with COLLEGE_DATA_PATH.open('w', encoding='utf-8') as file:
         json.dump(payload, file, indent=2)
 
@@ -1175,12 +1500,28 @@ essay_data = {
         },
     ],
 }
-ESSAY_STATUSES = ["brainstorm", "rough", "revise", "final"]
+ESSAY_STATUSES = ["not_started", "drafting", "revise", "final"]
+ESSAY_STATUS_LABELS = {
+    "not_started": "Not started",
+    "drafting": "Drafting",
+    "revise": "Revise",
+    "final": "Final",
+}
+ESSAY_STATUS_ALIASES = {
+    "brainstorm": "not_started",
+    "rough": "drafting",
+    "drafting": "drafting",
+    "revise": "revise",
+    "final": "final",
+}
 essay_state = {
     "college": "Harvard",
     "prompt_index": 0,
     "draft_index": 0,
     "compare_version": None,
+    "group_mode": "school",
+    "utility_tab": "versions",
+    "expanded_groups": {"Harvard", "Duke"},
 }
 theme_presets = [
     {"name": "Rosewood", "color": "#B96B7A"},
@@ -1358,7 +1699,7 @@ def get_widget(college_name: str):
 
 
 def get_college_profile(college_name: str):
-    record = get_college_record(college_name) or {}
+    record = ensure_college_record(college_name)
     profile = college_profiles.get(college_name, {})
     widget = get_widget(college_name) or {}
     return {
@@ -1374,6 +1715,7 @@ def get_college_profile(college_name: str):
         "basic_info": record.get("basic_info", {}),
         "research_page_reference": record.get("research_page_reference", f"research://{college_name}"),
         "requirements": profile.get("requirements", []),
+        "requirements_checklist": record.get("requirements_checklist", default_requirements_checklist()),
         "fees": profile.get("fees", []),
         "recs": profile.get("recs", []),
     }
@@ -1445,18 +1787,59 @@ PROMPT_TYPE_RELATIONSHIPS = {
 }
 
 
-def prompt_coverage(prompt_text: str, draft_text: str):
-    stopwords = {
-        "the", "and", "for", "that", "with", "this", "your", "you", "how", "are",
-        "from", "into", "have", "will", "about", "what", "where", "when", "why",
-    }
-    prompt_words = [w for w in re.findall(r"[a-zA-Z']+", prompt_text.lower()) if len(w) > 3 and w not in stopwords]
-    draft_words = normalize_words(draft_text)
-    if not prompt_words:
-        return 100, []
-    matched = [w for w in sorted(set(prompt_words)) if w in draft_words]
-    score = int((len(matched) / len(set(prompt_words))) * 100)
-    return score, matched
+def normalize_essay_status(status: str, draft_text: str = ""):
+    normalized = ESSAY_STATUS_ALIASES.get((status or "").strip().lower(), "not_started")
+    if not draft_text.strip():
+        return "not_started"
+    return normalized
+
+
+def status_label(status: str):
+    normalized = ESSAY_STATUS_ALIASES.get((status or "").strip().lower(), "not_started")
+    return ESSAY_STATUS_LABELS.get(normalized, "Not started")
+
+
+def status_class(status: str):
+    normalized = ESSAY_STATUS_ALIASES.get((status or "").strip().lower(), "not_started")
+    return normalized.replace("_", "-")
+
+
+def ensure_essay_data_shape():
+    for prompts in essay_data.values():
+        for prompt in prompts:
+            prompt.setdefault("prompt_type", "Essay")
+            prompt.setdefault("comments", [])
+            prompt.setdefault("drafts", [])
+            for index, draft in enumerate(prompt["drafts"], start=1):
+                draft.setdefault("name", f"v{index}")
+                draft.setdefault("label", draft["name"])
+                draft.setdefault("text", "")
+                draft.setdefault("external_doc_url", "")
+                draft.setdefault("autosave_status", "Saved")
+                draft.setdefault("last_saved", "")
+                draft["status"] = normalize_essay_status(draft.get("status", "not_started"), draft["text"])
+
+
+def current_prompt_status(prompt: dict):
+    if not prompt.get("drafts"):
+        return "not_started"
+    latest = prompt["drafts"][-1]
+    return normalize_essay_status(latest.get("status", "not_started"), latest.get("text", ""))
+
+
+def prompt_word_progress(prompt: dict):
+    if not prompt.get("drafts"):
+        return 0, 0, 0
+    latest = prompt["drafts"][-1]
+    words = count_words(latest.get("text", ""))
+    limit = max(1, prompt.get("word_limit", 1))
+    return words, limit, min(100, int((words / limit) * 100))
+
+
+def prompt_last_edited(prompt: dict):
+    if not prompt.get("drafts"):
+        return "No edits"
+    return prompt["drafts"][-1].get("last_saved") or "No edits"
 
 
 def get_school_reference_terms(college_name: str):
@@ -1493,10 +1876,12 @@ def analyze_prompt_breakdown(college_name: str, prompt: dict, draft: dict):
     too_generic = word_count >= 70 and not school_specific and prompt_type in {"Why Us", "Why Major", "Intellectual Curiosity"}
     school_specific_missing = prompt_type in {"Why Us", "Why Major", "Intellectual Curiosity"} and not school_specific
     return {
-        "detected": detected,
+        "present": detected,
         "missing": missing,
         "too_generic": too_generic,
         "school_specific_missing": school_specific_missing,
+        "school_specific_present": school_specific,
+        "word_count": word_count,
     }
 
 
@@ -1504,6 +1889,7 @@ def find_reuse_matches(selected_college: str, selected_prompt_index: int, select
     selected_prompt = essay_data[selected_college][selected_prompt_index]
     selected_text = selected_prompt["drafts"][selected_draft_index]["text"]
     selected_words = normalize_words(selected_text)
+    selected_type = selected_prompt.get("prompt_type", "")
     matches = []
     if not selected_words:
         return matches
@@ -1516,16 +1902,23 @@ def find_reuse_matches(selected_college: str, selected_prompt_index: int, select
                 union = selected_words | other_words
                 if not union:
                     continue
-                similarity = len(selected_words & other_words) / len(union)
-                if similarity >= 0.22:
+                lexical_similarity = len(selected_words & other_words) / len(union)
+                prompt_type = prompt.get("prompt_type", "Essay")
+                type_bonus = 0.12 if prompt_type == selected_type else (0.07 if prompt_type in PROMPT_TYPE_RELATIONSHIPS.get(selected_type, []) else 0.0)
+                score = lexical_similarity + type_bonus
+                if lexical_similarity >= 0.18 or score >= 0.26:
+                    similarity = min(0.96, score)
                     matches.append({
                         "college": college,
                         "prompt_title": prompt["title"],
-                        "prompt_type": prompt.get("prompt_type", "Essay"),
+                        "prompt_type": prompt_type,
                         "version": draft["name"],
+                        "draft_label": draft.get("label", draft["name"]),
+                        "lexical_similarity": int(lexical_similarity * 100),
                         "similarity": int(similarity * 100),
+                        "reason": "same prompt type" if prompt_type == selected_type else f"{prompt_type} can adapt from {selected_type}",
                     })
-    return sorted(matches, key=lambda m: m["similarity"], reverse=True)[:3]
+    return sorted(matches, key=lambda m: (m["similarity"], m["lexical_similarity"]), reverse=True)[:5]
 
 
 def get_prompt_comment_count(prompt: dict):
@@ -1536,7 +1929,8 @@ def get_prompt_overlap_indicator(college_name: str, prompt_index: int):
     prompt = essay_data[college_name][prompt_index]
     if not prompt.get("drafts"):
         return None
-    matches = find_reuse_matches(college_name, prompt_index, 0)
+    latest_index = max(0, len(prompt["drafts"]) - 1)
+    matches = find_reuse_matches(college_name, prompt_index, latest_index)
     return matches[0]["similarity"] if matches else None
 
 
@@ -1562,35 +1956,128 @@ def find_adaptable_targets(selected_college: str, selected_prompt_index: int):
     return targets[:4]
 
 
+def reuse_confidence_label(score: int):
+    if score >= 72:
+        return "High"
+    if score >= 52:
+        return "Medium"
+    return "Low"
+
+
+def build_relationship_map(selected_college: str, selected_prompt_index: int, selected_draft_index: int):
+    matches = find_reuse_matches(selected_college, selected_prompt_index, selected_draft_index)
+    if matches:
+        return [
+            {
+                "college": match["college"],
+                "prompt_title": match["prompt_title"],
+                "prompt_type": match["prompt_type"],
+                "confidence": reuse_confidence_label(match["similarity"]),
+                "similarity": match["similarity"],
+                "reason": match["reason"],
+            }
+            for match in matches[:3]
+        ]
+
+    targets = find_adaptable_targets(selected_college, selected_prompt_index)
+    return [
+        {
+            "college": target["college"],
+            "prompt_title": target["prompt_title"],
+            "prompt_type": target["prompt_type"],
+            "confidence": "Medium",
+            "similarity": 48,
+            "reason": target["reason"],
+        }
+        for target in targets[:3]
+    ]
+
+
+def version_display_name(version_index: int):
+    return f"Version {version_index + 1}"
+
+
+def sync_essay_workspace_with_college_data():
+    for college_name in college_data.keys():
+        record = ensure_college_record(college_name)
+        essay_data.setdefault(college_name, [])
+        prompts = record.get('essay_prompts', [])
+        if not isinstance(prompts, list):
+            continue
+
+        for prompt in prompts:
+            if not isinstance(prompt, dict):
+                continue
+            prompt_text = str(prompt.get('prompt_text', '') or '').strip()
+            if not prompt_text:
+                continue
+
+            existing = next(
+                (
+                    item for item in essay_data[college_name]
+                    if item.get('prompt_text', '').strip() == prompt_text
+                    or item.get('title', '').strip() == prompt_text
+                ),
+                None,
+            )
+            if existing:
+                if prompt.get('word_limit'):
+                    existing['word_limit'] = prompt.get('word_limit', existing.get('word_limit', 250))
+                if prompt.get('prompt_type'):
+                    existing['prompt_type'] = prompt.get('prompt_type', existing.get('prompt_type', 'Essay'))
+                if not existing.get('due_date') or existing.get('due_date') == 'TBD':
+                    existing['due_date'] = get_effective_deadline(college_name)
+                continue
+
+            essay_data[college_name].append({
+                'title': prompt_text,
+                'prompt_text': prompt_text,
+                'prompt_type': prompt.get('prompt_type', 'Essay'),
+                'word_limit': prompt.get('word_limit', 250),
+                'due_date': get_effective_deadline(college_name),
+                'comments': [],
+                'drafts': [{
+                    'name': 'v1',
+                    'label': 'Version 1',
+                    'status': 'not_started',
+                    'external_doc_url': '',
+                    'autosave_status': 'Saved',
+                    'last_saved': '',
+                    'text': '',
+                }],
+            })
+
+
 def render_essays_page():
+    ensure_essay_data_shape()
+    sync_essay_workspace_with_college_data()
     ui.label('Essays').classes('text-3xl font-bold')
-    ui.label('Strategy-first drafting: organize prompts, track reusable material, and keep versions moving toward submission.').classes('text-base')
+    ui.label('Simple workspace for organizing prompts, writing drafts, and tracking reuse.').classes('text-base')
 
-    with ui.row().classes('essay-summary-grid mt-4'):
-        total_prompts = sum(len(prompts) for prompts in essay_data.values())
-        total_drafts = sum(len(prompt["drafts"]) for prompts in essay_data.values() for prompt in prompts)
-        reusable_pairs = sum(1 for college, prompts in essay_data.items() for idx, _ in enumerate(prompts) if get_prompt_overlap_indicator(college, idx))
-        for label, value, subtitle in [
-            ("Tracked prompts", str(total_prompts), "Across active colleges"),
-            ("Draft versions", str(total_drafts), "Multiple passes per essay"),
-            ("Reusable drafts", str(reusable_pairs), "Prompts with adaptation potential"),
-        ]:
-            with ui.column().classes('essay-summary-card'):
-                ui.label(label).classes('essay-summary-label')
-                ui.label(value).classes('essay-summary-value')
-                ui.label(subtitle).classes('text-sm text-[var(--muted)]')
-
-    layout = ui.row().classes('essays-layout mt-4')
+    layout = ui.row().classes('essays-layout mt-5')
     with layout:
         left_col = ui.column().classes('essay-panel compact')
         center_col = ui.column().classes('essay-panel writer')
         right_col = ui.column().classes('essay-panel tools')
 
+    def active_college_names():
+        return [item['name'] for item in widgets if item.get('name') in essay_data]
+
+    def active_essay_data():
+        return {name: essay_data[name] for name in active_college_names() if name in essay_data}
+
+    def active_colleges_with_prompts():
+        return [name for name, prompts in active_essay_data().items() if prompts]
+
     def clamp_selection():
-        colleges = list(essay_data.keys())
+        colleges = active_colleges_with_prompts()
         if not colleges:
+            essay_state["college"] = active_college_names()[0] if active_college_names() else None
+            essay_state["prompt_index"] = 0
+            essay_state["draft_index"] = 0
+            essay_state["compare_version"] = None
             return
-        if essay_state["college"] not in essay_data:
+        if essay_state["college"] not in colleges:
             essay_state["college"] = colleges[0]
             essay_state["prompt_index"] = 0
             essay_state["draft_index"] = 0
@@ -1603,240 +2090,208 @@ def render_essays_page():
                 essay_state["compare_version"] = drafts[0]["name"] if len(drafts) > 1 else None
 
     def selected_prompt():
-        return essay_data[essay_state["college"]][essay_state["prompt_index"]]
+        college_name = essay_state.get("college")
+        if not college_name or college_name not in essay_data:
+            return None
+        prompts = essay_data.get(college_name, [])
+        if not prompts:
+            return None
+        prompt_index = min(essay_state["prompt_index"], len(prompts) - 1)
+        return prompts[prompt_index]
 
     def selected_draft():
-        return selected_prompt()["drafts"][essay_state["draft_index"]]
+        prompt = selected_prompt()
+        if not prompt or not prompt.get("drafts"):
+            return None
+        draft_index = min(essay_state["draft_index"], len(prompt["drafts"]) - 1)
+        return prompt["drafts"][draft_index]
+
+    def grouped_prompts_by_tag():
+        groups = {}
+        for college, prompts in active_essay_data().items():
+            for idx, prompt in enumerate(prompts):
+                tag = prompt.get("prompt_type", "Essay")
+                groups.setdefault(tag, []).append((college, idx, prompt))
+        return dict(sorted(groups.items(), key=lambda item: item[0]))
+
+    def toggle_group(name: str):
+        if name in essay_state["expanded_groups"]:
+            essay_state["expanded_groups"].remove(name)
+        else:
+            essay_state["expanded_groups"].add(name)
+        refresh_left()
 
     def refresh_left():
         left_col.clear()
         with left_col:
-            ui.label('Colleges & Prompts').classes('section-title')
-            ui.label('Status, word count, comments, and overlap are visible without opening each draft.').classes('text-xs text-[var(--muted)]')
-            for college, prompts in essay_data.items():
-                with ui.column().classes('w-full essay-college-block gap-2'):
-                    with ui.row().classes('w-full essay-college-head'):
-                        ui.label(college).classes('essay-college-name')
-                        due_label = get_widget(college).get("deadline", "") if get_widget(college) else ""
-                        if due_label:
-                            ui.label(due_label).classes('essay-mini-pill')
-                    for idx, prompt in enumerate(prompts):
-                        active = college == essay_state["college"] and idx == essay_state["prompt_index"]
-                        latest = prompt["drafts"][-1]
-                        word_count = count_words(latest["text"])
-                        overlap = get_prompt_overlap_indicator(college, idx)
-                        with ui.card().classes(f"w-full essay-prompt-card {'active' if active else ''}").on('click', lambda college_name=college, prompt_idx=idx: select_prompt(college_name, prompt_idx)):
-                            ui.label(prompt["title"]).classes('text-sm font-semibold')
-                            with ui.row().classes('w-full justify-between items-center mt-1'):
-                                ui.label(prompt.get("prompt_type", "Essay")).classes('essay-tag')
-                                ui.label(f"{word_count}/{prompt['word_limit']} words").classes('text-xs text-[var(--muted)]')
-                            with ui.row().classes('essay-prompt-meta'):
-                                ui.label(latest["status"]).classes(f"essay-mini-pill essay-stage-{latest['status']}")
-                                ui.label(f"{get_prompt_comment_count(prompt)} comments").classes('essay-mini-pill')
-                                if overlap:
-                                    ui.label(f"{overlap}% overlap").classes('essay-mini-pill')
+            with ui.row().classes('w-full essay-sidebar-top'):
+                ui.label('Group:').classes('text-xs text-[var(--muted)]')
+                ui.toggle(
+                    {'school': 'School', 'tag': 'Tag'},
+                    value=essay_state["group_mode"],
+                    on_change=lambda e: set_group_mode(e.value),
+                ).props('dense unelevated toggle-color=primary').classes('essay-sidebar-toggle')
+
+            if essay_state["group_mode"] == "school":
+                groups = [(college, [(college, idx, prompt) for idx, prompt in enumerate(prompts)]) for college, prompts in active_essay_data().items()]
+            else:
+                groups = list(grouped_prompts_by_tag().items())
+
+            for group_name, items in groups:
+                is_open = group_name in essay_state["expanded_groups"]
+                with ui.column().classes('w-full essay-tree-block'):
+                    with ui.row().classes('w-full essay-tree-header').on('click', lambda name=group_name: toggle_group(name)):
+                        ui.label('▾' if is_open else '▸').classes('essay-tree-chevron')
+                        ui.label(group_name).classes('essay-tree-title')
+                    if is_open:
+                        with ui.column().classes('w-full essay-tree-items'):
+                            for college, idx, prompt in items:
+                                active = college == essay_state["college"] and idx == essay_state["prompt_index"]
+                                label = prompt["title"] if essay_state["group_mode"] == "school" else f"{college} - {prompt['title']}"
+                                words, limit, _ = prompt_word_progress(prompt)
+                                prompt_status = current_prompt_status(prompt)
+                                with ui.row().classes(f"w-full essay-tree-item {'active' if active else ''}").on('click', lambda college_name=college, prompt_idx=idx: select_prompt(college_name, prompt_idx)):
+                                    ui.label(label).classes('essay-tree-item-text')
+                                    with ui.row().classes('essay-tree-item-meta'):
+                                        ui.element('div').classes(f'essay-tree-dot {status_class(prompt_status)}')
+                                        ui.label(f'{words}/{limit}')
 
     def refresh_center():
         center_col.clear()
         prompt = selected_prompt()
         draft = selected_draft()
+        if not prompt or not draft:
+            with center_col:
+                ui.label('No essay prompt selected').classes('text-xl font-semibold')
+                ui.label('Add essay prompts to this college and they will appear here automatically.').classes('text-sm text-[var(--muted)] mt-2')
+            return
         current_word_count = count_words(draft["text"])
-        compare_options = [item["name"] for item in prompt["drafts"] if item["name"] != draft["name"]]
-        if compare_options and essay_state["compare_version"] not in compare_options:
-            essay_state["compare_version"] = compare_options[0]
         with center_col:
             with ui.row().classes('w-full essay-header-row'):
                 with ui.column().classes('gap-1'):
                     ui.label(prompt["title"]).classes('text-2xl font-semibold')
-                    with ui.row().classes('essay-status-line'):
-                        ui.label(essay_state['college']).classes('chip')
-                        ui.label(prompt.get("prompt_type", "Essay")).classes('essay-tag')
-                        ui.label(f"Autosave: {draft.get('autosave_status', 'Saved')} {draft.get('last_saved', '')}".strip()).classes('essay-autosave')
-                with ui.column().classes('items-end gap-1'):
-                    ui.label(f"Due {prompt.get('due_date', 'TBD')}").classes('essay-mini-pill')
-                    ui.label(f"{current_word_count}/{prompt['word_limit']} words").classes('text-sm text-[var(--muted)]')
-            ui.label(prompt["prompt_text"]).classes('text-sm text-[var(--muted)] mt-1')
+                    with ui.row().classes('essay-meta-row'):
+                        ui.label(essay_state['college'])
+                        ui.label('•').classes('essay-meta-separator')
+                        ui.label(prompt.get("prompt_type", "Essay"))
+                        ui.label('•').classes('essay-meta-separator')
+                        word_count_label = ui.label(f"{current_word_count}/{prompt['word_limit']} words").classes('essay-mini-pill essay-word-count')
+                        if current_word_count > prompt["word_limit"]:
+                            word_count_label.classes(add='over')
+                ui.label('Saved').classes('essay-autosave')
 
             def on_text_change(e):
                 draft["text"] = e.value
+                draft["status"] = normalize_essay_status(draft.get("status", "drafting"), draft["text"])
                 draft["autosave_status"] = "Saved"
                 draft["last_saved"] = datetime.now().strftime("%I:%M %p").lstrip("0")
+                current_words = count_words(draft["text"])
+                word_count_label.text = f"{current_words}/{prompt['word_limit']} words"
+                if current_words > prompt["word_limit"]:
+                    word_count_label.classes(add='over')
+                else:
+                    word_count_label.classes(remove='over')
                 refresh_left()
-                refresh_center()
                 refresh_right()
 
-            ui.textarea(label='Draft workspace', value=draft["text"], on_change=on_text_change).props('autogrow outlined').classes('w-full mt-3 essay-editor')
-
-            ui.label('Versions').classes('section-title mt-4')
-            with ui.row().classes('w-full gap-2 items-center'):
-                for idx, version in enumerate(prompt["drafts"]):
-                    active = idx == essay_state["draft_index"]
-                    button = ui.button(
-                        f"{version['name']} • {version.get('label', version['name'])}",
-                        on_click=lambda version_idx=idx: select_version(version_idx),
-                    ).props('flat no-caps').classes(f"essay-version-chip {'active' if active else ''}")
-                    if active:
-                        button.classes(add='font-semibold')
-
-            with ui.row().classes('w-full items-center gap-2 mt-3'):
-                compare_value = essay_state["compare_version"] if compare_options else None
-
-                def on_compare_change(e):
-                    essay_state["compare_version"] = e.value
-                    refresh_center()
-
-                ui.select(compare_options, value=compare_value, on_change=on_compare_change, label='Compare against').classes('w-64')
-                ui.label('Side-by-side compare keeps older angles visible while you revise.').classes('text-xs text-[var(--muted)]')
-
-            if compare_options and essay_state["compare_version"]:
-                other = next(version for version in prompt["drafts"] if version["name"] == essay_state["compare_version"])
-                with ui.row().classes('essay-compare-grid mt-3'):
-                    with ui.column().classes('essay-compare-card'):
-                        ui.label(f"{draft['name']} • {draft.get('label', draft['name'])}").classes('font-semibold')
-                        ui.label(draft["status"]).classes(f"essay-mini-pill essay-stage-{draft['status']} mt-1")
-                        ui.label(draft["text"] or 'No text yet.').classes('essay-compare-text mt-2')
-                    with ui.column().classes('essay-compare-card'):
-                        ui.label(f"{other['name']} • {other.get('label', other['name'])}").classes('font-semibold')
-                        ui.label(other["status"]).classes(f"essay-mini-pill essay-stage-{other['status']} mt-1")
-                        ui.label(other["text"] or 'No text yet.').classes('essay-compare-text mt-2')
+            editor = ui.textarea(value=draft["text"]).props('autogrow outlined').classes('w-full mt-4 essay-editor')
+            editor.on('update:model-value', on_text_change)
 
     def refresh_right():
         right_col.clear()
         prompt = selected_prompt()
         draft = selected_draft()
-        word_count = count_words(draft["text"])
-        coverage_score, matched_words = prompt_coverage(prompt["prompt_text"], draft["text"])
-        reuse_matches = find_reuse_matches(essay_state["college"], essay_state["prompt_index"], essay_state["draft_index"])
-        adaptable_targets = find_adaptable_targets(essay_state["college"], essay_state["prompt_index"])
-        breakdown = analyze_prompt_breakdown(essay_state["college"], prompt, draft)
+        if not prompt or not draft:
+            with right_col:
+                ui.label('No prompt yet').classes('text-sm font-semibold')
+                ui.label('Versions, comments, and reuse will appear once this college has essay prompts.').classes('text-sm text-[var(--muted)] mt-2')
+            return
+        active_names = set(active_college_names())
+        reuse_matches = [
+            match for match in find_reuse_matches(essay_state["college"], essay_state["prompt_index"], essay_state["draft_index"])
+            if match["college"] in active_names
+        ]
         version_comments = [comment for comment in prompt.get("comments", []) if comment.get("version") in {draft["name"], None, ""}]
 
         with right_col:
-            ui.label('Metadata & Tools').classes('section-title')
-            with ui.expansion('Prompt', value=True).classes('w-full'):
-                ui.label(prompt["prompt_text"]).classes('text-sm')
-                with ui.row().classes('w-full gap-2 mt-2'):
-                    ui.label(prompt.get("prompt_type", "Essay")).classes('essay-tag')
-                    ui.label(f"Due {prompt.get('due_date', 'TBD')}").classes('essay-mini-pill')
-                    if word_count > prompt["word_limit"]:
-                        ui.label('Over limit').classes('essay-mini-pill')
-
-            with ui.expansion('Draft details', value=True).classes('w-full mt-2'):
-                def on_status_change(e):
-                    draft["status"] = e.value
-                    refresh_left()
-                    refresh_center()
-                    refresh_right()
-
-                def on_label_change(e):
-                    draft["label"] = e.value
-                    refresh_center()
-                    refresh_right()
-
-                def on_doc_change(e):
-                    draft["external_doc_url"] = e.value.strip()
-                    refresh_right()
-
-                ui.select(ESSAY_STATUSES, value=draft["status"], on_change=on_status_change, label='Draft status').classes('w-full')
-                ui.input(label='Version label', value=draft.get("label", ""), on_change=on_label_change).classes('w-full mt-2')
-                ui.input(label='Google Doc link', value=draft.get("external_doc_url", ""), on_change=on_doc_change).classes('w-full mt-2')
+            with ui.row().classes('w-full gap-1'):
+                ui.label(prompt.get("prompt_type", "Essay")).classes('essay-tag')
+                ui.label(status_label(draft["status"])).classes('essay-tag')
                 if draft.get("external_doc_url"):
-                    ui.link('Open draft in Docs', draft["external_doc_url"], new_tab=True).classes('block text-sm mt-2')
-                ui.label(f"Autosave: {draft.get('autosave_status', 'Saved')} {draft.get('last_saved', '')}".strip()).classes('text-xs text-[var(--muted)] mt-2')
+                    ui.link('Google Docs', draft["external_doc_url"], new_tab=True).classes('essay-tag')
 
-                def add_version():
-                    base = selected_draft()
-                    new_version_name = f"v{len(prompt['drafts']) + 1}"
-                    prompt["drafts"].append({
-                        "name": new_version_name,
-                        "label": f"Derived from {base['name']}",
-                        "status": "rough",
-                        "external_doc_url": base.get("external_doc_url", ""),
-                        "autosave_status": "Saved",
-                        "last_saved": datetime.now().strftime("%I:%M %p").lstrip("0"),
-                        "text": base["text"],
-                    })
-                    essay_state["draft_index"] = len(prompt["drafts"]) - 1
-                    essay_state["compare_version"] = base["name"]
-                    refresh_left()
-                    refresh_center()
-                    refresh_right()
-
-                ui.button('＋ New version from current draft', on_click=add_version).props('outline no-caps').classes('w-full mt-3')
-
-            with ui.expansion('Comments', value=True).classes('w-full mt-2'):
-                if version_comments:
+            with ui.tabs().props('dense active-color=primary indicator-color=primary').classes('essay-utility-tabs mt-4') as tabs:
+                versions_tab = ui.tab('Versions')
+                comments_tab = ui.tab('Comments')
+                reuse_tab = ui.tab('Reuse')
+            tabs.bind_value(essay_state, 'utility_tab')
+            with ui.tab_panels(tabs, value=essay_state["utility_tab"]).props('animated').classes('w-full mt-3'):
+                with ui.tab_panel(versions_tab).classes('essay-tab-panel'):
                     with ui.column().classes('essay-list-stack'):
-                        for comment in version_comments:
-                            with ui.column().classes('essay-list-item'):
-                                ui.label(comment.get("author", "Comment")).classes('text-xs font-semibold text-[var(--muted)]')
-                                ui.label(comment.get("text", "")).classes('text-sm')
-                                ui.label(comment.get("version", draft["name"])).classes('text-xs text-[var(--muted)]')
-                else:
-                    ui.label('No comments on this version yet.').classes('text-sm')
+                        for idx, version in enumerate(prompt["drafts"]):
+                            active = idx == essay_state["draft_index"]
+                            version_label = version_display_name(idx)
+                            button = ui.button(version_label, on_click=lambda version_idx=idx: select_version(version_idx)).props('flat no-caps').classes(f"essay-version-chip {'active' if active else ''}")
+                            if active:
+                                button.classes(add='font-semibold')
 
-                comment_input = ui.input(placeholder='Add a version-specific note').classes('w-full mt-2')
-
-                def add_comment():
-                    if comment_input.value:
-                        prompt["comments"].append({
-                            "version": draft["name"],
-                            "author": "You",
-                            "text": comment_input.value.strip(),
+                    def add_version():
+                        base = selected_draft()
+                        new_version_number = len(prompt['drafts']) + 1
+                        new_version_name = f"v{new_version_number}"
+                        prompt["drafts"].append({
+                            "name": new_version_name,
+                            "label": version_display_name(new_version_number - 1),
+                            "status": normalize_essay_status(base.get("status", "drafting"), base.get("text", "")),
+                            "external_doc_url": base.get("external_doc_url", ""),
+                            "autosave_status": "Saved",
+                            "last_saved": datetime.now().strftime("%I:%M %p").lstrip("0"),
+                            "text": base["text"],
                         })
-                        comment_input.value = ''
-                        refresh_left()
+                        essay_state["draft_index"] = len(prompt["drafts"]) - 1
+                        refresh_center()
                         refresh_right()
 
-                ui.button('Add comment', on_click=add_comment).props('flat').classes('self-start')
+                    ui.button('+ New version', on_click=add_version).props('outline dense no-caps').classes('w-full mt-2 essay-small-button')
 
-            with ui.expansion('Prompt analysis', value=True).classes('w-full mt-2'):
-                ui.label(f'Prompt alignment: {coverage_score}%').classes('text-sm')
-                if matched_words:
-                    ui.label(f"Detected prompt language: {', '.join(matched_words[:8])}").classes('text-xs text-[var(--muted)] mt-1')
-                with ui.row().classes('w-full gap-2 mt-2'):
-                    ui.label('Too generic' if breakdown["too_generic"] else 'Specific enough').classes('essay-mini-pill')
-                    ui.label('School detail missing' if breakdown["school_specific_missing"] else 'School detail present').classes('essay-mini-pill')
-                ui.label('Detected prompt elements').classes('text-sm font-semibold mt-3')
-                if breakdown["detected"]:
-                    for item in breakdown["detected"]:
-                        ui.label(f'• {item}').classes('text-sm')
-                else:
-                    ui.label('No strong prompt elements detected yet.').classes('text-sm')
-                ui.label('Missing elements').classes('text-sm font-semibold mt-3')
-                if breakdown["missing"]:
-                    for item in breakdown["missing"]:
-                        ui.label(f'• {item}').classes('text-sm')
-                else:
-                    ui.label('This draft touches all expected elements for this prompt type.').classes('text-sm')
+                with ui.tab_panel(comments_tab).classes('essay-tab-panel'):
+                    if version_comments:
+                        with ui.column().classes('essay-list-stack'):
+                            for comment in version_comments:
+                                with ui.column().classes('essay-list-item'):
+                                    ui.label(comment.get("text", "")).classes('text-sm')
+                                    ui.label(comment.get("author", "Comment")).classes('essay-item-meta')
+                    else:
+                        ui.label('No comments yet.').classes('text-sm text-[var(--muted)]')
 
-            with ui.expansion('Cross-college reuse', value=True).classes('w-full mt-2'):
-                ui.label('Current overlap').classes('text-sm font-semibold')
-                if reuse_matches:
-                    with ui.column().classes('essay-list-stack mt-2'):
-                        for match in reuse_matches:
-                            with ui.column().classes('essay-list-item'):
-                                ui.label(f"{match['similarity']}% overlap").classes('text-sm font-semibold')
-                                ui.label(f"{match['college']} • {match['prompt_title']}").classes('text-sm')
-                                ui.label(f"{match['prompt_type']} • {match['version']}").classes('text-xs text-[var(--muted)]')
-                else:
-                    ui.label('No strong overlaps detected yet.').classes('text-sm mt-1')
+                    comment_input = ui.input(placeholder='Add comment').classes('w-full mt-3 essay-input-compact')
 
-                ui.label('Can be adapted to').classes('text-sm font-semibold mt-3')
-                if adaptable_targets:
-                    with ui.column().classes('essay-list-stack mt-2'):
-                        for target in adaptable_targets:
-                            with ui.column().classes('essay-list-item'):
-                                ui.label(f"{target['college']} • {target['prompt_title']}").classes('text-sm')
-                                ui.label(f"{target['prompt_type']} • {target['reason']}").classes('text-xs text-[var(--muted)]')
-                else:
-                    ui.label('No clear adaptation targets yet.').classes('text-sm mt-1')
+                    def add_comment():
+                        if comment_input.value:
+                            prompt["comments"].append({
+                                "version": draft["name"],
+                                "author": "You",
+                                "text": comment_input.value.strip(),
+                            })
+                            comment_input.value = ''
+                            refresh_right()
+
+                    ui.button('Add Comment', on_click=add_comment).props('flat no-caps').classes('self-start mt-2')
+
+                with ui.tab_panel(reuse_tab).classes('essay-tab-panel'):
+                    if reuse_matches:
+                        with ui.column().classes('essay-list-stack'):
+                            for match in reuse_matches[:5]:
+                                with ui.column().classes('essay-list-item'):
+                                    ui.label(f"{match['college']} • {match['prompt_title']}").classes('text-sm')
+                                    ui.label(f"{match['similarity']}% overlap").classes('essay-item-meta')
+                    else:
+                        ui.label('No reuse suggestions yet.').classes('text-sm text-[var(--muted)]')
 
     def select_prompt(college_name: str, prompt_idx: int):
         essay_state["college"] = college_name
         essay_state["prompt_index"] = prompt_idx
         essay_state["draft_index"] = 0
-        essay_state["compare_version"] = None
         refresh_left()
         refresh_center()
         refresh_right()
@@ -1846,7 +2301,19 @@ def render_essays_page():
         refresh_center()
         refresh_right()
 
+    def set_group_mode(mode: str):
+        essay_state["group_mode"] = mode
+        if mode == "school":
+            essay_state["expanded_groups"] = set(active_college_names())
+        else:
+            essay_state["expanded_groups"] = set(grouped_prompts_by_tag().keys())
+        refresh_left()
+
     clamp_selection()
+    if essay_state["group_mode"] == "school" and not essay_state["expanded_groups"]:
+        essay_state["expanded_groups"] = set(active_college_names())
+    if essay_state["group_mode"] == "tag" and not essay_state["expanded_groups"]:
+        essay_state["expanded_groups"] = set(grouped_prompts_by_tag().keys())
     refresh_left()
     refresh_center()
     refresh_right()
@@ -2139,6 +2606,28 @@ def default_college_profile():
     }
 
 
+def default_requirements_checklist():
+    defaults = {}
+    for section in REQUIREMENT_SECTIONS:
+        for item in section['items']:
+            defaults[item['key']] = False if item['type'] == 'checkbox' else TESTING_POLICY_OPTIONS[0]
+    return defaults
+
+
+def normalize_requirements_checklist(raw_value):
+    normalized = default_requirements_checklist()
+    if isinstance(raw_value, dict):
+        for section in REQUIREMENT_SECTIONS:
+            for item in section['items']:
+                key = item['key']
+                value = raw_value.get(key)
+                if item['type'] == 'checkbox':
+                    normalized[key] = bool(value)
+                elif value in TESTING_POLICY_OPTIONS:
+                    normalized[key] = value
+    return normalized
+
+
 def default_college_record(college_name: str):
     return {
         'name': college_name,
@@ -2158,6 +2647,7 @@ def default_college_record(college_name: str):
         'optional_recommendations': [
             {'label': 'Optional Recommender', 'assigned_recommender': ''},
         ],
+        'requirements_checklist': default_requirements_checklist(),
     }
 
 
@@ -2200,6 +2690,11 @@ def ensure_college_record(college_name: str):
         record['optional_recommendations'] = normalized_optional
         changed = True
 
+    normalized_requirements = normalize_requirements_checklist(record.get('requirements_checklist'))
+    if normalized_requirements != record.get('requirements_checklist'):
+        record['requirements_checklist'] = normalized_requirements
+        changed = True
+
     if changed:
         save_college_catalog()
     return record
@@ -2215,6 +2710,16 @@ def normalize_college_records():
             changed = True
     if changed:
         save_college_catalog()
+
+
+def set_requirement_value(college_name: str, requirement_key: str, value):
+    record = ensure_college_record(college_name)
+    checklist = record.get('requirements_checklist', default_requirements_checklist())
+    if requirement_key not in checklist:
+        return
+    checklist[requirement_key] = value
+    record['requirements_checklist'] = checklist
+    save_college_catalog()
 
 
 def get_college_deadline(college_name: str):
@@ -2289,6 +2794,7 @@ def add_or_update_college(college_name: str, application_plan: str, deadline: st
 
     research_database[college_name] = research_database.get(college_name, default_research_entry(college_name, deadline))
     research_database[college_name]["application_deadline"] = deadline
+    essay_data.setdefault(college_name, [])
     ensure_recommendation_row(college_name)
     ensure_fee_row(college_name)
     save_college_catalog()
@@ -3202,7 +3708,35 @@ def render_college_page(college_name: str):
         with ui.tab_panel(requirements_tab):
             with ui.card().classes('card w-full p-5'):
                 ui.label('Requirements').classes('section-title')
-                render_simple_list(profile['requirements'], 'No requirements listed yet.')
+                ui.label('Track what this school needs and what you have already submitted.').classes('text-sm mt-1')
+                requirements_state = profile.get('requirements_checklist', default_requirements_checklist())
+                with ui.element('div').classes('requirements-grid mt-4'):
+                    for section in REQUIREMENT_SECTIONS:
+                        with ui.element('div').classes('requirements-card'):
+                            ui.label(section['title']).classes('requirements-card-title')
+                            with ui.element('div').classes('requirements-list mt-3'):
+                                for item in section['items']:
+                                    current_value = requirements_state.get(
+                                        item['key'],
+                                        False if item['type'] == 'checkbox' else TESTING_POLICY_OPTIONS[0],
+                                    )
+                                    if item['type'] == 'checkbox':
+                                        with ui.element('div').classes('requirement-row checkbox-only'):
+                                            ui.checkbox(
+                                                item['label'],
+                                                value=bool(current_value),
+                                                on_change=lambda e, key=item['key']: set_requirement_value(college_name, key, bool(e.value)),
+                                            ).classes('text-sm')
+                                    else:
+                                        with ui.element('div').classes('requirement-row'):
+                                            with ui.element('div'):
+                                                ui.label(item['label']).classes('requirement-label')
+                                                ui.label('School policy').classes('requirement-hint')
+                                            ui.select(
+                                                TESTING_POLICY_OPTIONS,
+                                                value=current_value if current_value in TESTING_POLICY_OPTIONS else TESTING_POLICY_OPTIONS[0],
+                                                on_change=lambda e, key=item['key']: set_requirement_value(college_name, key, e.value or TESTING_POLICY_OPTIONS[0]),
+                                            ).classes('w-full')
 
         with ui.tab_panel(fees_tab):
             with ui.card().classes('card w-full p-5'):
@@ -3300,6 +3834,209 @@ def deadline_countdown(date_text: str):
     if remaining == 0:
         return 'Due today'
     return f'{remaining}d left'
+
+
+home_task_view = {'value': 'Incomplete'}
+
+
+def next_home_task_id():
+    return max((int(task.get('id', 0)) for task in home_tasks), default=0) + 1
+
+
+def format_task_due_date(date_text: str):
+    due_date = parse_iso_date(date_text)
+    if not due_date:
+        return ''
+    return due_date.strftime('%b %d')
+
+
+def home_task_due_label(task: dict):
+    due_date = task.get('due_date', '')
+    if not due_date:
+        return ''
+    due_display = format_task_due_date(due_date)
+    remaining = (parse_iso_date(due_date) - datetime.now().date()).days if parse_iso_date(due_date) else None
+    if remaining is None:
+        return due_display
+    if remaining < 0:
+        return f'{due_display} • {abs(remaining)}d overdue'
+    if remaining == 0:
+        return f'{due_display} • Due today'
+    return f'{due_display} • {remaining}d left'
+
+
+def home_task_sort_key(task: dict):
+    due_date = parse_iso_date(task.get('due_date', ''))
+    priority_rank = {'High': 0, 'Medium': 1, 'Low': 2, '': 3}
+    return (
+        task.get('completed', False),
+        due_date is None,
+        due_date or datetime.max.date(),
+        priority_rank.get(task.get('priority', ''), 3),
+        (task.get('title') or '').lower(),
+    )
+
+
+def filtered_home_tasks():
+    tasks = list(home_tasks)
+    view = home_task_view['value']
+    if view == 'Incomplete':
+        tasks = [task for task in tasks if not task.get('completed')]
+    elif view == 'Completed':
+        tasks = [task for task in tasks if task.get('completed')]
+    else:
+        tasks = [task for task in tasks if not task.get('completed')]
+    return sorted(tasks, key=home_task_sort_key)
+
+
+def save_and_refresh_home_tasks():
+    save_college_catalog()
+    render_page()
+
+
+def add_home_task(title: str, due_date: str = '', priority: str = ''):
+    clean_title = (title or '').strip()
+    if not clean_title:
+        ui.notify('Enter a task title first.', color='warning')
+        return
+    home_tasks.append({
+        'id': next_home_task_id(),
+        'title': clean_title,
+        'completed': False,
+        'due_date': due_date if parse_iso_date(due_date) else '',
+        'priority': priority if priority in TASK_PRIORITY_OPTIONS else '',
+    })
+    save_and_refresh_home_tasks()
+
+
+def update_home_task(task_id: int, **changes):
+    for task in home_tasks:
+        if task.get('id') != task_id:
+            continue
+        if 'title' in changes:
+            clean_title = (changes.get('title') or '').strip()
+            if not clean_title:
+                ui.notify('Task title cannot be empty.', color='warning')
+                return
+            task['title'] = clean_title
+        if 'completed' in changes:
+            task['completed'] = bool(changes['completed'])
+        if 'due_date' in changes:
+            task['due_date'] = changes['due_date'] if parse_iso_date(changes['due_date']) else ''
+        if 'priority' in changes:
+            task['priority'] = changes['priority'] if changes['priority'] in TASK_PRIORITY_OPTIONS else ''
+        save_and_refresh_home_tasks()
+        return
+
+
+def delete_home_task(task_id: int):
+    global home_tasks
+    home_tasks = [task for task in home_tasks if task.get('id') != task_id]
+    save_and_refresh_home_tasks()
+
+
+def open_edit_home_task_dialog(task_id: int):
+    task = next((item for item in home_tasks if item.get('id') == task_id), None)
+    if not task:
+        return
+
+    dialog = ui.dialog()
+    with dialog, ui.card().classes('card w-[460px] max-w-full p-5'):
+        ui.label('Edit task').classes('text-xl font-bold')
+        title_input = ui.input('Task title', value=task.get('title', '')).props('outlined').classes('w-full mt-3')
+        due_input = ui.input('Due date', value=task.get('due_date', '')).props('outlined type=date').classes('w-full mt-3')
+        priority_select = ui.select(
+            options={'': 'No priority', 'High': 'High', 'Medium': 'Medium', 'Low': 'Low'},
+            value=task.get('priority', ''),
+            label='Priority',
+        ).props('outlined').classes('w-full mt-3')
+
+        with ui.row().classes('w-full justify-between items-center mt-4'):
+            ui.button(
+                'Delete',
+                on_click=lambda: (dialog.close(), delete_home_task(task_id)),
+            ).props('flat color=negative no-caps')
+            with ui.row().classes('gap-2'):
+                ui.button('Cancel', on_click=dialog.close).props('flat no-caps')
+                ui.button(
+                    'Save',
+                    on_click=lambda: (dialog.close(), update_home_task(
+                        task_id,
+                        title=title_input.value,
+                        due_date=due_input.value or '',
+                        priority=priority_select.value or '',
+                    )),
+                ).classes('add-btn').props('no-caps')
+    dialog.open()
+
+
+def render_home_task_widget():
+    tasks = filtered_home_tasks()
+    completed_count = sum(1 for task in home_tasks if task.get('completed'))
+    active_count = sum(1 for task in home_tasks if not task.get('completed'))
+
+    with ui.card().classes('card todo-card w-full p-4'):
+        with ui.element('div').classes('todo-header'):
+            with ui.column().classes('gap-0'):
+                ui.label('To-Do List').classes('section-title')
+            with ui.element('div').classes('todo-stats'):
+                ui.label(f'{active_count} active').classes('chip')
+                ui.label(f'{completed_count} done').classes('chip')
+                ui.select(
+                    TASK_VIEW_OPTIONS,
+                    value=home_task_view['value'],
+                    on_change=lambda e: (home_task_view.__setitem__('value', e.value), render_page()),
+                    label='View',
+                ).props('dense outlined').classes('w-36 max-w-full')
+
+        with ui.element('div').classes('todo-quick-add mt-3'):
+            quick_title = ui.input('Quick add').props('dense outlined').classes('w-full')
+            quick_due = ui.input('Due').props('dense outlined type=date').classes('w-full')
+            quick_priority = ui.select(
+                options={'': 'Priority', 'High': 'High', 'Medium': 'Medium', 'Low': 'Low'},
+                value='',
+                label='Priority',
+            ).props('dense outlined').classes('w-full')
+            ui.button(
+                '+ Add',
+                on_click=lambda: add_home_task(quick_title.value, quick_due.value or '', quick_priority.value or ''),
+            ).classes('add-btn').props('dense no-caps')
+
+        with ui.element('div').classes('todo-list mt-3'):
+            if tasks:
+                for task in tasks:
+                    due_label = home_task_due_label(task)
+                    priority = task.get('priority', '')
+                    title_classes = 'todo-item-title completed' if task.get('completed') else 'todo-item-title'
+                    item_classes = 'todo-item completed' if task.get('completed') else 'todo-item'
+                    with ui.element('div').classes(item_classes):
+                        ui.checkbox(
+                            value=bool(task.get('completed')),
+                            on_change=lambda e, task_id=task['id']: update_home_task(task_id, completed=bool(e.value)),
+                        )
+                        with ui.element('div').classes('todo-item-main'):
+                            ui.label(task.get('title', '')).classes(title_classes)
+                            with ui.element('div').classes('todo-meta'):
+                                if due_label:
+                                    ui.label(due_label).classes('chip')
+                                if priority:
+                                    ui.label(priority).classes(f'chip todo-priority-{priority.lower()}')
+                        with ui.element('div').classes('todo-actions'):
+                            ui.button(
+                                'Edit',
+                                on_click=lambda task_id=task['id']: open_edit_home_task_dialog(task_id),
+                            ).props('flat dense no-caps size=sm')
+                            ui.button(
+                                'Delete',
+                                on_click=lambda task_id=task['id']: delete_home_task(task_id),
+                            ).props('flat dense color=negative no-caps size=sm')
+            else:
+                empty_copy = {
+                    'Due Soon': 'No upcoming tasks with due dates yet. Add one above to build your week.',
+                    'Incomplete': 'No incomplete tasks right now. Add a next step to keep momentum going.',
+                    'Completed': 'No completed tasks yet. Finished items will collect here.',
+                }
+                ui.label(empty_copy.get(home_task_view['value'], 'No tasks yet.')).classes('todo-empty')
 
 
 def progress_ring(progress: int):
@@ -3571,15 +4308,8 @@ def render_home_page():
                 ui.label(f"{next_deadline['deadline']} ({deadline_countdown(next_deadline['deadline'])})").classes('text-sm')
             else:
                 ui.label('None').classes('stat-num')
-        with ui.card().classes('card p-5 grow'):
-            ui.label("Today's priorities").classes('section-title')
-            priorities = [
-                'Submit Harvard supplemental draft',
-                'Remind Ms. Patel for recommendation',
-                'Pay pending application fee',
-            ]
-            for task in priorities:
-                ui.label(f'• {task}').classes('text-sm')
+
+    render_home_task_widget()
 
     with ui.row().classes('split-layout'):
         with ui.column().classes('split-main'):
