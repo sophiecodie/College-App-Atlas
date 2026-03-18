@@ -261,6 +261,20 @@ h1, h2, h3, .text-3xl, .text-xl {{ font-family: Fraunces, serif; letter-spacing:
 .requirement-row.checkbox-only {{
   grid-template-columns: 1fr;
 }}
+.requirement-row.with-inline-checkbox {{
+  grid-template-columns: minmax(0, 1fr) minmax(108px, 132px) minmax(108px, 132px);
+}}
+.requirement-inline-checkbox {{
+  justify-self: end;
+  white-space: nowrap;
+}}
+.requirement-compact-select {{
+  max-width: 132px;
+  justify-self: end;
+}}
+.requirement-inline-checkbox .q-checkbox__label {{
+  font-size: 0.8rem;
+}}
 .requirement-label {{
   font-size: 0.95rem;
   font-weight: 600;
@@ -1062,14 +1076,22 @@ body {
   .requirement-row {
     grid-template-columns: 1fr;
   }
+  .requirement-row.with-inline-checkbox {
+    grid-template-columns: 1fr;
+  }
+  .requirement-inline-checkbox {
+    justify-self: start;
+  }
+  .requirement-compact-select {
+    max-width: none;
+    justify-self: stretch;
+  }
 }
 </style>
 """)
 
-widgets = [
-    {"name": "Harvard", "progress": 72, "deadline": "Mar 28, 2026"},
-    {"name": "Duke", "progress": 38, "deadline": "Apr 05, 2026"},
-]
+widgets = []
+selected_college_names = []
 
 
 COLLEGE_DATA_PATH = Path(__file__).with_name('college_plans.json')
@@ -1088,11 +1110,9 @@ REQUIREMENT_SECTIONS = [
     {
         'title': 'Testing',
         'items': [
-            {'key': 'sat_requirement', 'label': 'SAT requirement', 'type': 'select'},
-            {'key': 'sat_submission_method', 'label': 'SAT self-report vs official send', 'type': 'select'},
-            {'key': 'act_accepted', 'label': 'ACT accepted', 'type': 'select'},
-            {'key': 'ap_requirement', 'label': 'AP score requirement', 'type': 'select'},
-            {'key': 'ap_submission_method', 'label': 'AP self-report vs official send', 'type': 'select'},
+            {'key': 'sat_requirement', 'label': 'SAT requirement', 'type': 'select', 'completion_key': 'sat_requirement_completed'},
+            {'key': 'act_accepted', 'label': 'ACT accepted', 'type': 'select', 'completion_key': 'act_accepted_completed'},
+            {'key': 'ap_requirement', 'label': 'AP score requirement', 'type': 'select', 'completion_key': 'ap_requirement_completed'},
         ],
     },
     {
@@ -1132,29 +1152,7 @@ def parse_iso_date(date_text: str):
 
 
 def default_home_tasks():
-    return [
-        {
-            'id': 1,
-            'title': 'Finish Harvard supplemental draft',
-            'completed': False,
-            'due_date': '2026-03-20',
-            'priority': 'High',
-        },
-        {
-            'id': 2,
-            'title': 'Follow up with Ms. Patel about recommendation letter',
-            'completed': False,
-            'due_date': '2026-03-18',
-            'priority': 'Medium',
-        },
-        {
-            'id': 3,
-            'title': 'Pay Duke application fee',
-            'completed': True,
-            'due_date': '',
-            'priority': '',
-        },
-    ]
+    return []
 
 
 def normalize_home_tasks(raw_tasks):
@@ -1195,7 +1193,7 @@ def normalize_home_tasks(raw_tasks):
 
 
 def load_college_catalog():
-    global home_tasks
+    global home_tasks, selected_college_names
     try:
         with COLLEGE_DATA_PATH.open('r', encoding='utf-8') as file:
             data = json.load(file)
@@ -1207,6 +1205,7 @@ def load_college_catalog():
     # Backward compatibility: old format was {college_name: {plans: {...}}}
     if isinstance(data, dict) and 'colleges' not in data:
         home_tasks = default_home_tasks()
+        selected_college_names = []
         converted = {}
         for college_name, value in data.items():
             plans = value.get('plans', {}) if isinstance(value, dict) else {}
@@ -1233,63 +1232,30 @@ def load_college_catalog():
 
     colleges = data.get('colleges', []) if isinstance(data, dict) else []
     home_tasks = normalize_home_tasks(data.get('home_tasks', default_home_tasks()) if isinstance(data, dict) else default_home_tasks())
+    raw_selected = data.get('selected_colleges', []) if isinstance(data, dict) else []
     by_name = {}
     for college in colleges:
         if isinstance(college, dict) and college.get('name'):
             by_name[college['name']] = college
+    selected_college_names = [
+        name for name in raw_selected
+        if isinstance(name, str) and name in by_name
+    ]
     return by_name
 
 
 def save_college_catalog():
-    payload = {'colleges': list(college_data.values()), 'home_tasks': home_tasks}
+    payload = {
+        'colleges': list(college_data.values()),
+        'selected_colleges': [item['name'] for item in widgets if item.get('name') in college_data],
+        'home_tasks': home_tasks,
+    }
     with COLLEGE_DATA_PATH.open('w', encoding='utf-8') as file:
         json.dump(payload, file, indent=2)
 
 
 college_data = load_college_catalog()
-essays_due = [
-    {"title": "Harvard Supplemental", "due": "Mar 20, 2026"},
-    {"title": "Duke Why Us", "due": "Mar 24, 2026"},
-]
-missing_recommendations = [
-    {"college": "Harvard", "recommender": "Ms. Patel"},
-]
-fees_status = [
-    {"college": "Harvard", "status": "Pending fee"},
-    {"college": "Duke", "status": "Submitted"},
-]
-fee_tracker = {
-    "Harvard": {
-        "college_name": "Harvard",
-        "application_fee": 85,
-        "fee_waiver_status": "Requested",
-        "payment_status": "Not paid",
-        "notes": "Waiver request drafted. Keep an eye on the CSS deadline.",
-        "css_profile_required": True,
-        "css_profile_cost": 25,
-        "fafsa_required": False,
-        "fafsa_cost": 0,
-        "sat_score_send_required": True,
-        "sat_score_send_cost": 14,
-        "ap_score_send_required": False,
-        "ap_score_send_cost": 0,
-    },
-    "Duke": {
-        "college_name": "Duke",
-        "application_fee": 75,
-        "fee_waiver_status": "Approved",
-        "payment_status": "Paid",
-        "notes": "Application fee waived. Only tracking the remaining send costs.",
-        "css_profile_required": True,
-        "css_profile_cost": 16,
-        "fafsa_required": True,
-        "fafsa_cost": 0,
-        "sat_score_send_required": True,
-        "sat_score_send_cost": 14,
-        "ap_score_send_required": True,
-        "ap_score_send_cost": 15,
-    },
-}
+fee_tracker = {}
 ACTIVITY_CATEGORIES = [
     "Leadership",
     "Research",
@@ -1302,204 +1268,11 @@ ACTIVITY_CATEGORIES = [
     "Academic Club",
     "Other",
 ]
-brainstorm_activities = [
-    {
-        "activity_name": "Girls Who Code chapter",
-        "category": "Leadership",
-        "notes": "Started chapter meetings, planned workshops, and mentored newer members.",
-        "years_involved": "10-12",
-        "hours_per_week": 3,
-    },
-    {
-        "activity_name": "University public-interest AI lab",
-        "category": "Research",
-        "notes": "Assisted with literature review and data cleaning for civic-tech research.",
-        "years_involved": "11-12",
-        "hours_per_week": 6,
-    },
-    {
-        "activity_name": "Weekend food pantry volunteer",
-        "category": "Community Service",
-        "notes": "Helped organize distributions and translated for Spanish-speaking families.",
-        "years_involved": "9-12",
-        "hours_per_week": 4,
-    },
-]
-final_activities = [
-    {
-        "activity_name": "Girls Who Code chapter",
-        "role_position": "Founder & President",
-        "organization": "Central High School",
-        "description": "Founded a 25-member coding club, led weekly lessons, and organized a district hack night for middle school students.",
-        "years_involved": "10-12",
-        "hours_per_week": 3,
-        "weeks_per_year": 30,
-        "category": "Leadership",
-    },
-    {
-        "activity_name": "Public-interest AI research",
-        "role_position": "Student Research Assistant",
-        "organization": "State University Lab",
-        "description": "Supported an AI fairness project through data prep, paper review, and weekly research meetings.",
-        "years_involved": "11-12",
-        "hours_per_week": 6,
-        "weeks_per_year": 24,
-        "category": "Research",
-    },
-    {
-        "activity_name": "Food pantry outreach",
-        "role_position": "Lead Volunteer",
-        "organization": "Neighborhood Food Pantry",
-        "description": "Coordinated volunteer shifts, stocked supplies, and translated for visiting families during distributions.",
-        "years_involved": "9-12",
-        "hours_per_week": 4,
-        "weeks_per_year": 40,
-        "category": "Community Service",
-    },
-    {
-        "activity_name": "Varsity soccer",
-        "role_position": "Captain",
-        "organization": "Central High School",
-        "description": "Led team practices, mentored younger players, and balanced athletics with school responsibilities.",
-        "years_involved": "9-12",
-        "hours_per_week": 8,
-        "weeks_per_year": 16,
-        "category": "Athletics",
-    },
-]
+brainstorm_activities = []
+final_activities = []
 activity_drag_state = {"final_index": None}
-college_profiles = {
-    "Harvard": {
-        "application_type": "Regular Decision",
-        "status": "In Progress",
-        "major": "Computer Science",
-        "notes": "Need stronger opening paragraph for personal statement.",
-        "links": [
-            ("Admissions Portal", "https://college.harvard.edu/admissions"),
-            ("Supplemental Prompts", "https://college.harvard.edu/apply"),
-        ],
-        "essays": ["Personal Statement", "Harvard Short Answer"],
-        "research": ["Compare CS concentration tracks", "Review undergraduate research labs"],
-        "requirements": ["Transcript", "SAT/ACT (optional)", "School Report"],
-        "fees": ["Application fee: Pending", "CSS Profile: Not started"],
-        "recs": ["Teacher 1: Requested", "Teacher 2: Pending", "Counselor: Received"],
-    },
-    "Duke": {
-        "application_type": "Early Decision II",
-        "status": "Drafting Materials",
-        "major": "Public Policy",
-        "notes": "Finalize extracurricular impact examples.",
-        "links": [
-            ("Admissions Portal", "https://admissions.duke.edu"),
-            ("Application Requirements", "https://admissions.duke.edu/apply"),
-        ],
-        "essays": ["Why Duke", "Community Essay"],
-        "research": ["Explore Sanford School offerings", "Check first-year seminar options"],
-        "requirements": ["Transcript", "School Report", "Midyear Report"],
-        "fees": ["Application fee: Submitted"],
-        "recs": ["Teacher 1: Received", "Teacher 2: Requested"],
-    },
-}
-essay_data = {
-    "Harvard": [
-        {
-            "title": "How will you explore your academic interests at Harvard?",
-            "prompt_text": "How do your intellectual interests align with Harvard, and how will you pursue them on campus?",
-            "prompt_type": "Why Major",
-            "word_limit": 250,
-            "due_date": "Mar 20, 2026",
-            "comments": [
-                {"version": "v1", "author": "Advisor", "text": "Add one concrete program example."},
-                {"version": "v2", "author": "You", "text": "Researching one lab and one public-interest tech angle."},
-            ],
-            "drafts": [
-                {
-                    "name": "v1",
-                    "label": "Academic fit baseline",
-                    "status": "rough",
-                    "external_doc_url": "https://docs.google.com/document/d/harvard-why-major-v1/edit",
-                    "autosave_status": "Saved",
-                    "last_saved": "9:42 PM",
-                    "text": "I want to study computer science and policy. At Harvard, I can connect technical coursework with social impact through interdisciplinary projects.",
-                },
-                {
-                    "name": "v2",
-                    "label": "Specific programs pass",
-                    "status": "revise",
-                    "external_doc_url": "https://docs.google.com/document/d/harvard-why-major-v2/edit",
-                    "autosave_status": "Saved",
-                    "last_saved": "10:18 PM",
-                    "text": "My interests in computer science and policy fit Harvard's interdisciplinary ecosystem. I want to combine CS problem-solving with policy analysis and contribute to research labs focused on public-interest technology.",
-                },
-            ],
-        },
-        {
-            "title": "Tell us about a community you belong to.",
-            "prompt_text": "Describe a community that has shaped you and explain your role within it.",
-            "prompt_type": "Community",
-            "word_limit": 200,
-            "due_date": "Mar 24, 2026",
-            "comments": [
-                {"version": "v1", "author": "Counselor", "text": "Needs a clearer role and a stronger ending reflection."},
-            ],
-            "drafts": [
-                {
-                    "name": "v1",
-                    "label": "Tutoring community start",
-                    "status": "brainstorm",
-                    "external_doc_url": "",
-                    "autosave_status": "Saved",
-                    "last_saved": "8:05 PM",
-                    "text": "I learned leadership through organizing tutoring for younger students.",
-                },
-            ],
-        },
-    ],
-    "Duke": [
-        {
-            "title": "Why Duke?",
-            "prompt_text": "Why are you interested in Duke and how does it match your goals?",
-            "prompt_type": "Why Us",
-            "word_limit": 250,
-            "due_date": "Mar 24, 2026",
-            "comments": [
-                {"version": "v1", "author": "Advisor", "text": "Mention one specific Duke resource."},
-            ],
-            "drafts": [
-                {
-                    "name": "v1",
-                    "label": "Core fit draft",
-                    "status": "rough",
-                    "external_doc_url": "https://docs.google.com/document/d/duke-why-us-v1/edit",
-                    "autosave_status": "Saved",
-                    "last_saved": "7:54 PM",
-                    "text": "Duke fits my goals in policy and data-driven problem solving. I am excited by hands-on learning and interdisciplinary opportunities.",
-                }
-            ],
-        },
-        {
-            "title": "What idea keeps pulling you back?",
-            "prompt_text": "Describe an intellectual question or topic you keep returning to and why it matters to you.",
-            "prompt_type": "Intellectual Curiosity",
-            "word_limit": 200,
-            "due_date": "Mar 24, 2026",
-            "comments": [
-                {"version": "v1", "author": "You", "text": "Could connect algorithmic fairness to public policy interests."},
-            ],
-            "drafts": [
-                {
-                    "name": "v1",
-                    "label": "Curiosity angle",
-                    "status": "rough",
-                    "external_doc_url": "",
-                    "autosave_status": "Saved",
-                    "last_saved": "6:33 PM",
-                    "text": "I keep returning to how algorithmic systems shape real decisions, especially when the data behind them reflects unequal access and opportunity.",
-                }
-            ],
-        },
-    ],
-}
+college_profiles = {}
+essay_data = {}
 ESSAY_STATUSES = ["not_started", "drafting", "revise", "final"]
 ESSAY_STATUS_LABELS = {
     "not_started": "Not started",
@@ -1515,13 +1288,13 @@ ESSAY_STATUS_ALIASES = {
     "final": "final",
 }
 essay_state = {
-    "college": "Harvard",
+    "college": None,
     "prompt_index": 0,
     "draft_index": 0,
     "compare_version": None,
     "group_mode": "school",
     "utility_tab": "versions",
-    "expanded_groups": {"Harvard", "Duke"},
+    "expanded_groups": set(),
 }
 theme_presets = [
     {"name": "Rosewood", "color": "#B96B7A"},
@@ -1566,87 +1339,14 @@ def apply_theme_settings():
       body.classList.add('density-{density}');
     }})();
     """)
-research_database = {
-    "Harvard": {
-        "location": "Cambridge, MA",
-        "major_program": "Computer Science",
-        "application_deadline": "Mar 28, 2026",
-        "why_this_school": "Interdisciplinary CS + policy opportunities",
-        "vibe": "Ambitious, research-focused",
-        "academic_strengths": "CS, economics, public policy",
-        "notes_status": "In progress",
-        "interview": "Requested",
-        "visit_status": "Planned",
-        "priority_level": "High",
-        "general_notes": "Strong alignment with public-interest technology goals.",
-        "academic_programs": "CS concentration, policy electives, undergrad research grants.",
-        "campus_culture": "Collaborative but high-performing environment.",
-        "clubs_professors_labs": "Harvard College Consulting Group, Berkman Klein projects.",
-        "why_us_material": "Tie interdisciplinary curriculum to long-term civic-tech goals.",
-        "links_resources": "https://college.harvard.edu/admissions",
-        "personal_reflections": "Feels like a strong mission fit if support is available.",
-    },
-    "Duke": {
-        "location": "Durham, NC",
-        "major_program": "Public Policy",
-        "application_deadline": "Apr 05, 2026",
-        "why_this_school": "Policy training with practical leadership pathways",
-        "vibe": "Balanced academics + campus life",
-        "academic_strengths": "Public policy, economics, global studies",
-        "notes_status": "Started",
-        "interview": "Not required",
-        "visit_status": "Visited",
-        "priority_level": "Medium",
-        "general_notes": "Good fit for policy + data interests.",
-        "academic_programs": "Sanford School pathways and policy labs.",
-        "campus_culture": "School spirit and strong student communities.",
-        "clubs_professors_labs": "Policy student groups and research institutes.",
-        "why_us_material": "Emphasize interest in applied policy impact.",
-        "links_resources": "https://admissions.duke.edu",
-        "personal_reflections": "Feels practical and supportive for career goals.",
-    },
-}
+research_database = {}
 research_state = {
     "college": None,
     "sort_by": "priority_level",
 }
 PRIORITY_RANK = {"High": 0, "Medium": 1, "Low": 2}
-recommenders = [
-    {
-        "name": "Ms. Patel",
-        "role": "Math Teacher",
-        "subject": "Mathematics",
-        "schools_assigned": ["Harvard", "Duke"],
-        "request_sent": True,
-        "confirmed": True,
-        "submitted": False,
-        "notes": "Will submit after spring break.",
-    },
-    {
-        "name": "Mr. Johnson",
-        "role": "Counselor",
-        "subject": "College Counseling",
-        "schools_assigned": ["Harvard", "Duke"],
-        "request_sent": True,
-        "confirmed": True,
-        "submitted": True,
-        "notes": "School report submitted.",
-    },
-    {
-        "name": "Dr. Kim",
-        "role": "Supplemental Recommender",
-        "subject": "Research Mentorship",
-        "schools_assigned": ["Harvard"],
-        "request_sent": True,
-        "confirmed": False,
-        "submitted": False,
-        "notes": "Follow up this week.",
-    },
-]
-recommendation_matrix = {
-    "Harvard": {"Ms. Patel": "Confirmed", "Mr. Johnson": "Submitted", "Dr. Kim": "Missing"},
-    "Duke": {"Ms. Patel": "Requested", "Mr. Johnson": "Submitted", "Dr. Kim": "N/A"},
-}
+recommenders = []
+recommendation_matrix = {}
 
 SIDEBAR_PAGES = [
     ("home", "🏠 Home"),
@@ -1702,12 +1402,13 @@ def get_college_profile(college_name: str):
     record = ensure_college_record(college_name)
     profile = college_profiles.get(college_name, {})
     widget = get_widget(college_name) or {}
+    progress = sync_widget_progress(college_name)
     return {
         "application_type": record.get("selected_application_type") or profile.get("application_type", "Not set"),
         "deadline": widget.get("deadline", get_college_deadline(college_name)),
         "status": record.get("status", profile.get("status", "Not started")),
         "major": record.get("major", profile.get("major", "Undeclared")),
-        "progress": widget.get("progress", 0),
+        "progress": progress,
         "notes": record.get("quick_notes", profile.get("notes", "Add quick notes for this college.")),
         "links": record.get("important_links", profile.get("links", [])),
         "essays": record.get("essay_prompts", profile.get("essays", [])),
@@ -1820,18 +1521,20 @@ def ensure_essay_data_shape():
                 draft["status"] = normalize_essay_status(draft.get("status", "not_started"), draft["text"])
 
 
-def current_prompt_status(prompt: dict):
+def current_prompt_status(prompt: dict, draft_index: int | None = None):
     if not prompt.get("drafts"):
         return "not_started"
-    latest = prompt["drafts"][-1]
-    return normalize_essay_status(latest.get("status", "not_started"), latest.get("text", ""))
+    index = len(prompt["drafts"]) - 1 if draft_index is None else min(max(draft_index, 0), len(prompt["drafts"]) - 1)
+    draft = prompt["drafts"][index]
+    return normalize_essay_status(draft.get("status", "not_started"), draft.get("text", ""))
 
 
-def prompt_word_progress(prompt: dict):
+def prompt_word_progress(prompt: dict, draft_index: int | None = None):
     if not prompt.get("drafts"):
         return 0, 0, 0
-    latest = prompt["drafts"][-1]
-    words = count_words(latest.get("text", ""))
+    index = len(prompt["drafts"]) - 1 if draft_index is None else min(max(draft_index, 0), len(prompt["drafts"]) - 1)
+    draft = prompt["drafts"][index]
+    words = count_words(draft.get("text", ""))
     limit = max(1, prompt.get("word_limit", 1))
     return words, limit, min(100, int((words / limit) * 100))
 
@@ -2148,8 +1851,9 @@ def render_essays_page():
                             for college, idx, prompt in items:
                                 active = college == essay_state["college"] and idx == essay_state["prompt_index"]
                                 label = prompt["title"] if essay_state["group_mode"] == "school" else f"{college} - {prompt['title']}"
-                                words, limit, _ = prompt_word_progress(prompt)
-                                prompt_status = current_prompt_status(prompt)
+                                draft_index = essay_state["draft_index"] if active else None
+                                words, limit, _ = prompt_word_progress(prompt, draft_index)
+                                prompt_status = current_prompt_status(prompt, draft_index)
                                 with ui.row().classes(f"w-full essay-tree-item {'active' if active else ''}").on('click', lambda college_name=college, prompt_idx=idx: select_prompt(college_name, prompt_idx)):
                                     ui.label(label).classes('essay-tree-item-text')
                                     with ui.row().classes('essay-tree-item-meta'):
@@ -2191,10 +1895,12 @@ def render_essays_page():
                     word_count_label.classes(add='over')
                 else:
                     word_count_label.classes(remove='over')
+                word_count_label.update()
                 refresh_left()
                 refresh_right()
 
-            editor = ui.textarea(value=draft["text"]).props('autogrow outlined').classes('w-full mt-4 essay-editor')
+            editor = ui.textarea(value=draft["text"], on_change=on_text_change).props('autogrow outlined input-debounce=0').classes('w-full mt-4 essay-editor')
+            editor.on('input', on_text_change)
             editor.on('update:model-value', on_text_change)
 
     def refresh_right():
@@ -2591,6 +2297,13 @@ def default_research_entry(college_name: str, deadline: str = 'TBD'):
     }
 
 
+def ensure_research_entry(college_name: str):
+    if college_name not in research_database:
+        research_database[college_name] = default_research_entry(college_name, get_effective_deadline(college_name))
+    research_database[college_name]["application_deadline"] = get_effective_deadline(college_name)
+    return research_database[college_name]
+
+
 def default_college_profile():
     return {
         "application_type": "Not set",
@@ -2611,6 +2324,8 @@ def default_requirements_checklist():
     for section in REQUIREMENT_SECTIONS:
         for item in section['items']:
             defaults[item['key']] = False if item['type'] == 'checkbox' else TESTING_POLICY_OPTIONS[0]
+            if item['type'] == 'select' and item.get('completion_key'):
+                defaults[item['completion_key']] = False
     return defaults
 
 
@@ -2625,7 +2340,45 @@ def normalize_requirements_checklist(raw_value):
                     normalized[key] = bool(value)
                 elif value in TESTING_POLICY_OPTIONS:
                     normalized[key] = value
+                if item['type'] == 'select' and item.get('completion_key'):
+                    normalized[item['completion_key']] = bool(raw_value.get(item['completion_key']))
     return normalized
+
+
+def calculate_college_progress(college_name: str) -> int:
+    record = ensure_college_record(college_name)
+    completed_items = 0
+    total_items = 0
+
+    for prompt in record.get('essay_prompts', []):
+        total_items += 1
+        if bool(prompt.get('completed', False)):
+            completed_items += 1
+
+    checklist = normalize_requirements_checklist(record.get('requirements_checklist'))
+    for section in REQUIREMENT_SECTIONS:
+        for item in section['items']:
+            value = checklist.get(item['key'])
+            if item['type'] == 'checkbox':
+                total_items += 1
+                if bool(value):
+                    completed_items += 1
+            elif item['type'] == 'select' and value in TESTING_POLICY_OPTIONS[1:]:
+                total_items += 1
+                if bool(checklist.get(item.get('completion_key'))):
+                    completed_items += 1
+
+    if total_items == 0:
+        return 0
+    return round((completed_items / total_items) * 100)
+
+
+def sync_widget_progress(college_name: str) -> int:
+    progress = calculate_college_progress(college_name)
+    widget = get_widget(college_name)
+    if widget is not None:
+        widget['progress'] = progress
+    return progress
 
 
 def default_college_record(college_name: str):
@@ -2718,7 +2471,14 @@ def set_requirement_value(college_name: str, requirement_key: str, value):
     if requirement_key not in checklist:
         return
     checklist[requirement_key] = value
+    for section in REQUIREMENT_SECTIONS:
+        for item in section['items']:
+            if item['key'] == requirement_key and item['type'] == 'select' and item.get('completion_key'):
+                if value == TESTING_POLICY_OPTIONS[0]:
+                    checklist[item['completion_key']] = False
+                break
     record['requirements_checklist'] = checklist
+    sync_widget_progress(college_name)
     save_college_catalog()
 
 
@@ -2767,6 +2527,23 @@ def get_deadline_for_college_plan(college_name: str, application_plan: str):
     return 'TBD'
 
 
+def initialize_widgets_from_college_data():
+    widgets.clear()
+    for college_name in selected_college_names:
+        record = college_data.get(college_name)
+        if not record:
+            continue
+        selected_type = record.get('selected_application_type')
+        deadline = 'TBD'
+        for option in record.get('application_options', []):
+            if option.get('type') == selected_type:
+                deadline = option.get('deadline', 'TBD')
+                break
+        if deadline == 'TBD' and record.get('application_options'):
+            deadline = record['application_options'][0].get('deadline', 'TBD')
+        widgets.append({"name": college_name, "progress": 0, "deadline": deadline})
+
+
 def add_or_update_college(college_name: str, application_plan: str, deadline: str):
     record = ensure_college_record(college_name)
     if not record.get('application_options'):
@@ -2787,6 +2564,7 @@ def add_or_update_college(college_name: str, application_plan: str, deadline: st
         existing_widget["deadline"] = deadline
     else:
         widgets.append({"name": college_name, "progress": 0, "deadline": deadline})
+    sync_widget_progress(college_name)
 
     if college_name not in college_profiles:
         college_profiles[college_name] = default_college_profile()
@@ -2800,13 +2578,17 @@ def add_or_update_college(college_name: str, application_plan: str, deadline: st
     save_college_catalog()
 
 
+for widget in widgets:
+    sync_widget_progress(widget['name'])
+
+
 def render_research_page():
     ui.label('Research').classes('text-3xl font-bold')
     ui.label('Lightweight research overview for quick scanning. Open a college for full notes and depth.').classes('text-base')
 
     if research_state["college"]:
         college_name = research_state["college"]
-        entry = research_database[college_name]
+        entry = ensure_research_entry(college_name)
         profile = get_college_profile(college_name)
 
         with ui.row().classes('w-full justify-between items-center'):
@@ -2927,7 +2709,9 @@ def render_research_page():
 
 def sorted_research_rows():
     rows = []
-    for college, entry in research_database.items():
+    for item in widgets:
+        college = item["name"]
+        entry = ensure_research_entry(college)
         profile = get_college_profile(college)
         rows.append({
             "college": college,
@@ -2954,6 +2738,7 @@ def sorted_research_rows():
 
 
 def open_research_college(college_name: str):
+    ensure_research_entry(college_name)
     research_state["college"] = college_name
     render_page()
 
@@ -2969,7 +2754,7 @@ def update_research_sort(sort_by: str):
 
 
 def set_research_value(college_name: str, key: str, value: str):
-    research_database[college_name][key] = value
+    ensure_research_entry(college_name)[key] = value
 
 
 def ensure_recommendation_row(college_name: str):
@@ -3676,7 +3461,9 @@ def render_college_page(college_name: str):
 
                         def toggle_prompt(e, prompt_index=idx):
                             record['essay_prompts'][prompt_index]['completed'] = bool(e.value)
+                            sync_widget_progress(college_name)
                             save_college_catalog()
+                            render_page()
 
                         with ui.row().classes('w-full justify-between items-center mt-2'):
                             ui.checkbox(
@@ -3725,18 +3512,25 @@ def render_college_page(college_name: str):
                                             ui.checkbox(
                                                 item['label'],
                                                 value=bool(current_value),
-                                                on_change=lambda e, key=item['key']: set_requirement_value(college_name, key, bool(e.value)),
+                                                on_change=lambda e, key=item['key']: (set_requirement_value(college_name, key, bool(e.value)), render_page()),
                                             ).classes('text-sm')
                                     else:
-                                        with ui.element('div').classes('requirement-row'):
-                                            with ui.element('div'):
-                                                ui.label(item['label']).classes('requirement-label')
-                                                ui.label('School policy').classes('requirement-hint')
-                                            ui.select(
-                                                TESTING_POLICY_OPTIONS,
-                                                value=current_value if current_value in TESTING_POLICY_OPTIONS else TESTING_POLICY_OPTIONS[0],
-                                                on_change=lambda e, key=item['key']: set_requirement_value(college_name, key, e.value or TESTING_POLICY_OPTIONS[0]),
-                                            ).classes('w-full')
+                                        row_classes = 'requirement-row with-inline-checkbox' if current_value in TESTING_POLICY_OPTIONS[1:] and item.get('completion_key') else 'requirement-row'
+                                        with ui.element('div').classes(row_classes):
+                                                with ui.element('div'):
+                                                    ui.label(item['label']).classes('requirement-label')
+                                                    ui.label('School policy').classes('requirement-hint')
+                                                ui.select(
+                                                    TESTING_POLICY_OPTIONS,
+                                                    value=current_value if current_value in TESTING_POLICY_OPTIONS else TESTING_POLICY_OPTIONS[0],
+                                                    on_change=lambda e, key=item['key']: (set_requirement_value(college_name, key, e.value or TESTING_POLICY_OPTIONS[0]), render_page()),
+                                                ).props('dense options-dense').classes('w-full requirement-compact-select')
+                                                if current_value in TESTING_POLICY_OPTIONS[1:] and item.get('completion_key'):
+                                                    ui.checkbox(
+                                                        '',
+                                                        value=bool(requirements_state.get(item['completion_key'], False)),
+                                                        on_change=lambda e, key=item['completion_key']: (set_requirement_value(college_name, key, bool(e.value)), render_page()),
+                                                    ).props('dense size=sm').classes('text-sm requirement-inline-checkbox')
 
         with ui.tab_panel(fees_tab):
             with ui.card().classes('card w-full p-5'):
@@ -4056,10 +3850,10 @@ def render_add_college_control(square: bool = False):
         ui.label('Add College Application').classes('text-xl font-bold')
         ui.label('Choose a college, pick a valid application plan, and confirm the deadline.').classes('text-sm')
 
-        college_options = list(college_data.keys())
+        college_options = [name for name in college_data.keys() if not get_widget(name)]
         college_select = ui.select(
             options=college_options,
-            value=None,
+            value=college_options[0] if college_options else None,
             label='College',
         ).props('use-input input-debounce=0 options-dense').classes('w-full')
         application_type_select = ui.select(options=[], label='Application Type').classes('w-full')
@@ -4067,6 +3861,13 @@ def render_add_college_control(square: bool = False):
 
         def sync_college_plan_fields():
             selected_college = college_select.value
+            if not selected_college:
+                application_type_select.options = []
+                application_type_select.value = None
+                deadline_input.value = 'TBD'
+                application_type_select.update()
+                deadline_input.update()
+                return
             valid_plans = get_valid_application_plans(selected_college)
             application_type_select.options = valid_plans
             if valid_plans:
@@ -4106,7 +3907,10 @@ def render_add_college_control(square: bool = False):
 
         with ui.row().classes('w-full justify-end gap-2 mt-2'):
             ui.button('Cancel', on_click=add_college_dialog.close).props('flat')
-            ui.button('Save college', on_click=submit_college_selection).classes('add-btn')
+            ui.button('Save college', on_click=submit_college_selection).classes('add-btn').props('disable' if not college_options else '')
+
+        if not college_options:
+            ui.label('All colleges in your list have already been added.').classes('text-sm mt-3')
 
     if square:
         ui.button('+', on_click=add_college_dialog.open).classes('plus-square')
@@ -4284,6 +4088,8 @@ def render_activities_page():
 
 
 def render_home_page():
+    for item in widgets:
+        sync_widget_progress(item['name'])
     progress_average = int(sum(item['progress'] for item in widgets) / len(widgets)) if widgets else 0
     deadline_view = [
         {'name': item['name'], 'deadline': get_effective_deadline(item['name'])}
@@ -4291,9 +4097,22 @@ def render_home_page():
     ]
     dated_widgets = [item for item in deadline_view if days_until(item['deadline']) is not None]
     upcoming = sorted(dated_widgets, key=lambda item: days_until(item['deadline']))
+    if not widgets:
+        ui.label('Start your application tracker').classes('text-3xl font-bold')
+        ui.label('Add your first college to begin tracking deadlines, essays, requirements, and fees.').classes('text-base')
 
-    ui.label('Welcome back, Sophie').classes('text-3xl font-bold')
-    ui.label('Your applications are moving. Focus on the next high-impact tasks today.').classes('text-base')
+        with ui.row().classes('w-full gap-4 mt-4'):
+            with ui.card().classes('card p-6 grow'):
+                ui.label('No colleges yet').classes('section-title')
+                ui.label('Your dashboard will populate automatically once you add a college and pick an application plan.').classes('text-sm mt-2')
+                render_add_college_control(square=False)
+            with ui.card().classes('card p-6 grow'):
+                ui.label('What you will unlock').classes('section-title')
+                ui.label('Track progress, requirements, supplemental essays, fees, and recommendation assignments in one place.').classes('text-sm mt-2')
+        return
+
+    ui.label('Application dashboard').classes('text-3xl font-bold')
+    ui.label('Track progress across your colleges and focus on the next work that matters.').classes('text-base')
 
     with ui.row().classes('w-full gap-4'):
         with ui.card().classes('card p-5 grow'):
@@ -4333,34 +4152,19 @@ def render_home_page():
                                     ).classes('text-sm')
                             ui.button('Resume where you left off', on_click=lambda college_name=item['name']: open_college_page(college_name)).props('outline no-caps').classes('text-xs')
 
-            with ui.card().classes('card w-full p-5'):
-                ui.label('Quick add').classes('section-title')
-                with ui.row().classes('w-full gap-2 mt-2'):
-                    render_add_college_control(square=False)
-                    ui.button('＋ Add essay').props('flat outline')
-                    ui.button('＋ Add recommender').props('flat outline')
-
-        with ui.column().classes('split-side'):
-            with ui.card().classes('card w-full p-5'):
-                ui.label('Essays due soon').classes('section-title')
-                for essay in essays_due:
-                    ui.label(f"{essay['title']} • {deadline_countdown(essay['due'])}").classes('text-sm mt-1')
-            with ui.card().classes('card w-full p-5'):
-                ui.label('Missing recommendation letters').classes('section-title')
-                if missing_recommendations:
-                    for rec in missing_recommendations:
-                        ui.label(f"{rec['college']} • {rec['recommender']}").classes('text-sm mt-1')
-                else:
-                    ui.label('None pending').classes('text-sm mt-1')
-            with ui.card().classes('card w-full p-5'):
-                ui.label('Pending fees / submitted applications').classes('section-title')
-                for item in fees_status:
-                    ui.label(f"{item['college']} • {item['status']}").classes('text-sm mt-1')
-
 
 def render_colleges_page():
+    for item in widgets:
+        sync_widget_progress(item['name'])
     ui.label('Colleges').classes('text-3xl font-bold')
-    ui.label('Open any college to continue where you left off.').classes('text-base')
+    if not widgets:
+        ui.label('Start by adding your first college.').classes('text-base')
+        with ui.column().classes('w-full items-center mt-6'):
+            render_add_college_control(square=True)
+            ui.label('Add your first college').classes('text-base font-medium mt-3')
+        return
+
+    ui.label('Open any college to continue where you left off, or add another one below.').classes('text-base')
 
     with ui.column().classes('w-full gap-4'):
         for item in widgets:
@@ -4381,8 +4185,9 @@ def render_colleges_page():
                         'Open college page',
                         on_click=lambda college_name=item['name']: open_college_page(college_name),
                     ).props('outline no-caps')
-    with ui.row().classes('w-full justify-center mt-1'):
+    with ui.column().classes('w-full items-center mt-4'):
         render_add_college_control(square=True)
+        ui.label('Add another college').classes('text-sm font-medium mt-2')
 
 
 def render_placeholder_page(title: str, subtitle: str):
@@ -4428,6 +4233,7 @@ with ui.row().classes('shell w-full no-wrap'):
         pass
 
 normalize_college_records()
+initialize_widgets_from_college_data()
 normalize_fee_tracker()
 sync_widget_deadlines_from_college_data()
 set_active_sidebar()

@@ -47,27 +47,28 @@
       "required_recommendations": [
         {
           "label": "Required Recommender 1",
-          "assigned_recommender": "Mr. Johnson"
+          "assigned_recommender": ""
         },
         {
           "label": "Required Recommender 2",
-          "assigned_recommender": "Dr. Kim"
+          "assigned_recommender": ""
         }
       ],
       "optional_recommendations": [
         {
           "label": "Optional Recommender",
-          "assigned_recommender": "Mr. Johnson"
+          "assigned_recommender": ""
         }
       ],
       "requirements_checklist": {
-        "common_app_submitted": false,
+        "common_app_submitted": true,
         "supplement_submitted": false,
         "sat_requirement": "Not required",
-        "sat_submission_method": "Not required",
+        "sat_requirement_completed": false,
         "act_accepted": "Not required",
+        "act_accepted_completed": false,
         "ap_requirement": "Not required",
-        "ap_submission_method": "Not required",
+        "ap_requirement_completed": false,
         "transcript": false,
         "school_report": false,
         "counselor_recommendation": false,
@@ -95,7 +96,7 @@
           "deadline": "Jan 02, 2027"
         }
       ],
-      "selected_application_type": "Early Decision II",
+      "selected_application_type": "Early Decision I",
       "status": "In Progress",
       "major": "CS",
       "quick_notes": "Add one more policy impact anecdote.",
@@ -142,10 +143,11 @@
         "common_app_submitted": false,
         "supplement_submitted": false,
         "sat_requirement": "Not required",
-        "sat_submission_method": "Not required",
+        "sat_requirement_completed": false,
         "act_accepted": "Not required",
+        "act_accepted_completed": false,
         "ap_requirement": "Not required",
-        "ap_submission_method": "Not required",
+        "ap_requirement_completed": false,
         "transcript": false,
         "school_report": false,
         "counselor_recommendation": false,
@@ -212,10 +214,11 @@
         "common_app_submitted": false,
         "supplement_submitted": false,
         "sat_requirement": "Not required",
-        "sat_submission_method": "Not required",
+        "sat_requirement_completed": false,
         "act_accepted": "Not required",
+        "act_accepted_completed": false,
         "ap_requirement": "Not required",
-        "ap_submission_method": "Not required",
+        "ap_requirement_completed": false,
         "transcript": false,
         "school_report": false,
         "counselor_recommendation": false,
@@ -282,10 +285,11 @@
         "common_app_submitted": false,
         "supplement_submitted": false,
         "sat_requirement": "Not required",
-        "sat_submission_method": "Not required",
+        "sat_requirement_completed": false,
         "act_accepted": "Not required",
+        "act_accepted_completed": false,
         "ap_requirement": "Not required",
-        "ap_submission_method": "Not required",
+        "ap_requirement_completed": false,
         "transcript": false,
         "school_report": false,
         "counselor_recommendation": false,
@@ -352,10 +356,11 @@
         "common_app_submitted": false,
         "supplement_submitted": false,
         "sat_requirement": "Not required",
-        "sat_submission_method": "Not required",
+        "sat_requirement_completed": false,
         "act_accepted": "Not required",
+        "act_accepted_completed": false,
         "ap_requirement": "Not required",
-        "ap_submission_method": "Not required",
+        "ap_requirement_completed": false,
         "transcript": false,
         "school_report": false,
         "counselor_recommendation": false,
@@ -367,6 +372,10 @@
         "portfolio": false
       }
     }
+  ],
+  "selected_colleges": [
+    "Harvard",
+    "Duke"
   ],
   "home_tasks": [
     {
