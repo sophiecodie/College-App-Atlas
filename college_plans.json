@@ -13,7 +13,7 @@
         }
       ],
       "selected_application_type": "Restrictive Early Action",
-      "status": "In Progress",
+      "status": "Ready to Submit",
       "major": "CS",
       "quick_notes": "Refine leadership example in personal statement.",
       "important_links": [
@@ -33,14 +33,74 @@
       },
       "essay_prompts": [
         {
-          "prompt_text": "How will you explore your academic interests at Harvard?",
-          "word_limit": 250,
-          "completed": false
+          "prompt_id": "harvard-01",
+          "prompt_text": "Harvard has long recognized the importance of enrolling a student body with a diversity of perspectives and experiences. How will the life experiences that shaped who you are today enable you to contribute to Harvard?",
+          "word_limit": 150,
+          "completed": false,
+          "prompt_type": "supplemental_short_answer",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "official-harvard-faq"
+          ],
+          "source_url": "https://college.harvard.edu/resources/faq/what-included-harvard-supplement",
+          "last_updated": "2026-03-20T02:11:35Z"
         },
         {
-          "prompt_text": "Tell us about a community you belong to.",
-          "word_limit": 200,
-          "completed": false
+          "prompt_id": "harvard-02",
+          "prompt_text": "Describe a time when you strongly disagreed with someone about an idea or issue. How did you communicate or engage with this person? What did you learn from this experience?",
+          "word_limit": 150,
+          "completed": false,
+          "prompt_type": "supplemental_short_answer",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "official-harvard-faq"
+          ],
+          "source_url": "https://college.harvard.edu/resources/faq/what-included-harvard-supplement",
+          "last_updated": "2026-03-20T02:11:35Z"
+        },
+        {
+          "prompt_id": "harvard-03",
+          "prompt_text": "Briefly describe any of your extracurricular activities, employment experience, travel, or family responsibilities that have shaped who you are.",
+          "word_limit": 150,
+          "completed": false,
+          "prompt_type": "supplemental_short_answer",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "official-harvard-faq"
+          ],
+          "source_url": "https://college.harvard.edu/resources/faq/what-included-harvard-supplement",
+          "last_updated": "2026-03-20T02:11:35Z"
+        },
+        {
+          "prompt_id": "harvard-04",
+          "prompt_text": "How do you hope to use your Harvard education in the future?",
+          "word_limit": 150,
+          "completed": false,
+          "prompt_type": "supplemental_short_answer",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "official-harvard-faq"
+          ],
+          "source_url": "https://college.harvard.edu/resources/faq/what-included-harvard-supplement",
+          "last_updated": "2026-03-20T02:11:35Z"
+        },
+        {
+          "prompt_id": "harvard-05",
+          "prompt_text": "Top 3 things your roommates might like to know about you.",
+          "word_limit": 150,
+          "completed": false,
+          "prompt_type": "supplemental_short_answer",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "official-harvard-faq"
+          ],
+          "source_url": "https://college.harvard.edu/resources/faq/what-included-harvard-supplement",
+          "last_updated": "2026-03-20T02:11:35Z"
         }
       ],
       "research_page_reference": "research://Harvard",
@@ -61,9 +121,9 @@
         }
       ],
       "requirements_checklist": {
-        "common_app_submitted": true,
+        "common_app_submitted": false,
         "supplement_submitted": false,
-        "sat_requirement": "Not required",
+        "sat_requirement": "Self-report",
         "sat_requirement_completed": false,
         "act_accepted": "Not required",
         "act_accepted_completed": false,
@@ -78,6 +138,21 @@
         "css_profile": false,
         "interview": false,
         "portfolio": false
+      },
+      "fees": {
+        "college_name": "Harvard",
+        "application_fee": 80,
+        "fee_waiver_status": "Not requested",
+        "payment_status": "Not paid",
+        "notes": "",
+        "css_profile_required": true,
+        "css_profile_cost": 80,
+        "fafsa_required": false,
+        "fafsa_cost": 0,
+        "sat_score_send_required": true,
+        "sat_score_send_cost": 0,
+        "ap_score_send_required": true,
+        "ap_score_send_cost": 0
       }
     },
     {
@@ -117,9 +192,86 @@
       },
       "essay_prompts": [
         {
-          "prompt_text": "Why Duke?",
+          "prompt_id": "duke-01",
+          "prompt_text": "What is your impression of Duke as a university and community, and why do you believe it is a good match for your goals, values, and interests? If there is something specific that attracts you to our academic offerings in Trinity College of Arts and Sciences or the Pratt School of Engineering, or to our co-curricular opportunities, feel free to include that, too.",
           "word_limit": 250,
-          "completed": false
+          "completed": false,
+          "prompt_type": "supplemental_essay",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "why-school"
+          ],
+          "source_url": "https://admissions.duke.edu/apply/",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "duke-02",
+          "prompt_text": "We believe a wide range of viewpoints and experiences is essential to maintaining Duke\u2019s vibrant living and learning community. Please share anything in this context that might help us better understand you and your potential contributions to Duke.",
+          "word_limit": 250,
+          "completed": false,
+          "prompt_type": "optional_supplemental_essay",
+          "required": false,
+          "tags": [
+            "choose_zero_or_one",
+            "community",
+            "optional",
+            "optional_response",
+            "supplemental"
+          ],
+          "source_url": "https://admissions.duke.edu/apply/",
+          "last_updated": "2026-03-20T02:35:29Z"
+        },
+        {
+          "prompt_id": "duke-03",
+          "prompt_text": "Meaningful dialogue often involves respectful disagreement. Provide an example of a difference of opinion you\u2019ve had with someone you care about. What did you learn from it?",
+          "word_limit": 250,
+          "completed": false,
+          "prompt_type": "optional_supplemental_essay",
+          "required": false,
+          "tags": [
+            "choose_zero_or_one",
+            "dialogue",
+            "optional",
+            "optional_response",
+            "supplemental"
+          ],
+          "source_url": "https://admissions.duke.edu/apply/",
+          "last_updated": "2026-03-20T02:35:29Z"
+        },
+        {
+          "prompt_id": "duke-04",
+          "prompt_text": "What\u2019s the last thing that you\u2019ve been really excited about?",
+          "word_limit": 250,
+          "completed": false,
+          "prompt_type": "optional_supplemental_essay",
+          "required": false,
+          "tags": [
+            "choose_zero_or_one",
+            "optional",
+            "optional_response",
+            "personal",
+            "supplemental"
+          ],
+          "source_url": "https://admissions.duke.edu/apply/",
+          "last_updated": "2026-03-20T02:35:29Z"
+        },
+        {
+          "prompt_id": "duke-05",
+          "prompt_text": "Duke recently launched an initiative to bring together experts advancing AI research and addressing ethical challenges. Tell us about a situation when you would or would not choose to use AI (when possible and permitted). What shapes your thinking?",
+          "word_limit": 250,
+          "completed": false,
+          "prompt_type": "optional_supplemental_essay",
+          "required": false,
+          "tags": [
+            "ai-ethics",
+            "choose_zero_or_one",
+            "optional",
+            "optional_response",
+            "supplemental"
+          ],
+          "source_url": "https://admissions.duke.edu/apply/",
+          "last_updated": "2026-03-20T02:35:29Z"
         }
       ],
       "research_page_reference": "research://Duke",
@@ -157,6 +309,21 @@
         "css_profile": false,
         "interview": false,
         "portfolio": false
+      },
+      "fees": {
+        "college_name": "Duke",
+        "application_fee": 80,
+        "fee_waiver_status": "Not requested",
+        "payment_status": "Not paid",
+        "notes": "",
+        "css_profile_required": false,
+        "css_profile_cost": 0,
+        "fafsa_required": false,
+        "fafsa_cost": 0,
+        "sat_score_send_required": false,
+        "sat_score_send_cost": 0,
+        "ap_score_send_required": false,
+        "ap_score_send_cost": 0
       }
     },
     {
@@ -188,9 +355,18 @@
       },
       "essay_prompts": [
         {
-          "prompt_text": "What matters most to you, and why?",
-          "word_limit": 250,
-          "completed": false
+          "prompt_id": "stanford-01",
+          "prompt_text": "Stanford first-year application includes Stanford-specific short essays/short answers in the application system. Exact current-cycle prompt text was not publicly listed on the official first-year requirements page and needs manual capture from the application supplement.",
+          "word_limit": null,
+          "completed": false,
+          "prompt_type": "supplemental_unknown",
+          "required": false,
+          "tags": [
+            "supplemental",
+            "needs_manual_extraction"
+          ],
+          "source_url": "https://admission.stanford.edu/apply/first-year/index.html",
+          "last_updated": "2026-03-20T02:05:35Z"
         }
       ],
       "research_page_reference": "research://Stanford",
@@ -228,6 +404,21 @@
         "css_profile": false,
         "interview": false,
         "portfolio": false
+      },
+      "fees": {
+        "college_name": "Stanford",
+        "application_fee": 0,
+        "fee_waiver_status": "Not requested",
+        "payment_status": "Not paid",
+        "notes": "",
+        "css_profile_required": false,
+        "css_profile_cost": 0,
+        "fafsa_required": false,
+        "fafsa_cost": 0,
+        "sat_score_send_required": false,
+        "sat_score_send_cost": 0,
+        "ap_score_send_required": false,
+        "ap_score_send_cost": 0
       }
     },
     {
@@ -259,9 +450,104 @@
       },
       "essay_prompts": [
         {
-          "prompt_text": "How have your lived experiences shaped you?",
+          "prompt_id": "princeton-01",
+          "prompt_text": "As a research institution that also prides itself on its liberal arts curriculum, Princeton allows students to explore areas across the humanities and the arts, the natural sciences, and the social sciences. What academic areas most pique your curiosity, and how do the programs offered at Princeton suit your particular interests?",
+          "word_limit": 250,
+          "completed": false,
+          "prompt_type": "supplemental_essay",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "ab-undecided"
+          ],
+          "source_url": "https://admission.princeton.edu/apply/princeton-specific-questions",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "princeton-02",
+          "prompt_text": "Please describe why you are interested in studying engineering at Princeton. Include any of your experiences in or exposure to engineering, and how you think the programs offered at the University suit your particular interests.",
+          "word_limit": 250,
+          "completed": false,
+          "prompt_type": "supplemental_essay",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "bse"
+          ],
+          "source_url": "https://admission.princeton.edu/apply/princeton-specific-questions",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "princeton-03",
+          "prompt_text": "Princeton values community and encourages respectful conversations that can expand perspectives and challenge ideas. Reflect on how your lived experiences will impact the conversations you will have in campus spaces. What lessons have you learned in life thus far? What will your classmates learn from you? In short, how has your lived experience shaped you?",
           "word_limit": 500,
-          "completed": true
+          "completed": false,
+          "prompt_type": "supplemental_essay",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "community",
+            "identity"
+          ],
+          "source_url": "https://admission.princeton.edu/apply/princeton-specific-questions",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "princeton-04",
+          "prompt_text": "Princeton has a longstanding commitment to understanding our responsibility to society through service and civic engagement. How does your own story intersect with these ideals?",
+          "word_limit": 250,
+          "completed": false,
+          "prompt_type": "supplemental_essay",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "service",
+            "civic-engagement"
+          ],
+          "source_url": "https://admission.princeton.edu/apply/princeton-specific-questions",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "princeton-05",
+          "prompt_text": "What is a new skill you would like to learn in college?",
+          "word_limit": 50,
+          "completed": false,
+          "prompt_type": "short_answer",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "short-answer"
+          ],
+          "source_url": "https://admission.princeton.edu/apply/princeton-specific-questions",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "princeton-06",
+          "prompt_text": "What brings you joy?",
+          "word_limit": 50,
+          "completed": false,
+          "prompt_type": "short_answer",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "short-answer"
+          ],
+          "source_url": "https://admission.princeton.edu/apply/princeton-specific-questions",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "princeton-07",
+          "prompt_text": "What song represents the soundtrack of your life at this moment?",
+          "word_limit": 50,
+          "completed": false,
+          "prompt_type": "short_answer",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "short-answer"
+          ],
+          "source_url": "https://admission.princeton.edu/apply/princeton-specific-questions",
+          "last_updated": "2026-03-20T02:05:35Z"
         }
       ],
       "research_page_reference": "research://Princeton",
@@ -299,6 +585,21 @@
         "css_profile": false,
         "interview": false,
         "portfolio": false
+      },
+      "fees": {
+        "college_name": "Princeton",
+        "application_fee": 0,
+        "fee_waiver_status": "Not requested",
+        "payment_status": "Not paid",
+        "notes": "",
+        "css_profile_required": false,
+        "css_profile_cost": 0,
+        "fafsa_required": false,
+        "fafsa_cost": 0,
+        "sat_score_send_required": false,
+        "sat_score_send_cost": 0,
+        "ap_score_send_required": false,
+        "ap_score_send_cost": 0
       }
     },
     {
@@ -330,9 +631,150 @@
       },
       "essay_prompts": [
         {
-          "prompt_text": "What inspires your academic direction?",
+          "prompt_id": "yale-01",
+          "prompt_text": "Tell us about a topic or idea that excites you and is related to one or more academic areas you selected above. Why are you drawn to it?",
           "word_limit": 200,
-          "completed": false
+          "completed": false,
+          "prompt_type": "supplemental_essay",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "academic-interest"
+          ],
+          "source_url": "https://admissions.yale.edu/essay-topics",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "yale-02",
+          "prompt_text": "Reflect on how your interests, values, and/or experiences have drawn you to Yale.",
+          "word_limit": 125,
+          "completed": false,
+          "prompt_type": "supplemental_essay",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "why-school"
+          ],
+          "source_url": "https://admissions.yale.edu/essay-topics",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "yale-03",
+          "prompt_text": "What inspires you?",
+          "word_limit": null,
+          "completed": false,
+          "prompt_type": "short_take_200_char",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "short-take"
+          ],
+          "source_url": "https://admissions.yale.edu/essay-topics",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "yale-04",
+          "prompt_text": "If you could teach any college course, write a book, or create an original piece of art of any kind, what would it be?",
+          "word_limit": null,
+          "completed": false,
+          "prompt_type": "short_take_200_char",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "short-take"
+          ],
+          "source_url": "https://admissions.yale.edu/essay-topics",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "yale-05",
+          "prompt_text": "Other than a family member, who is someone who has had a significant influence on you? What has been the impact of their influence?",
+          "word_limit": null,
+          "completed": false,
+          "prompt_type": "short_take_200_char",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "short-take"
+          ],
+          "source_url": "https://admissions.yale.edu/essay-topics",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "yale-06",
+          "prompt_text": "What is something about you that is not included anywhere else in your application?",
+          "word_limit": null,
+          "completed": false,
+          "prompt_type": "short_take_200_char",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "short-take"
+          ],
+          "source_url": "https://admissions.yale.edu/essay-topics",
+          "last_updated": "2026-03-20T02:05:35Z"
+        },
+        {
+          "prompt_id": "yale-07",
+          "prompt_text": "Reflect on a time you discussed an issue important to you with someone holding an opposing view. Why did you find the experience meaningful?",
+          "word_limit": 400,
+          "completed": false,
+          "prompt_type": "supplemental_essay_option",
+          "required": false,
+          "tags": [
+            "choose_one_of_three",
+            "long-essay-option",
+            "optional",
+            "supplemental"
+          ],
+          "source_url": "https://admissions.yale.edu/essay-topics",
+          "last_updated": "2026-03-20T02:35:29Z"
+        },
+        {
+          "prompt_id": "yale-08",
+          "prompt_text": "Reflect on your membership in a community to which you feel connected. Why is this community meaningful to you? You may define community however you like.",
+          "word_limit": 400,
+          "completed": false,
+          "prompt_type": "supplemental_essay_option",
+          "required": false,
+          "tags": [
+            "choose_one_of_three",
+            "long-essay-option",
+            "optional",
+            "supplemental"
+          ],
+          "source_url": "https://admissions.yale.edu/essay-topics",
+          "last_updated": "2026-03-20T02:35:29Z"
+        },
+        {
+          "prompt_id": "yale-09",
+          "prompt_text": "Reflect on an element of your personal experience that you feel will enrich your college. How has it shaped you?",
+          "word_limit": 400,
+          "completed": false,
+          "prompt_type": "supplemental_essay_option",
+          "required": false,
+          "tags": [
+            "choose_one_of_three",
+            "long-essay-option",
+            "optional",
+            "supplemental"
+          ],
+          "source_url": "https://admissions.yale.edu/essay-topics",
+          "last_updated": "2026-03-20T02:35:29Z"
+        },
+        {
+          "prompt_id": "yale-10",
+          "prompt_text": "As of this moment, what academic areas seem to fit your interests or goals most comfortably? Please indicate up to three from the list provided.",
+          "word_limit": null,
+          "completed": false,
+          "prompt_type": "selection_response",
+          "required": true,
+          "tags": [
+            "supplemental",
+            "academic-areas-selection"
+          ],
+          "source_url": "https://admissions.yale.edu/essay-topics",
+          "last_updated": "2026-03-20T02:05:35Z"
         }
       ],
       "research_page_reference": "research://Yale",
@@ -370,12 +812,28 @@
         "css_profile": false,
         "interview": false,
         "portfolio": false
+      },
+      "fees": {
+        "college_name": "Yale",
+        "application_fee": 0,
+        "fee_waiver_status": "Not requested",
+        "payment_status": "Not paid",
+        "notes": "",
+        "css_profile_required": false,
+        "css_profile_cost": 0,
+        "fafsa_required": false,
+        "fafsa_cost": 0,
+        "sat_score_send_required": false,
+        "sat_score_send_cost": 0,
+        "ap_score_send_required": false,
+        "ap_score_send_cost": 0
       }
     }
   ],
   "selected_colleges": [
     "Harvard",
-    "Duke"
+    "Duke",
+    "Stanford"
   ],
   "home_tasks": [
     {

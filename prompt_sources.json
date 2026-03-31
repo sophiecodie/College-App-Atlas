@@ -1,0 +1,37 @@
+[
+  {
+    "college_name": "Harvard",
+    "college_slug": "harvard",
+    "source_url": "https://college.harvard.edu/resources/faq/what-included-harvard-supplement",
+    "source_type": "webpage",
+    "application_cycle": "2026-2027"
+  },
+  {
+    "college_name": "Duke",
+    "college_slug": "duke",
+    "source_url": "https://admissions.duke.edu/apply/",
+    "source_type": "webpage",
+    "application_cycle": "2026-2027"
+  },
+  {
+    "college_name": "Stanford",
+    "college_slug": "stanford",
+    "source_url": "https://admission.stanford.edu/apply/first-year/index.html",
+    "source_type": "webpage",
+    "application_cycle": "2026-2027"
+  },
+  {
+    "college_name": "Princeton",
+    "college_slug": "princeton",
+    "source_url": "https://admission.princeton.edu/apply/princeton-specific-questions",
+    "source_type": "webpage",
+    "application_cycle": "2026-2027"
+  },
+  {
+    "college_name": "Yale",
+    "college_slug": "yale",
+    "source_url": "https://admissions.yale.edu/essay-topics",
+    "source_type": "webpage",
+    "application_cycle": "2026-2027"
+  }
+]

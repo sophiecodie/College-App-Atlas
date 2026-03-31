@@ -1095,6 +1095,7 @@ selected_college_names = []
 
 
 COLLEGE_DATA_PATH = Path(__file__).with_name('college_plans.json')
+PROMPTS_DATA_PATH = Path(__file__).with_name('prompts.jsonl')
 APPLICATION_STATUS_OPTIONS = ['In Progress', 'Ready to Submit', 'Submitted']
 TASK_PRIORITY_OPTIONS = ['', 'High', 'Medium', 'Low']
 TASK_VIEW_OPTIONS = ['Due Soon', 'Incomplete', 'Completed']
@@ -1255,6 +1256,146 @@ def save_college_catalog():
 
 
 college_data = load_college_catalog()
+
+
+def load_prompt_catalog():
+    prompts_by_college = {}
+    try:
+        with PROMPTS_DATA_PATH.open('r', encoding='utf-8') as file:
+            for line in file:
+                raw_line = line.strip()
+                if not raw_line:
+                    continue
+                try:
+                    payload = json.loads(raw_line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(payload, dict):
+                    continue
+                college_name = str(payload.get('college_name', '') or '').strip()
+                prompt_text = str(payload.get('prompt_text', '') or '').strip()
+                if not college_name or not prompt_text:
+                    continue
+                prompts_by_college.setdefault(college_name, []).append(payload)
+    except FileNotFoundError:
+        return {}
+    except OSError as error:
+        print(f'Could not load prompt catalog from {PROMPTS_DATA_PATH}: {error}')
+        return {}
+    return prompts_by_college
+
+
+prompt_catalog = load_prompt_catalog()
+IGNORED_PROMPT_TAGS = {
+    'supplemental',
+    'official-harvard-faq',
+    'needs_manual_extraction',
+}
+PROMPT_TAG_ALIASES = {
+    'academic-interest': 'academics',
+    'academic-areas-selection': 'academics',
+    'ab-undecided': 'academics',
+    'bse': 'academics',
+    'civic-engagement': 'service',
+    'why-school': 'academics',
+    'ai-ethics': 'academics',
+    'short-answer': 'identity',
+    'long-essay-option': 'identity',
+    'community': 'community',
+    'identity': 'identity',
+    'service': 'service',
+    'adversity': 'adversity',
+}
+
+
+def prompt_catalog_entry(prompt_payload: dict, completed: bool = False):
+    word_limit = prompt_payload.get('word_limit')
+    normalized_limit = word_limit if isinstance(word_limit, int) and word_limit > 0 else None
+    raw_tags = prompt_payload.get('tags', [])
+    return {
+        'prompt_id': str(prompt_payload.get('prompt_id', '') or '').strip(),
+        'prompt_text': str(prompt_payload.get('prompt_text', '') or '').strip(),
+        'word_limit': normalized_limit,
+        'completed': bool(completed),
+        'prompt_type': str(prompt_payload.get('prompt_type', 'Essay') or 'Essay'),
+        'required': bool(prompt_payload.get('required', False)),
+        'tags': list(raw_tags) if isinstance(raw_tags, list) else [],
+        'source_url': str(prompt_payload.get('source_url', '') or '').strip(),
+        'last_updated': str(prompt_payload.get('last_updated', '') or '').strip(),
+    }
+
+
+def add_prompt_tag(tag_list: list[str], label: str):
+    cleaned = str(label or '').strip().lower()
+    if cleaned and cleaned not in tag_list:
+        tag_list.append(cleaned)
+
+
+def display_prompt_tags(prompt: dict):
+    tags = []
+    raw_tags = prompt.get('tags', [])
+    if isinstance(raw_tags, list):
+        for raw_tag in raw_tags:
+            normalized = str(raw_tag or '').strip().lower()
+            if not normalized or normalized in IGNORED_PROMPT_TAGS:
+                continue
+            mapped = PROMPT_TAG_ALIASES.get(normalized)
+            if mapped in {'community', 'adversity', 'identity', 'academics', 'service'}:
+                add_prompt_tag(tags, mapped)
+
+    prompt_text = str(prompt.get('prompt_text', '') or prompt.get('title', '') or '').lower()
+
+    if any(token in prompt_text for token in ['community', 'contributions to ', 'contribute to']):
+        add_prompt_tag(tags, 'community')
+    if any(token in prompt_text for token in ['adversity', 'challenge', 'obstacle', 'hardship']):
+        add_prompt_tag(tags, 'adversity')
+    if any(token in prompt_text for token in ['identity', 'lived experience', 'shaped who you are', 'shaped you']):
+        add_prompt_tag(tags, 'identity')
+    if any(token in prompt_text for token in ['academic', 'study', 'major', 'curiosity', 'research institution']):
+        add_prompt_tag(tags, 'academics')
+    if any(token in prompt_text for token in ['service', 'civic']):
+        add_prompt_tag(tags, 'service')
+
+    if prompt.get('required') is False:
+        add_prompt_tag(tags, 'optional')
+
+    if not tags:
+        add_prompt_tag(tags, 'identity')
+    return tags
+
+
+def sync_college_prompts_from_catalog():
+    changed = False
+    for college_name in list(college_data.keys()):
+        record = ensure_college_record(college_name)
+        catalog_prompts = prompt_catalog.get(college_name, [])
+        existing_prompts = record.get('essay_prompts', [])
+        completion_lookup = {}
+        if isinstance(existing_prompts, list):
+            for prompt in existing_prompts:
+                if not isinstance(prompt, dict):
+                    continue
+                prompt_id = str(prompt.get('prompt_id', '') or '').strip()
+                prompt_text = str(prompt.get('prompt_text', '') or '').strip()
+                if prompt_id:
+                    completion_lookup[prompt_id] = bool(prompt.get('completed', False))
+                if prompt_text:
+                    completion_lookup[prompt_text] = bool(prompt.get('completed', False))
+
+        synced_prompts = []
+        for prompt in catalog_prompts:
+            prompt_id = str(prompt.get('prompt_id', '') or '').strip()
+            prompt_text = str(prompt.get('prompt_text', '') or '').strip()
+            completed = completion_lookup.get(prompt_id, completion_lookup.get(prompt_text, False))
+            synced_prompts.append(prompt_catalog_entry(prompt, completed))
+
+        if record.get('essay_prompts') != synced_prompts:
+            record['essay_prompts'] = synced_prompts
+            changed = True
+
+    if changed:
+        save_college_catalog()
+
 fee_tracker = {}
 ACTIVITY_CATEGORIES = [
     "Leadership",
@@ -1417,7 +1558,7 @@ def get_college_profile(college_name: str):
         "research_page_reference": record.get("research_page_reference", f"research://{college_name}"),
         "requirements": profile.get("requirements", []),
         "requirements_checklist": record.get("requirements_checklist", default_requirements_checklist()),
-        "fees": profile.get("fees", []),
+        "fees": record.get("fees", profile.get("fees", [])),
         "recs": profile.get("recs", []),
     }
 
@@ -1588,39 +1729,55 @@ def analyze_prompt_breakdown(college_name: str, prompt: dict, draft: dict):
     }
 
 
+def prompt_similarity(selected_prompt: dict, other_prompt: dict):
+    selected_words = normalize_words(selected_prompt.get("prompt_text", "") or selected_prompt.get("title", ""))
+    other_words = normalize_words(other_prompt.get("prompt_text", "") or other_prompt.get("title", ""))
+    lexical_similarity = 0.0
+    union = selected_words | other_words
+    if union:
+        lexical_similarity = len(selected_words & other_words) / len(union)
+
+    selected_tags = set(display_prompt_tags(selected_prompt))
+    other_tags = set(display_prompt_tags(other_prompt))
+    tag_similarity = 0.0
+    tag_union = selected_tags | other_tags
+    if tag_union:
+        tag_similarity = len(selected_tags & other_tags) / len(tag_union)
+
+    score = (lexical_similarity * 0.65) + (tag_similarity * 0.35)
+    if selected_prompt.get("required") == other_prompt.get("required"):
+        score += 0.05
+
+    shared_tags = sorted(selected_tags & other_tags)
+    if shared_tags:
+        reason = f"shared tags: {', '.join(shared_tags[:2])}"
+    elif lexical_similarity >= 0.22:
+        reason = "similar wording"
+    elif selected_prompt.get("required") == other_prompt.get("required"):
+        reason = "same requirement type"
+    else:
+        reason = "adjacent prompt themes"
+
+    return min(0.98, score), lexical_similarity, reason
+
+
 def find_reuse_matches(selected_college: str, selected_prompt_index: int, selected_draft_index: int):
     selected_prompt = essay_data[selected_college][selected_prompt_index]
-    selected_text = selected_prompt["drafts"][selected_draft_index]["text"]
-    selected_words = normalize_words(selected_text)
-    selected_type = selected_prompt.get("prompt_type", "")
     matches = []
-    if not selected_words:
-        return matches
     for college, prompts in essay_data.items():
         for prompt_idx, prompt in enumerate(prompts):
-            for draft_idx, draft in enumerate(prompt["drafts"]):
-                if college == selected_college and prompt_idx == selected_prompt_index and draft_idx == selected_draft_index:
-                    continue
-                other_words = normalize_words(draft["text"])
-                union = selected_words | other_words
-                if not union:
-                    continue
-                lexical_similarity = len(selected_words & other_words) / len(union)
-                prompt_type = prompt.get("prompt_type", "Essay")
-                type_bonus = 0.12 if prompt_type == selected_type else (0.07 if prompt_type in PROMPT_TYPE_RELATIONSHIPS.get(selected_type, []) else 0.0)
-                score = lexical_similarity + type_bonus
-                if lexical_similarity >= 0.18 or score >= 0.26:
-                    similarity = min(0.96, score)
-                    matches.append({
-                        "college": college,
-                        "prompt_title": prompt["title"],
-                        "prompt_type": prompt_type,
-                        "version": draft["name"],
-                        "draft_label": draft.get("label", draft["name"]),
-                        "lexical_similarity": int(lexical_similarity * 100),
-                        "similarity": int(similarity * 100),
-                        "reason": "same prompt type" if prompt_type == selected_type else f"{prompt_type} can adapt from {selected_type}",
-                    })
+            if college == selected_college and prompt_idx == selected_prompt_index:
+                continue
+            similarity, lexical_similarity, reason = prompt_similarity(selected_prompt, prompt)
+            if lexical_similarity >= 0.12 or similarity >= 0.22:
+                matches.append({
+                    "college": college,
+                    "prompt_title": prompt["title"],
+                    "prompt_type": prompt.get("prompt_type", "Essay"),
+                    "lexical_similarity": int(lexical_similarity * 100),
+                    "similarity": int(similarity * 100),
+                    "reason": reason,
+                })
     return sorted(matches, key=lambda m: (m["similarity"], m["lexical_similarity"]), reverse=True)[:5]
 
 
@@ -1708,35 +1865,48 @@ def sync_essay_workspace_with_college_data():
         if not isinstance(prompts, list):
             continue
 
+        valid_prompt_keys = set()
         for prompt in prompts:
             if not isinstance(prompt, dict):
                 continue
+            prompt_id = str(prompt.get('prompt_id', '') or '').strip()
             prompt_text = str(prompt.get('prompt_text', '') or '').strip()
             if not prompt_text:
                 continue
+            valid_prompt_keys.add(prompt_id or prompt_text)
 
             existing = next(
                 (
                     item for item in essay_data[college_name]
-                    if item.get('prompt_text', '').strip() == prompt_text
+                    if (prompt_id and item.get('prompt_id', '').strip() == prompt_id)
+                    or item.get('prompt_text', '').strip() == prompt_text
                     or item.get('title', '').strip() == prompt_text
                 ),
                 None,
             )
             if existing:
-                if prompt.get('word_limit'):
-                    existing['word_limit'] = prompt.get('word_limit', existing.get('word_limit', 250))
-                if prompt.get('prompt_type'):
-                    existing['prompt_type'] = prompt.get('prompt_type', existing.get('prompt_type', 'Essay'))
-                if not existing.get('due_date') or existing.get('due_date') == 'TBD':
-                    existing['due_date'] = get_effective_deadline(college_name)
+                existing['prompt_id'] = prompt_id
+                existing['title'] = prompt_text
+                existing['prompt_text'] = prompt_text
+                existing['word_limit'] = prompt.get('word_limit') or 250
+                existing['prompt_type'] = prompt.get('prompt_type', existing.get('prompt_type', 'Essay'))
+                existing['required'] = bool(prompt.get('required', False))
+                existing['tags'] = list(prompt.get('tags', [])) if isinstance(prompt.get('tags'), list) else []
+                existing['source_url'] = str(prompt.get('source_url', '') or '').strip()
+                existing['last_updated'] = str(prompt.get('last_updated', '') or '').strip()
+                existing['due_date'] = get_effective_deadline(college_name)
                 continue
 
             essay_data[college_name].append({
+                'prompt_id': prompt_id,
                 'title': prompt_text,
                 'prompt_text': prompt_text,
                 'prompt_type': prompt.get('prompt_type', 'Essay'),
-                'word_limit': prompt.get('word_limit', 250),
+                'word_limit': prompt.get('word_limit') or 250,
+                'required': bool(prompt.get('required', False)),
+                'tags': list(prompt.get('tags', [])) if isinstance(prompt.get('tags'), list) else [],
+                'source_url': str(prompt.get('source_url', '') or '').strip(),
+                'last_updated': str(prompt.get('last_updated', '') or '').strip(),
                 'due_date': get_effective_deadline(college_name),
                 'comments': [],
                 'drafts': [{
@@ -1749,6 +1919,11 @@ def sync_essay_workspace_with_college_data():
                     'text': '',
                 }],
             })
+
+        essay_data[college_name] = [
+            item for item in essay_data[college_name]
+            if (str(item.get('prompt_id', '') or '').strip() or str(item.get('prompt_text', '') or '').strip()) in valid_prompt_keys
+        ]
 
 
 def render_essays_page():
@@ -1813,8 +1988,8 @@ def render_essays_page():
         groups = {}
         for college, prompts in active_essay_data().items():
             for idx, prompt in enumerate(prompts):
-                tag = prompt.get("prompt_type", "Essay")
-                groups.setdefault(tag, []).append((college, idx, prompt))
+                for tag in display_prompt_tags(prompt):
+                    groups.setdefault(tag, []).append((college, idx, prompt))
         return dict(sorted(groups.items(), key=lambda item: item[0]))
 
     def toggle_group(name: str):
@@ -1874,10 +2049,11 @@ def render_essays_page():
             with ui.row().classes('w-full essay-header-row'):
                 with ui.column().classes('gap-1'):
                     ui.label(prompt["title"]).classes('text-2xl font-semibold')
+                    prompt_tags = display_prompt_tags(prompt)
                     with ui.row().classes('essay-meta-row'):
                         ui.label(essay_state['college'])
                         ui.label('•').classes('essay-meta-separator')
-                        ui.label(prompt.get("prompt_type", "Essay"))
+                        ui.label(', '.join(prompt_tags[:2]))
                         ui.label('•').classes('essay-meta-separator')
                         word_count_label = ui.label(f"{current_word_count}/{prompt['word_limit']} words").classes('essay-mini-pill essay-word-count')
                         if current_word_count > prompt["word_limit"]:
@@ -1921,7 +2097,8 @@ def render_essays_page():
 
         with right_col:
             with ui.row().classes('w-full gap-1'):
-                ui.label(prompt.get("prompt_type", "Essay")).classes('essay-tag')
+                for tag in display_prompt_tags(prompt):
+                    ui.label(tag).classes('essay-tag')
                 ui.label(status_label(draft["status"])).classes('essay-tag')
                 if draft.get("external_doc_url"):
                     ui.link('Google Docs', draft["external_doc_url"], new_tab=True).classes('essay-tag')
@@ -1990,7 +2167,7 @@ def render_essays_page():
                             for match in reuse_matches[:5]:
                                 with ui.column().classes('essay-list-item'):
                                     ui.label(f"{match['college']} • {match['prompt_title']}").classes('text-sm')
-                                    ui.label(f"{match['similarity']}% overlap").classes('essay-item-meta')
+                                    ui.label(f"{match['similarity']}% similar • {match['reason']}").classes('essay-item-meta')
                     else:
                         ui.label('No reuse suggestions yet.').classes('text-sm text-[var(--muted)]')
 
@@ -2401,6 +2578,7 @@ def default_college_record(college_name: str):
             {'label': 'Optional Recommender', 'assigned_recommender': ''},
         ],
         'requirements_checklist': default_requirements_checklist(),
+        'fees': default_fee_entry(),
     }
 
 
@@ -2793,7 +2971,8 @@ OPTIONAL_FEE_FIELDS = [
 
 
 def normalize_fee_tracker():
-    for college_name, row in fee_tracker.items():
+    for college_name, record in college_data.items():
+        row = record.get('fees', {})
         normalized = default_fee_entry()
         normalized.update(row)
         normalized["college_name"] = normalized["college_name"] or college_name
@@ -2819,6 +2998,7 @@ def normalize_fee_tracker():
             normalized["fee_waiver_status"] = "Denied"
 
         fee_tracker[college_name] = normalized
+        record['fees'] = dict(normalized)
 
 
 def application_fee_due(row: dict):
@@ -2842,14 +3022,22 @@ def waiver_savings(row: dict):
 
 
 def ensure_fee_row(college_name: str):
+    record = ensure_college_record(college_name)
     if college_name not in fee_tracker:
+        stored = record.get('fees', {})
         fee_tracker[college_name] = default_fee_entry()
+        if isinstance(stored, dict):
+            fee_tracker[college_name].update(stored)
     fee_tracker[college_name]["college_name"] = fee_tracker[college_name].get("college_name") or college_name
+    record['fees'] = dict(fee_tracker[college_name])
+    return fee_tracker[college_name]
 
 
 def set_fee_value(college_name: str, key: str, value):
-    ensure_fee_row(college_name)
-    fee_tracker[college_name][key] = value
+    row = ensure_fee_row(college_name)
+    row[key] = value
+    ensure_college_record(college_name)['fees'] = dict(row)
+    save_college_catalog()
 
 
 def set_fee_number(college_name: str, key: str, value):
@@ -2895,6 +3083,46 @@ def set_activity_number(collection: str, index: int, key: str, value):
     except (TypeError, ValueError):
         numeric_value = 0
     set_activity_value(collection, index, key, max(0, numeric_value))
+
+
+def update_activity_value(collection: str, index: int, key: str, value, rerender: bool = False):
+    set_activity_value(collection, index, key, value)
+    if rerender:
+        render_page()
+
+
+def update_activity_number(collection: str, index: int, key: str, value, rerender: bool = False):
+    set_activity_number(collection, index, key, value)
+    if rerender:
+        render_page()
+
+
+def count_years_involved(years_value) -> int:
+    text = str(years_value or '').strip()
+    if not text:
+        return 0
+
+    text = text.replace('–', '-').replace('&', ',')
+    numbers = [int(match) for match in re.findall(r'\d+', text)]
+    if not numbers:
+        return 0
+
+    if '-' in text and len(numbers) >= 2:
+        start, end = numbers[0], numbers[1]
+        if end >= start:
+            return (end - start) + 1
+
+    separators = [part.strip() for part in re.split(r'[,/]+', text) if part.strip()]
+    if len(separators) > 1:
+        return len(numbers)
+
+    if len(numbers) == 1:
+        single_value = numbers[0]
+        if single_value >= 9:
+            return 1
+        return single_value
+
+    return len(numbers)
 
 
 def add_brainstorm_activity():
@@ -3010,7 +3238,12 @@ def activity_insights():
         if category == "Research":
             research_count += 1
         if category == "Community Service":
-            community_service_hours += (item.get("hours_per_week", 0) or 0) * (item.get("weeks_per_year", 0) or 0)
+            years_count = count_years_involved(item.get("years_involved", ""))
+            community_service_hours += (
+                (item.get("hours_per_week", 0) or 0)
+                * (item.get("weeks_per_year", 0) or 0)
+                * years_count
+            )
 
     represented_categories = sorted(set(categories))
     max_count = max(category_counts.values(), default=1)
@@ -3053,7 +3286,7 @@ def render_fee_editor(college_name: str, show_college_name: bool = True):
                         value=row["application_fee"],
                         min=0,
                         step=1,
-                        on_change=lambda e, c=college_name: (set_fee_number(c, 'application_fee', e.value), render_page()),
+                        on_change=lambda e, c=college_name: set_fee_number(c, 'application_fee', e.value),
                     ).props('dense outlined').classes('w-full')
 
                     ui.select(
@@ -3096,7 +3329,7 @@ def render_fee_editor(college_name: str, show_college_name: bool = True):
                         value=row.get(cost_key, 0),
                         min=0,
                         step=1,
-                        on_change=lambda e, c=college_name, ck=cost_key: (set_fee_number(c, ck, e.value), render_page()),
+                        on_change=lambda e, c=college_name, ck=cost_key: set_fee_number(c, ck, e.value),
                     ).props('dense outlined').classes('w-full')
                     if not row.get(toggle_key):
                         cost_input.props('disable')
@@ -3457,7 +3690,9 @@ def render_college_page(college_name: str):
                 if prompts:
                     for idx, prompt in enumerate(prompts):
                         text = prompt.get('prompt_text', f'Prompt {idx + 1}')
-                        word_limit = prompt.get('word_limit', 'N/A')
+                        word_limit = prompt.get('word_limit')
+                        word_limit_label = f'{word_limit} words' if isinstance(word_limit, int) and word_limit > 0 else 'No limit listed'
+                        optional_label = ' [Optional]' if prompt.get('required') is False else ''
 
                         def toggle_prompt(e, prompt_index=idx):
                             record['essay_prompts'][prompt_index]['completed'] = bool(e.value)
@@ -3467,12 +3702,10 @@ def render_college_page(college_name: str):
 
                         with ui.row().classes('w-full justify-between items-center mt-2'):
                             ui.checkbox(
-                                f'{text} ({word_limit} words)',
+                                f'{text}{optional_label} ({word_limit_label})',
                                 value=bool(prompt.get('completed', False)),
                                 on_change=toggle_prompt,
                             )
-                            status = 'Complete' if prompt.get('completed') else 'Pending'
-                            ui.label(status).classes('chip')
                 else:
                     ui.label('No essay prompts tracked yet.').classes('text-sm mt-1')
 
@@ -3951,19 +4184,19 @@ def render_activities_page():
                                 ACTIVITY_CATEGORIES,
                                 value=activity.get('category', 'Other'),
                                 label='Category',
-                                on_change=lambda e, i=index: set_activity_value('brainstorm', i, 'category', e.value or 'Other'),
+                                on_change=lambda e, i=index: update_activity_value('brainstorm', i, 'category', e.value or 'Other', rerender=True),
                             ).props('dense outlined').classes('w-full')
                             ui.input(
                                 label='Years involved',
                                 value=activity.get('years_involved', ''),
-                                on_change=lambda e, i=index: set_activity_value('brainstorm', i, 'years_involved', e.value or ''),
+                                on_change=lambda e, i=index: update_activity_value('brainstorm', i, 'years_involved', e.value or '', rerender=True),
                             ).props('dense outlined').classes('w-full')
                             ui.number(
                                 label='Hours/week',
                                 value=activity.get('hours_per_week', 0),
                                 min=0,
                                 step=1,
-                                on_change=lambda e, i=index: set_activity_number('brainstorm', i, 'hours_per_week', e.value),
+                                on_change=lambda e, i=index: update_activity_number('brainstorm', i, 'hours_per_week', e.value, rerender=True),
                             ).props('dense outlined').classes('w-full')
                         ui.textarea(
                             label='Notes',
@@ -4019,28 +4252,28 @@ def render_activities_page():
                             ui.input(
                                 label='Years involved',
                                 value=activity.get('years_involved', ''),
-                                on_change=lambda e, i=index: set_activity_value('final', i, 'years_involved', e.value or ''),
+                                on_change=lambda e, i=index: update_activity_value('final', i, 'years_involved', e.value or '', rerender=True),
                             ).props('dense outlined').classes('w-full')
                             ui.number(
                                 label='Hours/week',
                                 value=activity.get('hours_per_week', 0),
                                 min=0,
                                 step=1,
-                                on_change=lambda e, i=index: set_activity_number('final', i, 'hours_per_week', e.value),
+                                on_change=lambda e, i=index: update_activity_number('final', i, 'hours_per_week', e.value, rerender=True),
                             ).props('dense outlined').classes('w-full')
                             ui.number(
                                 label='Weeks/year',
                                 value=activity.get('weeks_per_year', 0),
                                 min=0,
                                 step=1,
-                                on_change=lambda e, i=index: set_activity_number('final', i, 'weeks_per_year', e.value),
+                                on_change=lambda e, i=index: update_activity_number('final', i, 'weeks_per_year', e.value, rerender=True),
                             ).props('dense outlined').classes('w-full')
                         with ui.row().classes('w-full gap-3 mt-2'):
                             ui.select(
                                 ACTIVITY_CATEGORIES,
                                 value=activity.get('category', 'Other'),
                                 label='Category',
-                                on_change=lambda e, i=index: set_activity_value('final', i, 'category', e.value or 'Other'),
+                                on_change=lambda e, i=index: update_activity_value('final', i, 'category', e.value or 'Other', rerender=True),
                             ).props('dense outlined').classes('w-56 max-w-full')
                         ui.textarea(
                             label='Description',
@@ -4234,6 +4467,7 @@ with ui.row().classes('shell w-full no-wrap'):
 
 normalize_college_records()
 initialize_widgets_from_college_data()
+sync_college_prompts_from_catalog()
 normalize_fee_tracker()
 sync_widget_deadlines_from_college_data()
 set_active_sidebar()
