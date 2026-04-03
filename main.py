@@ -1,8 +1,10 @@
-from nicegui import ui
+from nicegui import core, ui
 from datetime import datetime
 from pathlib import Path
 import json
 import re
+
+from prompt_tagging import PRIMARY_TAGS, get_prompt_tag_labels, infer_prompt_tags
 
 THEME = {
     "bg": "#F8F5EF",
@@ -1286,82 +1288,62 @@ def load_prompt_catalog():
 
 
 prompt_catalog = load_prompt_catalog()
-IGNORED_PROMPT_TAGS = {
-    'supplemental',
-    'official-harvard-faq',
-    'needs_manual_extraction',
-}
-PROMPT_TAG_ALIASES = {
-    'academic-interest': 'academics',
-    'academic-areas-selection': 'academics',
-    'ab-undecided': 'academics',
-    'bse': 'academics',
-    'civic-engagement': 'service',
-    'why-school': 'academics',
-    'ai-ethics': 'academics',
-    'short-answer': 'identity',
-    'long-essay-option': 'identity',
-    'community': 'community',
-    'identity': 'identity',
-    'service': 'service',
-    'adversity': 'adversity',
-}
+
+
+def normalize_prompt_tag_fields(prompt_payload: dict):
+    inferred = infer_prompt_tags(
+        prompt_payload.get('prompt_text', '') or prompt_payload.get('title', ''),
+        prompt_payload.get('prompt_type', ''),
+        prompt_payload.get('word_limit'),
+        prompt_payload.get('character_limit'),
+        prompt_payload.get('required'),
+        prompt_payload.get('tags', []),
+    )
+    existing_primary_tag = str(prompt_payload.get('primary_tag', '') or '').strip()
+    primary_tag = existing_primary_tag if existing_primary_tag in PRIMARY_TAGS else inferred['primary_tag']
+    if primary_tag == 'Other' and inferred['primary_tag'] != 'Other':
+        primary_tag = inferred['primary_tag']
+    return {
+        'primary_tag': primary_tag,
+    }
 
 
 def prompt_catalog_entry(prompt_payload: dict, completed: bool = False):
     word_limit = prompt_payload.get('word_limit')
     normalized_limit = word_limit if isinstance(word_limit, int) and word_limit > 0 else None
-    raw_tags = prompt_payload.get('tags', [])
+    word_min = prompt_payload.get('word_min')
+    normalized_word_min = word_min if isinstance(word_min, int) and word_min > 0 else None
+    character_limit = prompt_payload.get('character_limit')
+    normalized_character_limit = character_limit if isinstance(character_limit, int) and character_limit > 0 else None
+    tag_fields = normalize_prompt_tag_fields(prompt_payload)
     return {
         'prompt_id': str(prompt_payload.get('prompt_id', '') or '').strip(),
         'prompt_text': str(prompt_payload.get('prompt_text', '') or '').strip(),
         'word_limit': normalized_limit,
+        'word_min': normalized_word_min,
+        'character_limit': normalized_character_limit,
         'completed': bool(completed),
         'prompt_type': str(prompt_payload.get('prompt_type', 'Essay') or 'Essay'),
         'required': bool(prompt_payload.get('required', False)),
-        'tags': list(raw_tags) if isinstance(raw_tags, list) else [],
+        'is_optional_choice': bool(prompt_payload.get('is_optional_choice', prompt_payload.get('required') is False)),
+        'selected': bool(prompt_payload.get('selected', prompt_payload.get('required', False))),
+        'program_scope': list(prompt_payload.get('program_scope', [])) if isinstance(prompt_payload.get('program_scope'), list) else [],
+        'primary_tag': tag_fields['primary_tag'],
         'source_url': str(prompt_payload.get('source_url', '') or '').strip(),
         'last_updated': str(prompt_payload.get('last_updated', '') or '').strip(),
     }
 
 
-def add_prompt_tag(tag_list: list[str], label: str):
-    cleaned = str(label or '').strip().lower()
-    if cleaned and cleaned not in tag_list:
-        tag_list.append(cleaned)
+def normalize_prompt_record(prompt_payload: dict):
+    normalized = prompt_catalog_entry(prompt_payload, bool(prompt_payload.get('completed', False)))
+    for key in ('title', 'comments', 'drafts', 'due_date', 'source_type', 'college_name', 'college_slug', 'cycle', 'extraction_status'):
+        if key in prompt_payload:
+            normalized[key] = prompt_payload.get(key)
+    return normalized
 
 
 def display_prompt_tags(prompt: dict):
-    tags = []
-    raw_tags = prompt.get('tags', [])
-    if isinstance(raw_tags, list):
-        for raw_tag in raw_tags:
-            normalized = str(raw_tag or '').strip().lower()
-            if not normalized or normalized in IGNORED_PROMPT_TAGS:
-                continue
-            mapped = PROMPT_TAG_ALIASES.get(normalized)
-            if mapped in {'community', 'adversity', 'identity', 'academics', 'service'}:
-                add_prompt_tag(tags, mapped)
-
-    prompt_text = str(prompt.get('prompt_text', '') or prompt.get('title', '') or '').lower()
-
-    if any(token in prompt_text for token in ['community', 'contributions to ', 'contribute to']):
-        add_prompt_tag(tags, 'community')
-    if any(token in prompt_text for token in ['adversity', 'challenge', 'obstacle', 'hardship']):
-        add_prompt_tag(tags, 'adversity')
-    if any(token in prompt_text for token in ['identity', 'lived experience', 'shaped who you are', 'shaped you']):
-        add_prompt_tag(tags, 'identity')
-    if any(token in prompt_text for token in ['academic', 'study', 'major', 'curiosity', 'research institution']):
-        add_prompt_tag(tags, 'academics')
-    if any(token in prompt_text for token in ['service', 'civic']):
-        add_prompt_tag(tags, 'service')
-
-    if prompt.get('required') is False:
-        add_prompt_tag(tags, 'optional')
-
-    if not tags:
-        add_prompt_tag(tags, 'identity')
-    return tags
+    return get_prompt_tag_labels(prompt)
 
 
 def sync_college_prompts_from_catalog():
@@ -1371,6 +1353,7 @@ def sync_college_prompts_from_catalog():
         catalog_prompts = prompt_catalog.get(college_name, [])
         existing_prompts = record.get('essay_prompts', [])
         completion_lookup = {}
+        selection_lookup = {}
         if isinstance(existing_prompts, list):
             for prompt in existing_prompts:
                 if not isinstance(prompt, dict):
@@ -1379,15 +1362,23 @@ def sync_college_prompts_from_catalog():
                 prompt_text = str(prompt.get('prompt_text', '') or '').strip()
                 if prompt_id:
                     completion_lookup[prompt_id] = bool(prompt.get('completed', False))
+                    selection_lookup[prompt_id] = bool(prompt.get('selected', prompt.get('required', False)))
                 if prompt_text:
                     completion_lookup[prompt_text] = bool(prompt.get('completed', False))
+                    selection_lookup[prompt_text] = bool(prompt.get('selected', prompt.get('required', False)))
 
         synced_prompts = []
         for prompt in catalog_prompts:
             prompt_id = str(prompt.get('prompt_id', '') or '').strip()
             prompt_text = str(prompt.get('prompt_text', '') or '').strip()
             completed = completion_lookup.get(prompt_id, completion_lookup.get(prompt_text, False))
-            synced_prompts.append(prompt_catalog_entry(prompt, completed))
+            normalized_prompt = prompt_catalog_entry(prompt, completed)
+            selected = selection_lookup.get(
+                prompt_id,
+                selection_lookup.get(prompt_text, bool(normalized_prompt.get('required', False))),
+            )
+            normalized_prompt['selected'] = bool(normalized_prompt.get('required', False)) or selected
+            synced_prompts.append(normalized_prompt)
 
         if record.get('essay_prompts') != synced_prompts:
             record['essay_prompts'] = synced_prompts
@@ -1470,16 +1461,22 @@ def current_theme_values():
 def apply_theme_settings():
     palette = current_theme_values()
     density = settings_state["appearance"].get("layout_density", "Compact").lower()
-    ui.run_javascript(f"""
-    (() => {{
-      const root = document.documentElement;
-      const body = document.body;
-      const theme = {json.dumps(palette)};
-      Object.entries(theme).forEach(([key, value]) => root.style.setProperty(`--${{key.replace(/_/g, '-')}}`, value));
-      body.classList.remove('density-compact', 'density-cozy');
-      body.classList.add('density-{density}');
-    }})();
-    """)
+    # NiceGUI cannot enqueue client-side JS until its event loop and client context exist.
+    if core.loop is None:
+        return
+    try:
+        ui.run_javascript(f"""
+        (() => {{
+          const root = document.documentElement;
+          const body = document.body;
+          const theme = {json.dumps(palette)};
+          Object.entries(theme).forEach(([key, value]) => root.style.setProperty(`--${{key.replace(/_/g, '-')}}`, value));
+          body.classList.remove('density-compact', 'density-cozy');
+          body.classList.add('density-{density}');
+        }})();
+        """)
+    except RuntimeError:
+        return
 research_database = {}
 research_state = {
     "college": None,
@@ -1579,6 +1576,37 @@ def count_words(text: str):
     return len(re.findall(r"\b\w+\b", text))
 
 
+def count_characters(text: str):
+    return len(text or "")
+
+
+def prompt_limit_value(prompt: dict):
+    character_limit = prompt.get("character_limit")
+    if isinstance(character_limit, int) and character_limit > 0:
+        return character_limit, "characters"
+    word_limit = prompt.get("word_limit")
+    if isinstance(word_limit, int) and word_limit > 0:
+        return word_limit, "words"
+    return None, None
+
+
+def draft_length_for_prompt(prompt: dict, draft_text: str):
+    _, unit = prompt_limit_value(prompt)
+    if unit == "characters":
+        return count_characters(draft_text)
+    return count_words(draft_text)
+
+
+def prompt_limit_label(prompt: dict):
+    limit, unit = prompt_limit_value(prompt)
+    if limit is None or unit is None:
+        return 'No limit listed'
+    word_min = prompt.get('word_min')
+    if unit == "words" and isinstance(word_min, int) and word_min > 0:
+        return f'{word_min}-{limit} words'
+    return f'{limit} {unit}'
+
+
 PROMPT_TYPE_ELEMENTS = {
     "Why Us": ["academic fit", "specific school resource", "campus/community fit", "future contribution"],
     "Why Major": ["intellectual motivation", "academic path", "specific school resource", "future direction"],
@@ -1650,6 +1678,12 @@ def ensure_essay_data_shape():
     for prompts in essay_data.values():
         for prompt in prompts:
             prompt.setdefault("prompt_type", "Essay")
+            prompt.setdefault("character_limit", None)
+            prompt.setdefault("is_optional_choice", prompt.get("required") is False)
+            prompt.setdefault("selected", bool(prompt.get("required", False)))
+            prompt.setdefault("program_scope", [])
+            tag_fields = normalize_prompt_tag_fields(prompt)
+            prompt["primary_tag"] = tag_fields["primary_tag"]
             prompt.setdefault("comments", [])
             prompt.setdefault("drafts", [])
             for index, draft in enumerate(prompt["drafts"], start=1):
@@ -1672,18 +1706,54 @@ def current_prompt_status(prompt: dict, draft_index: int | None = None):
 
 def prompt_word_progress(prompt: dict, draft_index: int | None = None):
     if not prompt.get("drafts"):
-        return 0, 0, 0
+        return 0, None, 0, None
     index = len(prompt["drafts"]) - 1 if draft_index is None else min(max(draft_index, 0), len(prompt["drafts"]) - 1)
     draft = prompt["drafts"][index]
-    words = count_words(draft.get("text", ""))
-    limit = max(1, prompt.get("word_limit", 1))
-    return words, limit, min(100, int((words / limit) * 100))
+    length = draft_length_for_prompt(prompt, draft.get("text", ""))
+    limit, unit = prompt_limit_value(prompt)
+    if limit is None or unit is None:
+        return length, None, 0, None
+    return length, limit, min(100, int((length / limit) * 100)), unit
 
 
 def prompt_last_edited(prompt: dict):
     if not prompt.get("drafts"):
         return "No edits"
     return prompt["drafts"][-1].get("last_saved") or "No edits"
+
+
+def prompt_program_scopes(prompt: dict) -> list[str]:
+    raw_scopes = prompt.get("program_scope", [])
+    if isinstance(raw_scopes, list):
+        return [str(scope or "").strip().lower() for scope in raw_scopes if str(scope or "").strip()]
+    return []
+
+
+def active_program_selection(record: dict, prompt: dict) -> str:
+    explicit = str(record.get("program_selection", "") or "").strip().lower()
+    if explicit:
+        return explicit
+    major = str(record.get("major", "") or "").strip().lower()
+    if "engineer" in major:
+        return "engineering"
+    if major in {"undeclared", ""}:
+        return "undecided"
+    return "general"
+
+
+def prompt_is_applicable(record: dict, prompt: dict) -> bool:
+    scopes = prompt_program_scopes(prompt)
+    if not scopes:
+        return True
+    return active_program_selection(record, prompt) in scopes
+
+
+def prompt_is_active(record: dict, prompt: dict) -> bool:
+    if not prompt_is_applicable(record, prompt):
+        return False
+    if prompt.get("required", False) and not prompt.get("is_optional_choice", False):
+        return True
+    return bool(prompt.get("selected", False))
 
 
 def get_school_reference_terms(college_name: str):
@@ -1888,23 +1958,35 @@ def sync_essay_workspace_with_college_data():
                 existing['prompt_id'] = prompt_id
                 existing['title'] = prompt_text
                 existing['prompt_text'] = prompt_text
-                existing['word_limit'] = prompt.get('word_limit') or 250
+                existing['word_limit'] = prompt.get('word_limit') if isinstance(prompt.get('word_limit'), int) and prompt.get('word_limit') > 0 else None
+                existing['word_min'] = prompt.get('word_min') if isinstance(prompt.get('word_min'), int) and prompt.get('word_min') > 0 else None
+                existing['character_limit'] = prompt.get('character_limit') if isinstance(prompt.get('character_limit'), int) and prompt.get('character_limit') > 0 else None
                 existing['prompt_type'] = prompt.get('prompt_type', existing.get('prompt_type', 'Essay'))
                 existing['required'] = bool(prompt.get('required', False))
-                existing['tags'] = list(prompt.get('tags', [])) if isinstance(prompt.get('tags'), list) else []
+                existing['is_optional_choice'] = bool(prompt.get('is_optional_choice', prompt.get('required') is False))
+                existing['selected'] = bool(prompt.get('required', False)) or bool(prompt.get('selected', False))
+                existing['program_scope'] = list(prompt.get('program_scope', [])) if isinstance(prompt.get('program_scope'), list) else []
+                tag_fields = normalize_prompt_tag_fields(prompt)
+                existing['primary_tag'] = tag_fields['primary_tag']
                 existing['source_url'] = str(prompt.get('source_url', '') or '').strip()
                 existing['last_updated'] = str(prompt.get('last_updated', '') or '').strip()
                 existing['due_date'] = get_effective_deadline(college_name)
                 continue
 
+            tag_fields = normalize_prompt_tag_fields(prompt)
             essay_data[college_name].append({
                 'prompt_id': prompt_id,
                 'title': prompt_text,
                 'prompt_text': prompt_text,
                 'prompt_type': prompt.get('prompt_type', 'Essay'),
-                'word_limit': prompt.get('word_limit') or 250,
+                'word_limit': prompt.get('word_limit') if isinstance(prompt.get('word_limit'), int) and prompt.get('word_limit') > 0 else None,
+                'word_min': prompt.get('word_min') if isinstance(prompt.get('word_min'), int) and prompt.get('word_min') > 0 else None,
+                'character_limit': prompt.get('character_limit') if isinstance(prompt.get('character_limit'), int) and prompt.get('character_limit') > 0 else None,
                 'required': bool(prompt.get('required', False)),
-                'tags': list(prompt.get('tags', [])) if isinstance(prompt.get('tags'), list) else [],
+                'is_optional_choice': bool(prompt.get('is_optional_choice', prompt.get('required') is False)),
+                'selected': bool(prompt.get('required', False)) or bool(prompt.get('selected', False)),
+                'program_scope': list(prompt.get('program_scope', [])) if isinstance(prompt.get('program_scope'), list) else [],
+                'primary_tag': tag_fields['primary_tag'],
                 'source_url': str(prompt.get('source_url', '') or '').strip(),
                 'last_updated': str(prompt.get('last_updated', '') or '').strip(),
                 'due_date': get_effective_deadline(college_name),
@@ -1930,7 +2012,7 @@ def render_essays_page():
     ensure_essay_data_shape()
     sync_essay_workspace_with_college_data()
     ui.label('Essays').classes('text-3xl font-bold')
-    ui.label('Simple workspace for organizing prompts, writing drafts, and tracking reuse.').classes('text-base')
+    ui.label('Simple workspace for organizing prompts, writing drafts, and tracking progress.').classes('text-base')
 
     layout = ui.row().classes('essays-layout mt-5')
     with layout:
@@ -1942,7 +2024,17 @@ def render_essays_page():
         return [item['name'] for item in widgets if item.get('name') in essay_data]
 
     def active_essay_data():
-        return {name: essay_data[name] for name in active_college_names() if name in essay_data}
+        visible = {}
+        for name in active_college_names():
+            if name not in essay_data:
+                continue
+            record = ensure_college_record(name)
+            visible_prompts = [
+                (index, prompt) for index, prompt in enumerate(essay_data[name])
+                if prompt_is_active(record, prompt)
+            ]
+            visible[name] = visible_prompts
+        return visible
 
     def active_colleges_with_prompts():
         return [name for name, prompts in active_essay_data().items() if prompts]
@@ -1959,10 +2051,12 @@ def render_essays_page():
             essay_state["college"] = colleges[0]
             essay_state["prompt_index"] = 0
             essay_state["draft_index"] = 0
-        prompts = essay_data[essay_state["college"]]
-        if prompts:
-            essay_state["prompt_index"] = min(essay_state["prompt_index"], len(prompts) - 1)
-            drafts = prompts[essay_state["prompt_index"]]["drafts"]
+        visible_entries = active_essay_data().get(essay_state["college"], [])
+        if visible_entries:
+            visible_indices = [index for index, _ in visible_entries]
+            if essay_state["prompt_index"] not in visible_indices:
+                essay_state["prompt_index"] = visible_indices[0]
+            drafts = essay_data[essay_state["college"]][essay_state["prompt_index"]]["drafts"]
             essay_state["draft_index"] = min(essay_state["draft_index"], len(drafts) - 1)
             if essay_state["compare_version"] not in [draft["name"] for draft in drafts]:
                 essay_state["compare_version"] = drafts[0]["name"] if len(drafts) > 1 else None
@@ -1986,11 +2080,15 @@ def render_essays_page():
 
     def grouped_prompts_by_tag():
         groups = {}
-        for college, prompts in active_essay_data().items():
-            for idx, prompt in enumerate(prompts):
+        for college, prompt_entries in active_essay_data().items():
+            for idx, prompt in prompt_entries:
                 for tag in display_prompt_tags(prompt):
                     groups.setdefault(tag, []).append((college, idx, prompt))
-        return dict(sorted(groups.items(), key=lambda item: item[0]))
+        primary_order = {tag: index for index, tag in enumerate(PRIMARY_TAGS)}
+        return dict(sorted(
+            groups.items(),
+            key=lambda item: (primary_order.get(item[0], len(primary_order) + 1), item[0]),
+        ))
 
     def toggle_group(name: str):
         if name in essay_state["expanded_groups"]:
@@ -2011,7 +2109,7 @@ def render_essays_page():
                 ).props('dense unelevated toggle-color=primary').classes('essay-sidebar-toggle')
 
             if essay_state["group_mode"] == "school":
-                groups = [(college, [(college, idx, prompt) for idx, prompt in enumerate(prompts)]) for college, prompts in active_essay_data().items()]
+                groups = [(college, [(college, idx, prompt) for idx, prompt in prompt_entries]) for college, prompt_entries in active_essay_data().items()]
             else:
                 groups = list(grouped_prompts_by_tag().items())
 
@@ -2027,13 +2125,14 @@ def render_essays_page():
                                 active = college == essay_state["college"] and idx == essay_state["prompt_index"]
                                 label = prompt["title"] if essay_state["group_mode"] == "school" else f"{college} - {prompt['title']}"
                                 draft_index = essay_state["draft_index"] if active else None
-                                words, limit, _ = prompt_word_progress(prompt, draft_index)
+                                length, limit, _, unit = prompt_word_progress(prompt, draft_index)
                                 prompt_status = current_prompt_status(prompt, draft_index)
                                 with ui.row().classes(f"w-full essay-tree-item {'active' if active else ''}").on('click', lambda college_name=college, prompt_idx=idx: select_prompt(college_name, prompt_idx)):
                                     ui.label(label).classes('essay-tree-item-text')
                                     with ui.row().classes('essay-tree-item-meta'):
                                         ui.element('div').classes(f'essay-tree-dot {status_class(prompt_status)}')
-                                        ui.label(f'{words}/{limit}')
+                                        if limit is not None and unit is not None:
+                                            ui.label(f'{length}/{limit}{"" if unit == "words" else "c"}')
 
     def refresh_center():
         center_col.clear()
@@ -2044,7 +2143,8 @@ def render_essays_page():
                 ui.label('No essay prompt selected').classes('text-xl font-semibold')
                 ui.label('Add essay prompts to this college and they will appear here automatically.').classes('text-sm text-[var(--muted)] mt-2')
             return
-        current_word_count = count_words(draft["text"])
+        current_length = draft_length_for_prompt(prompt, draft["text"])
+        limit, limit_unit = prompt_limit_value(prompt)
         with center_col:
             with ui.row().classes('w-full essay-header-row'):
                 with ui.column().classes('gap-1'):
@@ -2054,10 +2154,13 @@ def render_essays_page():
                         ui.label(essay_state['college'])
                         ui.label('•').classes('essay-meta-separator')
                         ui.label(', '.join(prompt_tags[:2]))
-                        ui.label('•').classes('essay-meta-separator')
-                        word_count_label = ui.label(f"{current_word_count}/{prompt['word_limit']} words").classes('essay-mini-pill essay-word-count')
-                        if current_word_count > prompt["word_limit"]:
-                            word_count_label.classes(add='over')
+                        if limit is not None and limit_unit is not None:
+                            ui.label('•').classes('essay-meta-separator')
+                            word_count_label = ui.label(f"{current_length}/{limit} {limit_unit}").classes('essay-mini-pill essay-word-count')
+                            if current_length > limit:
+                                word_count_label.classes(add='over')
+                        else:
+                            word_count_label = None
                 ui.label('Saved').classes('essay-autosave')
 
             def on_text_change(e):
@@ -2065,13 +2168,14 @@ def render_essays_page():
                 draft["status"] = normalize_essay_status(draft.get("status", "drafting"), draft["text"])
                 draft["autosave_status"] = "Saved"
                 draft["last_saved"] = datetime.now().strftime("%I:%M %p").lstrip("0")
-                current_words = count_words(draft["text"])
-                word_count_label.text = f"{current_words}/{prompt['word_limit']} words"
-                if current_words > prompt["word_limit"]:
-                    word_count_label.classes(add='over')
-                else:
-                    word_count_label.classes(remove='over')
-                word_count_label.update()
+                current_length = draft_length_for_prompt(prompt, draft["text"])
+                if word_count_label is not None and limit is not None and limit_unit is not None:
+                    word_count_label.text = f"{current_length}/{limit} {limit_unit}"
+                    if current_length > limit:
+                        word_count_label.classes(add='over')
+                    else:
+                        word_count_label.classes(remove='over')
+                    word_count_label.update()
                 refresh_left()
                 refresh_right()
 
@@ -2083,16 +2187,13 @@ def render_essays_page():
         right_col.clear()
         prompt = selected_prompt()
         draft = selected_draft()
+        if essay_state.get("utility_tab") not in {"versions", "comments"}:
+            essay_state["utility_tab"] = "versions"
         if not prompt or not draft:
             with right_col:
                 ui.label('No prompt yet').classes('text-sm font-semibold')
-                ui.label('Versions, comments, and reuse will appear once this college has essay prompts.').classes('text-sm text-[var(--muted)] mt-2')
+                ui.label('Versions and comments will appear once this college has essay prompts.').classes('text-sm text-[var(--muted)] mt-2')
             return
-        active_names = set(active_college_names())
-        reuse_matches = [
-            match for match in find_reuse_matches(essay_state["college"], essay_state["prompt_index"], essay_state["draft_index"])
-            if match["college"] in active_names
-        ]
         version_comments = [comment for comment in prompt.get("comments", []) if comment.get("version") in {draft["name"], None, ""}]
 
         with right_col:
@@ -2106,7 +2207,6 @@ def render_essays_page():
             with ui.tabs().props('dense active-color=primary indicator-color=primary').classes('essay-utility-tabs mt-4') as tabs:
                 versions_tab = ui.tab('Versions')
                 comments_tab = ui.tab('Comments')
-                reuse_tab = ui.tab('Reuse')
             tabs.bind_value(essay_state, 'utility_tab')
             with ui.tab_panels(tabs, value=essay_state["utility_tab"]).props('animated').classes('w-full mt-3'):
                 with ui.tab_panel(versions_tab).classes('essay-tab-panel'):
@@ -2160,16 +2260,6 @@ def render_essays_page():
                             refresh_right()
 
                     ui.button('Add Comment', on_click=add_comment).props('flat no-caps').classes('self-start mt-2')
-
-                with ui.tab_panel(reuse_tab).classes('essay-tab-panel'):
-                    if reuse_matches:
-                        with ui.column().classes('essay-list-stack'):
-                            for match in reuse_matches[:5]:
-                                with ui.column().classes('essay-list-item'):
-                                    ui.label(f"{match['college']} • {match['prompt_title']}").classes('text-sm')
-                                    ui.label(f"{match['similarity']}% similar • {match['reason']}").classes('essay-item-meta')
-                    else:
-                        ui.label('No reuse suggestions yet.').classes('text-sm text-[var(--muted)]')
 
     def select_prompt(college_name: str, prompt_idx: int):
         essay_state["college"] = college_name
@@ -2527,7 +2617,7 @@ def calculate_college_progress(college_name: str) -> int:
     completed_items = 0
     total_items = 0
 
-    for prompt in record.get('essay_prompts', []):
+    for prompt in visible_prompts_for_record(record):
         total_items += 1
         if bool(prompt.get('completed', False)):
             completed_items += 1
@@ -2565,6 +2655,7 @@ def default_college_record(college_name: str):
         'selected_application_type': '',
         'status': 'In Progress',
         'major': 'Undeclared',
+        'program_selection': '',
         'quick_notes': '',
         'important_links': [],
         'basic_info': {},
@@ -2584,6 +2675,13 @@ def default_college_record(college_name: str):
 
 def get_college_record(college_name: str):
     return college_data.get(college_name)
+
+
+def visible_prompts_for_record(record: dict):
+    prompts = record.get('essay_prompts', [])
+    if not isinstance(prompts, list):
+        return []
+    return [prompt for prompt in prompts if isinstance(prompt, dict) and prompt_is_active(record, prompt)]
 
 
 def ensure_college_record(college_name: str):
@@ -2625,6 +2723,17 @@ def ensure_college_record(college_name: str):
     if normalized_requirements != record.get('requirements_checklist'):
         record['requirements_checklist'] = normalized_requirements
         changed = True
+
+    raw_essay_prompts = record.get('essay_prompts', [])
+    if isinstance(raw_essay_prompts, list):
+        normalized_essay_prompts = []
+        for prompt in raw_essay_prompts:
+            if not isinstance(prompt, dict):
+                continue
+            normalized_essay_prompts.append(normalize_prompt_record(prompt))
+        if normalized_essay_prompts != raw_essay_prompts:
+            record['essay_prompts'] = normalized_essay_prompts
+            changed = True
 
     if changed:
         save_college_catalog()
@@ -3685,28 +3794,91 @@ def render_college_page(college_name: str):
 
         with ui.tab_panel(essays_tab):
             with ui.card().classes('card w-full p-5'):
-                ui.label('Essay prompts checklist').classes('section-title')
+                ui.label('Essay prompt selection').classes('section-title')
                 prompts = record.get('essay_prompts', [])
-                if prompts:
-                    for idx, prompt in enumerate(prompts):
-                        text = prompt.get('prompt_text', f'Prompt {idx + 1}')
-                        word_limit = prompt.get('word_limit')
-                        word_limit_label = f'{word_limit} words' if isinstance(word_limit, int) and word_limit > 0 else 'No limit listed'
-                        optional_label = ' [Optional]' if prompt.get('required') is False else ''
+                scoped_options = sorted({
+                    scope
+                    for prompt in prompts if isinstance(prompt, dict)
+                    for scope in prompt_program_scopes(prompt)
+                })
 
-                        def toggle_prompt(e, prompt_index=idx):
-                            record['essay_prompts'][prompt_index]['completed'] = bool(e.value)
-                            sync_widget_progress(college_name)
-                            save_college_catalog()
-                            render_page()
+                if scoped_options:
+                    current_program = active_program_selection(record, {})
 
-                        with ui.row().classes('w-full justify-between items-center mt-2'):
+                    def set_program_scope(e):
+                        record['program_selection'] = e.value
+                        sync_widget_progress(college_name)
+                        save_college_catalog()
+                        render_page()
+
+                    labels = {
+                        'general': 'General applicant',
+                        'engineering': 'Engineering applicant',
+                        'undecided': 'Undecided',
+                    }
+                    ui.label('Program-specific prompts').classes('text-sm font-medium mt-2')
+                    ui.select(
+                        {scope: labels.get(scope, scope.replace('_', ' ').title()) for scope in sorted(set(scoped_options + ['general', 'undecided']))},
+                        value=current_program,
+                        on_change=set_program_scope,
+                        label='This school application track',
+                    ).classes('w-full mt-2')
+
+                visible_required = [
+                    prompt for prompt in prompts
+                    if isinstance(prompt, dict)
+                    and prompt_is_applicable(record, prompt)
+                    and bool(prompt.get('required', False))
+                    and not bool(prompt.get('is_optional_choice', False))
+                ]
+                visible_optional = [
+                    prompt for prompt in prompts
+                    if isinstance(prompt, dict)
+                    and prompt_is_applicable(record, prompt)
+                    and bool(prompt.get('is_optional_choice', False))
+                ]
+
+                def prompt_row(prompt: dict, prompt_index: int, selectable: bool):
+                    text = prompt.get('prompt_text', f'Prompt {prompt_index + 1}')
+                    tags = display_prompt_tags(prompt)
+                    with ui.column().classes('gap-1 mt-3'):
+                        with ui.row().classes('w-full justify-between items-start'):
+                            with ui.column().classes('gap-1'):
+                                ui.label(text).classes('text-sm')
+                                ui.label(f"{prompt_limit_label(prompt)} • {' • '.join(tags[:2])}").classes('text-xs text-[var(--muted)]')
+                            if selectable:
+                                def toggle_selected(e, idx=prompt_index):
+                                    record['essay_prompts'][idx]['selected'] = bool(e.value)
+                                    sync_widget_progress(college_name)
+                                    save_college_catalog()
+                                    render_page()
+                                ui.switch('Include', value=bool(prompt.get('selected', False)), on_change=toggle_selected).props('dense')
+                        if prompt_is_active(record, prompt):
+                            def toggle_completed(e, idx=prompt_index):
+                                record['essay_prompts'][idx]['completed'] = bool(e.value)
+                                sync_widget_progress(college_name)
+                                save_college_catalog()
+                                render_page()
                             ui.checkbox(
-                                f'{text}{optional_label} ({word_limit_label})',
+                                'Completed',
                                 value=bool(prompt.get('completed', False)),
-                                on_change=toggle_prompt,
-                            )
-                else:
+                                on_change=toggle_completed,
+                            ).classes('mt-1')
+
+                if visible_required:
+                    ui.label('Required prompts').classes('text-sm font-medium mt-4')
+                    for idx, prompt in enumerate(prompts):
+                        if prompt in visible_required:
+                            prompt_row(prompt, idx, selectable=False)
+
+                if visible_optional:
+                    ui.label('Optional prompts').classes('text-sm font-medium mt-5')
+                    ui.label('Choose which optional prompts you want in the essays workspace.').classes('text-xs text-[var(--muted)]')
+                    for idx, prompt in enumerate(prompts):
+                        if prompt in visible_optional:
+                            prompt_row(prompt, idx, selectable=True)
+
+                if not visible_required and not visible_optional:
                     ui.label('No essay prompts tracked yet.').classes('text-sm mt-1')
 
         with ui.tab_panel(research_tab):

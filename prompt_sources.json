@@ -16,9 +16,10 @@
   {
     "college_name": "Stanford",
     "college_slug": "stanford",
-    "source_url": "https://admission.stanford.edu/apply/first-year/index.html",
+    "source_url": "https://admission.stanford.edu/apply/questbridge/index.html",
     "source_type": "webpage",
-    "application_cycle": "2026-2027"
+    "application_cycle": "2026-2027",
+    "notes": "Officially confirms 3 essays with 100-250 word limits plus several 50-word short questions. Exact short-question text still needs direct official capture."
   },
   {
     "college_name": "Princeton",
