@@ -42,6 +42,38 @@ Because you explicitly want Vercel, I recommend option 2.
 
 Build a Vercel-native web app and treat the current NiceGUI app plus JSON files as the prototype and seed data source.
 
+Important refinement:
+
+Do **not** try to turn the current NiceGUI app into the Vercel app in place.
+
+Preserve the NiceGUI app.
+
+Build the launch-ready app as a **separate app** inside the repo, not as a single extra file and not as a mutation of [main.py](/Users/sophie/Documents/CollegeApplicationAtlas/clawyapp1/main.py).
+
+Recommended repo shape:
+- current NiceGUI prototype stays where it is
+- new launch app lives in a sibling folder such as `web/`
+
+Example:
+
+```text
+clawyapp1/
+  main.py
+  prompts.jsonl
+  prompt_sources.json
+  college_plans.json
+  web/
+    app/...
+    package.json
+    ...
+```
+
+This gives you:
+- a preserved prototype
+- a clean Vercel-native architecture
+- a safe migration path
+- less risk of breaking the current app while building the real one
+
 Use:
 - **Vercel** for hosting
 - **Neon Postgres** for the database
@@ -73,11 +105,19 @@ If the goal is a real launch stack, tomorrow should be:
 
 That is the right MVP move.
 
+Also:
+
+Do **not** make tomorrow “create one extra file inside the NiceGUI app and hope it grows into the launch version.”
+
+That sounds tidy, but it is the wrong unit of separation.
+
+The right unit is a separate app.
+
 ## Best Path Tomorrow
 
 ### Approach A: Recommended
 
-Create a new Vercel-native app, probably Next.js, and migrate the MVP into it in slices.
+Create a new Vercel-native app, probably Next.js, in a sibling folder like `web/`, and migrate the MVP into it in slices.
 
 #### Day-1 deliverable
 - landing page or app shell deployed on Vercel
@@ -251,6 +291,10 @@ Important:
 - `college_plans.json` mixes product catalog data and user/workspace state
 - that should be split during migration, not copied directly
 
+And structurally:
+- those JSON files should remain in the root app as your current prototype/source material
+- the new `web/` app should read from seed/import scripts, not directly depend on the NiceGUI runtime
+
 ### Phase 2: Separate static from user-owned data
 
 Map fields like this:
@@ -291,10 +335,11 @@ Tomorrow’s goal is one clean seeded database plus one working user account.
 1. Create Vercel project
 2. Create Neon project/database
 3. Create OAuth app for sign-in
-4. Build app shell with auth
-5. Create schema + run first migration
-6. Seed colleges and prompts
-7. Save at least one piece of user-specific data to Neon
+4. Create the new `web/` app
+5. Build app shell with auth
+6. Create schema + run first migration
+7. Seed colleges and prompts
+8. Save at least one piece of user-specific data to Neon
 
 ### Nice-to-have
 
@@ -324,6 +369,33 @@ This is the version I would ship first:
 7. Drafts save to database
 
 That’s enough to be real.
+
+## Frontend and Visual Design
+
+Yes, you will absolutely be able to layer much stronger aesthetics and frontend polish on top of this later.
+
+In fact, creating a separate Vercel-native app is what makes that easier.
+
+Why:
+- NiceGUI is fine for fast internal-product iteration
+- a modern web app gives you much more control over layout, animation, typography, responsive behavior, and overall product feel
+- separating the launch app from the prototype keeps you from inheriting prototype UI constraints forever
+
+So this is not just compatible with a future visual upgrade.
+
+It actively protects that future.
+
+That means you can:
+- launch a relatively plain but real MVP first
+- then iterate toward a much stronger visual system without rewriting the backend choices again
+
+This is the right order:
+1. real platform
+2. real data/auth
+3. better product polish
+4. much better visual identity
+
+If you try to perfect the frontend before you separate the architecture, you risk polishing the wrong surface.
 
 ## Environment Variables You’ll Need
 
@@ -390,7 +462,7 @@ That is the move that gets you to a real startup architecture instead of a proto
 1. Create Vercel account/project
 2. Create Neon account/project
 3. Create Google OAuth credentials
-4. Scaffold Vercel-native app
+4. Scaffold Vercel-native app in `web/`
 
 ### Midday
 
