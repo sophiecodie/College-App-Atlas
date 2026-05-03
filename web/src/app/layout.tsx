@@ -17,7 +17,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="en">
-      <body>
+      <body suppressHydrationWarning>
         <header className="site-header">
           <div className="site-header-inner">
             <Link className="brand-mark" href={session?.user ? "/app" : "/"}>

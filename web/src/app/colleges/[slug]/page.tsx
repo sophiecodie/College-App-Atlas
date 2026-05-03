@@ -2,12 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { updatePromptPreference, updateUserCollege } from "@/app/app/actions";
-import {
-  updateCollegeRecommendations,
-  updateFees,
-  updateRequirements,
-  updateResearchEntry,
-} from "@/app/workspace-actions";
+import { updateRequirements, updateResearchEntry } from "@/app/workspace-actions";
 import { getUserCollegeBySlug, requireCurrentUser } from "@/lib/app-data";
 import {
   getCollegePromptsForUser,
@@ -18,7 +13,6 @@ import {
 import { collegeTabs } from "@/lib/shell";
 import {
   ensureWorkspaceState,
-  normalizeRecommenders,
   normalizeResearchData,
   REQUIREMENT_SECTIONS,
   TESTING_POLICY_OPTIONS,
@@ -66,7 +60,6 @@ export default async function CollegeDetailPage({
     ensureWorkspaceState(user.id),
   ]);
   const researchData = normalizeResearchData(workspace.researchData);
-  const recommenders = normalizeRecommenders(workspace.recommenders);
   const researchEntry = researchData[college.slug] ?? {
     location: "TBD",
     reach_level: "--",
@@ -361,94 +354,6 @@ export default async function CollegeDetailPage({
             </div>
           ))}
         </div>
-      ) : null}
-
-      {activeTab === "fees" ? (
-        <form action={updateFees} className="panel stack">
-          <input name="collegeSlug" type="hidden" value={college.slug} />
-          <input name="collegeName" type="hidden" value={college.name} />
-          <input name="current" type="hidden" value={JSON.stringify(college.fees)} />
-          <div className="four-up">
-            <input className="field" defaultValue={String(college.fees.application_fee ?? 0)} name="application_fee" type="number" />
-            <select className="field" defaultValue={String(college.fees.fee_waiver_status ?? "Not requested")} name="fee_waiver_status">
-              <option value="Not requested">Not requested</option>
-              <option value="Requested">Requested</option>
-              <option value="Approved">Approved</option>
-              <option value="Denied">Denied</option>
-            </select>
-            <select className="field" defaultValue={String(college.fees.payment_status ?? "Not paid")} name="payment_status">
-              <option value="Not paid">Not paid</option>
-              <option value="Paid">Paid</option>
-            </select>
-            <input className="field" defaultValue={String(college.fees.notes ?? "")} name="notes" placeholder="Notes" />
-          </div>
-          <div className="four-up">
-            <label className="checkbox-row"><input defaultChecked={Boolean(college.fees.css_profile_required)} name="css_profile_required" type="checkbox" /><span>CSS Profile</span></label>
-            <input className="field" defaultValue={String(college.fees.css_profile_cost ?? 0)} name="css_profile_cost" type="number" />
-            <label className="checkbox-row"><input defaultChecked={Boolean(college.fees.fafsa_required)} name="fafsa_required" type="checkbox" /><span>FAFSA</span></label>
-            <input className="field" defaultValue={String(college.fees.fafsa_cost ?? 0)} name="fafsa_cost" type="number" />
-          </div>
-          <div className="four-up">
-            <label className="checkbox-row"><input defaultChecked={Boolean(college.fees.sat_score_send_required)} name="sat_score_send_required" type="checkbox" /><span>SAT send</span></label>
-            <input className="field" defaultValue={String(college.fees.sat_score_send_cost ?? 0)} name="sat_score_send_cost" type="number" />
-            <label className="checkbox-row"><input defaultChecked={Boolean(college.fees.ap_score_send_required)} name="ap_score_send_required" type="checkbox" /><span>AP send</span></label>
-            <input className="field" defaultValue={String(college.fees.ap_score_send_cost ?? 0)} name="ap_score_send_cost" type="number" />
-          </div>
-          <button className="button" type="submit">Save fees</button>
-        </form>
-      ) : null}
-
-      {activeTab === "recs" ? (
-        <section className="two-up">
-          <div className="panel">
-            <div className="subpanel-header">
-              <strong>Required recommenders</strong>
-              <span className="muted">{recommenders.length} global options</span>
-            </div>
-            <div className="stack">
-              {college.requiredRecommendations.map((slot, index) => (
-                <form action={updateCollegeRecommendations} className="prompt-card" key={`required-${index}`}>
-                  <input name="collegeSlug" type="hidden" value={college.slug} />
-                  <input name="kind" type="hidden" value="required" />
-                  <input name="index" type="hidden" value={index} />
-                  <input name="current" type="hidden" value={JSON.stringify(college.requiredRecommendations)} />
-                  <strong>{slot.label}</strong>
-                  <select className="field compact-field" defaultValue={slot.assigned_recommender} name="assigned_recommender">
-                    <option value="">-- Unassigned --</option>
-                    {recommenders.map((rec) => (
-                      <option key={rec.name} value={rec.name}>{rec.name}</option>
-                    ))}
-                  </select>
-                  <button className="button button-secondary" type="submit">Save</button>
-                </form>
-              ))}
-            </div>
-          </div>
-          <div className="panel">
-            <div className="subpanel-header">
-              <strong>Optional recommenders</strong>
-              <span className="muted">Use the global directory first</span>
-            </div>
-            <div className="stack">
-              {college.optionalRecommendations.map((slot, index) => (
-                <form action={updateCollegeRecommendations} className="prompt-card" key={`optional-${index}`}>
-                  <input name="collegeSlug" type="hidden" value={college.slug} />
-                  <input name="kind" type="hidden" value="optional" />
-                  <input name="index" type="hidden" value={index} />
-                  <input name="current" type="hidden" value={JSON.stringify(college.optionalRecommendations)} />
-                  <strong>{slot.label}</strong>
-                  <select className="field compact-field" defaultValue={slot.assigned_recommender} name="assigned_recommender">
-                    <option value="">-- Unassigned --</option>
-                    {recommenders.map((rec) => (
-                      <option key={rec.name} value={rec.name}>{rec.name}</option>
-                    ))}
-                  </select>
-                  <button className="button button-secondary" type="submit">Save</button>
-                </form>
-              ))}
-            </div>
-          </div>
-        </section>
       ) : null}
     </main>
   );

@@ -74,6 +74,7 @@ export async function saveSettings(formData: FormData) {
       layout_density: String(formData.get("layout_density") ?? current.appearance.layout_density),
       dark_mode: String(formData.get("dark_mode") ?? "") === "on",
     },
+    essayWorkspace: current.essayWorkspace,
   };
 
   await updateWorkspaceState(user.id, { settingsState: nextState });

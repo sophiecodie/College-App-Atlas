@@ -1,77 +1,121 @@
-import { getUserColleges, requireCurrentUser } from "@/lib/app-data";
-import { updateResearchEntry } from "@/app/workspace-actions";
-import { ensureWorkspaceState, normalizeResearchData } from "@/lib/workspace-state";
+import Link from "next/link";
 
-export default async function ResearchPage() {
+import { getUserColleges, requireCurrentUser } from "@/lib/app-data";
+import {
+  getSortMode,
+  priorityDotClass,
+  reachDotClass,
+  RESEARCH_SORT_OPTIONS,
+  sortResearchCards,
+} from "@/lib/research";
+import { defaultResearchEntry, ensureWorkspaceState, normalizeResearchData } from "@/lib/workspace-state";
+
+export default async function ResearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string }>;
+}) {
   const user = await requireCurrentUser();
+  const { sort } = await searchParams;
   const [colleges, workspace] = await Promise.all([
     getUserColleges(user.id),
     ensureWorkspaceState(user.id),
   ]);
   const researchData = normalizeResearchData(workspace.researchData);
+  const sortBy = getSortMode(sort);
+
+  const rows = sortResearchCards(
+    colleges.map((college) => ({
+      college,
+      entry: researchData[college.slug] ?? defaultResearchEntry(),
+    })),
+    sortBy,
+  );
 
   return (
-    <main className="shell">
+    <main className="shell shell-wide">
       <section className="page-header-row">
         <div>
           <span className="eyebrow">Research</span>
           <h1 className="page-title">Research overview</h1>
           <p className="lede">
-            NiceGUI has both a database view and per-college research workspace. This web page now
-            stores the same research notes in account-backed workspace state.
+            Browse your colleges as a visual research board, then open any school into a full-page
+            workspace when you are ready to go deep.
           </p>
         </div>
       </section>
-      <section className="stack">
-        {colleges.map((college) => {
-          const entry = researchData[college.slug] ?? {
-            location: "TBD",
-            reach_level: "--",
-            visit_status: "No Visit",
-            priority_level: "--",
-            general_notes: "",
-            academic_programs: "",
-            campus_culture: "",
-            why_us_material: "",
-            personal_reflections: "",
-          };
-          return (
-            <form action={updateResearchEntry} className="panel stack" key={college.id}>
-              <input name="collegeSlug" type="hidden" value={college.slug} />
-              <div className="subpanel-header">
-                <strong>{college.name}</strong>
-                <span className="pill">{college.selectedApplicationType ?? "Application type not set"}</span>
-              </div>
-              <div className="three-up">
-                <input className="field" defaultValue={entry.location} name="location" placeholder="Location" />
-                <select className="field" defaultValue={entry.reach_level} name="reach_level">
-                  <option value="--">Reach level</option>
-                  <option value="High Reach">High Reach</option>
-                  <option value="Reach">Reach</option>
-                  <option value="Target">Target</option>
-                  <option value="Safety">Safety</option>
-                </select>
-                <select className="field" defaultValue={entry.priority_level} name="priority_level">
-                  <option value="--">Priority</option>
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                </select>
-              </div>
-              <select className="field" defaultValue={entry.visit_status} name="visit_status">
-                <option value="Visited">Visited</option>
-                <option value="Planned">Planned</option>
-                <option value="No Visit">No Visit</option>
-              </select>
-              <textarea className="field field-textarea" defaultValue={entry.general_notes} name="general_notes" placeholder="General notes" rows={4} />
-              <textarea className="field field-textarea" defaultValue={entry.academic_programs} name="academic_programs" placeholder="Academic programs" rows={3} />
-              <textarea className="field field-textarea" defaultValue={entry.campus_culture} name="campus_culture" placeholder="Campus culture" rows={3} />
-              <textarea className="field field-textarea" defaultValue={entry.why_us_material} name="why_us_material" placeholder="Why us material" rows={3} />
-              <textarea className="field field-textarea" defaultValue={entry.personal_reflections} name="personal_reflections" placeholder="Personal reflections" rows={3} />
-              <button className="button" type="submit">Save research notes</button>
-            </form>
-          );
-        })}
+
+      <section className="panel research-gallery-panel">
+        <div className="subpanel-header">
+          <div>
+            <strong>Research board</strong>
+            <div className="muted">
+              The overview only shows cards now. Click one to open that college in a dedicated workspace.
+            </div>
+          </div>
+          <form action="/research" className="research-sort-form">
+            <label className="field-label" htmlFor="research-sort">
+              Sort by
+            </label>
+            <select className="field compact-field" defaultValue={sortBy} id="research-sort" name="sort">
+              {RESEARCH_SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <button className="button button-secondary" type="submit">
+              Reorder
+            </button>
+          </form>
+        </div>
+
+        <div className="research-card-grid">
+          {rows.map(({ college, entry }) => {
+            const href = `/research/${college.slug}?sort=${sortBy}`;
+
+            return (
+              <Link className="research-overview-card research-overview-card-large" href={href} key={college.id}>
+                <div className="research-overview-top">
+                  <div className="research-card-title-group">
+                    <strong>{college.name}</strong>
+                    <span className="muted">
+                      {college.programSelection ?? "General applicant"}
+                    </span>
+                  </div>
+                  <span className="pill research-mini-pill">{college.selectedApplicationType ?? "App type"}</span>
+                </div>
+
+                <div className="research-card-meta">
+                  <div className="research-meta-item">
+                    <span className="muted">Location</span>
+                    <strong>{entry.location || "TBD"}</strong>
+                  </div>
+                  <div className="research-meta-item">
+                    <span className="muted">Visit status</span>
+                    <strong>{entry.visit_status}</strong>
+                  </div>
+                </div>
+
+                <div className="research-dot-row">
+                  <span className="research-dot-label">
+                    <span className={`research-dot ${reachDotClass(entry.reach_level)}`} />
+                    {entry.reach_level === "--" ? "Reach unset" : entry.reach_level}
+                  </span>
+                  <span className="research-dot-label">
+                    <span className={`research-dot ${priorityDotClass(entry.priority_level)}`} />
+                    {entry.priority_level === "--" ? "Priority unset" : `${entry.priority_level} priority`}
+                  </span>
+                </div>
+
+                <div className="research-overview-footer">
+                  <span className="pill">{college.status ?? "In Progress"}</span>
+                  <span className="research-open-label">Open workspace</span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </section>
     </main>
   );

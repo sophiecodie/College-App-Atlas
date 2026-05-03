@@ -4,8 +4,6 @@ export const mainNav = [
   { href: "/activities", label: "Activities" },
   { href: "/research", label: "Research" },
   { href: "/essays", label: "Essays" },
-  { href: "/recs", label: "Recommendations" },
-  { href: "/fees", label: "Fees" },
   { href: "/settings", label: "Settings" },
 ];
 
@@ -14,6 +12,4 @@ export const collegeTabs = [
   { id: "essays", label: "Essays" },
   { id: "research", label: "Research" },
   { id: "requirements", label: "Requirements" },
-  { id: "fees", label: "Fees" },
-  { id: "recs", label: "Recommendations" },
 ];

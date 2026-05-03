@@ -60,7 +60,7 @@
           "is_optional_choice": false,
           "selected": true,
           "program_scope": [],
-          "primary_tag": "Other",
+          "primary_tag": "Debate",
           "source_url": "https://college.harvard.edu/resources/faq/what-included-harvard-supplement",
           "last_updated": "2026-03-20T02:11:35Z"
         },
@@ -152,7 +152,7 @@
       "fees": {
         "college_name": "Harvard",
         "application_fee": 80,
-        "fee_waiver_status": "Not requested",
+        "fee_waiver_status": "Requested",
         "payment_status": "Not paid",
         "notes": "",
         "css_profile_required": true,
@@ -245,7 +245,7 @@
           "is_optional_choice": true,
           "selected": false,
           "program_scope": [],
-          "primary_tag": "Other",
+          "primary_tag": "Debate",
           "source_url": "https://admissions.duke.edu/apply/",
           "last_updated": "2026-03-20T02:35:29Z"
         },
@@ -798,7 +798,7 @@
           "is_optional_choice": true,
           "selected": false,
           "program_scope": [],
-          "primary_tag": "Other",
+          "primary_tag": "Debate",
           "source_url": "https://admissions.yale.edu/essay-topics",
           "last_updated": "2026-03-20T02:35:29Z"
         },
@@ -905,11 +905,7 @@
     }
   ],
   "selected_colleges": [
-    "Harvard",
-    "Duke",
-    "Princeton",
-    "Yale",
-    "Stanford"
+    "Harvard"
   ],
   "home_tasks": [
     {

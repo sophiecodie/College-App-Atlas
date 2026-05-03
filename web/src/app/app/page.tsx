@@ -134,7 +134,7 @@ export default async function DashboardPage() {
             <div className="check">Colleges are persisted to Neon.</div>
             <div className="check">Prompt selections are now persisted per user.</div>
             <div className="check">Home tasks are now persisted too.</div>
-            <div className="check">Next I am wiring settings, research, fees, recommendations, and activities to the same state layer.</div>
+            <div className="check">Next I am tightening research, college planning, settings, and activities into a cleaner workflow.</div>
           </div>
         </div>
       </section>

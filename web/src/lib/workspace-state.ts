@@ -157,6 +157,10 @@ export function defaultWorkspaceSettings() {
       layout_density: "Cozy",
       dark_mode: false,
     },
+    essayWorkspace: {
+      selectedPromptId: null as string | null,
+      promptTags: {} as Record<string, string[]>,
+    },
   };
 }
 
@@ -226,6 +230,38 @@ export function normalizeSettingsState(raw: unknown) {
       layout_density: String(appearance.layout_density || base.appearance.layout_density),
       dark_mode: Boolean(appearance.dark_mode),
     },
+    essayWorkspace: normalizeEssayWorkspaceSettings(source.essayWorkspace),
+  };
+}
+
+export function normalizeEssayWorkspaceSettings(raw: unknown) {
+  const base = defaultWorkspaceSettings().essayWorkspace;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return base;
+  }
+
+  const source = raw as Record<string, unknown>;
+  const rawPromptTags =
+    source.promptTags && typeof source.promptTags === "object" && !Array.isArray(source.promptTags)
+      ? (source.promptTags as Record<string, unknown>)
+      : {};
+
+  const promptTags: Record<string, string[]> = {};
+  for (const [promptId, value] of Object.entries(rawPromptTags)) {
+    if (!Array.isArray(value)) {
+      continue;
+    }
+    const tags = value
+      .map((tag) => String(tag ?? "").trim())
+      .filter(Boolean);
+    if (tags.length > 0) {
+      promptTags[promptId] = tags;
+    }
+  }
+
+  return {
+    selectedPromptId: source.selectedPromptId ? String(source.selectedPromptId) : null,
+    promptTags,
   };
 }
 

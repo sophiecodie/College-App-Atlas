@@ -9,8 +9,6 @@ import {
   defaultResearchEntry,
   ensureWorkspaceState,
   normalizeActivities,
-  normalizeFeeEntry,
-  normalizeRecommendationSlots,
   normalizeRecommenders,
   normalizeRequirementsChecklist,
   normalizeResearchData,
@@ -29,53 +27,6 @@ export async function updateRequirements(formData: FormData) {
   current[key] = value === "true" ? true : value === "false" ? false : value;
   await updateCollegeExtras(user.id, collegeSlug, { requirementsChecklist: current });
   revalidatePath(`/colleges/${collegeSlug}`);
-}
-
-export async function updateFees(formData: FormData) {
-  const user = await requireCurrentUser();
-  const collegeSlug = String(formData.get("collegeSlug") ?? "");
-  const collegeName = String(formData.get("collegeName") ?? "");
-  const rawCurrent = String(formData.get("current") ?? "{}");
-  const current = normalizeFeeEntry(JSON.parse(rawCurrent), collegeName);
-
-  current.application_fee = Number(formData.get("application_fee") ?? 0);
-  current.fee_waiver_status = String(formData.get("fee_waiver_status") ?? current.fee_waiver_status);
-  current.payment_status = String(formData.get("payment_status") ?? current.payment_status);
-  current.notes = String(formData.get("notes") ?? "");
-  current.css_profile_required = String(formData.get("css_profile_required") ?? "") === "on";
-  current.css_profile_cost = Number(formData.get("css_profile_cost") ?? 0);
-  current.fafsa_required = String(formData.get("fafsa_required") ?? "") === "on";
-  current.fafsa_cost = Number(formData.get("fafsa_cost") ?? 0);
-  current.sat_score_send_required = String(formData.get("sat_score_send_required") ?? "") === "on";
-  current.sat_score_send_cost = Number(formData.get("sat_score_send_cost") ?? 0);
-  current.ap_score_send_required = String(formData.get("ap_score_send_required") ?? "") === "on";
-  current.ap_score_send_cost = Number(formData.get("ap_score_send_cost") ?? 0);
-
-  await updateCollegeExtras(user.id, collegeSlug, { fees: current });
-  revalidatePath(`/colleges/${collegeSlug}`);
-  revalidatePath("/fees");
-}
-
-export async function updateCollegeRecommendations(formData: FormData) {
-  const user = await requireCurrentUser();
-  const collegeSlug = String(formData.get("collegeSlug") ?? "");
-  const kind = String(formData.get("kind") ?? "required") as "required" | "optional";
-  const index = Number(formData.get("index") ?? 0);
-  const assigned = String(formData.get("assigned_recommender") ?? "");
-  const rawCurrent = String(formData.get("current") ?? "[]");
-  const current = normalizeRecommendationSlots(JSON.parse(rawCurrent), kind);
-  if (index >= 0 && index < current.length) {
-    current[index].assigned_recommender = assigned;
-  }
-  await updateCollegeExtras(
-    user.id,
-    collegeSlug,
-    kind === "required"
-      ? { requiredRecommendations: current }
-      : { optionalRecommendations: current },
-  );
-  revalidatePath(`/colleges/${collegeSlug}`);
-  revalidatePath("/recs");
 }
 
 export async function updateResearchEntry(formData: FormData) {
@@ -98,6 +49,7 @@ export async function updateResearchEntry(formData: FormData) {
 
   await updateWorkspaceState(user.id, { researchData });
   revalidatePath("/research");
+  revalidatePath(`/research/${collegeSlug}`);
   revalidatePath(`/colleges/${collegeSlug}`);
 }
 
@@ -116,7 +68,6 @@ export async function addRecommender(formData: FormData) {
     notes: String(formData.get("notes") ?? ""),
   });
   await updateWorkspaceState(user.id, { recommenders });
-  revalidatePath("/recs");
   revalidatePath("/colleges");
 }
 
@@ -128,7 +79,6 @@ export async function deleteRecommender(formData: FormData) {
   await updateWorkspaceState(user.id, {
     recommenders: recommenders.filter((rec) => rec.name !== name),
   });
-  revalidatePath("/recs");
   revalidatePath("/colleges");
 }
 
@@ -141,6 +91,44 @@ export async function addActivity(formData: FormData) {
     kind,
   );
   entries.push(kind === "brainstorm" ? defaultBrainstormActivity() : defaultFinalActivity());
+  await updateWorkspaceState(
+    user.id,
+    kind === "brainstorm"
+      ? { brainstormActivities: entries }
+      : { finalActivities: entries },
+  );
+  revalidatePath("/activities");
+}
+
+export async function saveActivity(formData: FormData) {
+  const user = await requireCurrentUser();
+  const workspace = await ensureWorkspaceState(user.id);
+  const kind = String(formData.get("kind") ?? "brainstorm") as "brainstorm" | "final";
+  const index = Number(formData.get("index") ?? 0);
+  const entries = normalizeActivities(
+    kind === "brainstorm" ? workspace.brainstormActivities : workspace.finalActivities,
+    kind,
+  );
+
+  if (!entries[index]) {
+    return;
+  }
+
+  const current = entries[index] as Record<string, unknown>;
+  current.activity_name = String(formData.get("activity_name") ?? current.activity_name ?? "").trim();
+  current.category = String(formData.get("category") ?? current.category ?? "Other").trim() || "Other";
+  current.years_involved = String(formData.get("years_involved") ?? current.years_involved ?? "").trim();
+  current.hours_per_week = Number(formData.get("hours_per_week") ?? current.hours_per_week ?? 0) || 0;
+
+  if (kind === "brainstorm") {
+    current.notes = String(formData.get("notes") ?? current.notes ?? "").trim();
+  } else {
+    current.role_position = String(formData.get("role_position") ?? current.role_position ?? "").trim();
+    current.organization = String(formData.get("organization") ?? current.organization ?? "").trim();
+    current.weeks_per_year = Number(formData.get("weeks_per_year") ?? current.weeks_per_year ?? 0) || 0;
+    current.description = String(formData.get("description") ?? current.description ?? "").trim();
+  }
+
   await updateWorkspaceState(
     user.id,
     kind === "brainstorm"
@@ -164,6 +152,34 @@ export async function updateActivity(formData: FormData) {
   if (entries[index]) {
     (entries[index] as Record<string, unknown>)[field] = value;
   }
+  await updateWorkspaceState(
+    user.id,
+    kind === "brainstorm"
+      ? { brainstormActivities: entries }
+      : { finalActivities: entries },
+  );
+  revalidatePath("/activities");
+}
+
+export async function moveActivity(formData: FormData) {
+  const user = await requireCurrentUser();
+  const workspace = await ensureWorkspaceState(user.id);
+  const kind = String(formData.get("kind") ?? "final") as "brainstorm" | "final";
+  const index = Number(formData.get("index") ?? 0);
+  const direction = Number(formData.get("direction") ?? 0);
+  const entries = normalizeActivities(
+    kind === "brainstorm" ? workspace.brainstormActivities : workspace.finalActivities,
+    kind,
+  );
+  const nextIndex = index + direction;
+
+  if (index < 0 || index >= entries.length || nextIndex < 0 || nextIndex >= entries.length) {
+    return;
+  }
+
+  const [entry] = entries.splice(index, 1);
+  entries.splice(nextIndex, 0, entry);
+
   await updateWorkspaceState(
     user.id,
     kind === "brainstorm"
