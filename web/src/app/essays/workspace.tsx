@@ -3,7 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { createEssayVersion, deleteEssayVersion, saveEssayDraft, saveEssayTags } from "@/app/essays/actions";
+import {
+  applyStorylineToPrompt,
+  createEssayVersion,
+  deleteEssayVersion,
+  generateEssayStorylines,
+  saveEssayDraft,
+  saveEssayTags,
+  saveStorylineFacts,
+  toggleSavedStoryline,
+} from "@/app/essays/actions";
 import {
   type EssayStatus,
   type EssayWorkspaceGroup,
@@ -13,11 +22,18 @@ import {
   ESSAY_STATUS_OPTIONS,
 } from "@/lib/essays-shared";
 import { promptLimitLabel } from "@/lib/prompts-shared";
+import { type StorylineCard, type StorylineFact } from "@/lib/storylines";
 
 type WorkspaceProps = {
   groups: EssayWorkspaceGroup[];
   initialPromptId: string | null;
   initialPromptTags: Record<string, string[]>;
+  initialStorylineFacts: StorylineFact[];
+  initialStorylineCards: StorylineCard[];
+  initialStorylineGeneratedAt: string | null;
+  aiConfigured: boolean;
+  aiBaseUrl: string;
+  aiModel: string;
 };
 
 const TAG_GROUP_ORDER = [
@@ -65,10 +81,17 @@ export function EssaysWorkspace({
   groups,
   initialPromptId,
   initialPromptTags,
+  initialStorylineFacts,
+  initialStorylineCards,
+  initialStorylineGeneratedAt,
+  aiConfigured,
+  aiBaseUrl,
+  aiModel,
 }: WorkspaceProps) {
   const router = useRouter();
-  const [isSaving, setIsSaving] = useState<null | "draft" | "version" | "tags">(null);
+  const [isSaving, setIsSaving] = useState<null | "draft" | "version" | "tags" | "facts" | "storylines" | "storyline">(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [workspaceMode, setWorkspaceMode] = useState<"writing" | "storylines">("writing");
   const [groupMode, setGroupMode] = useState<"college" | "tag">("college");
   const prompts = useMemo(() => groups.flatMap((group) => group.prompts), [groups]);
   const firstPromptId = prompts[0]?.promptId ?? null;
@@ -90,6 +113,9 @@ export function EssaysWorkspace({
   const [draftStatus, setDraftStatus] = useState(selectedVersion?.status ?? "not_started");
   const [draftContent, setDraftContent] = useState(selectedVersion?.content ?? "");
   const [tagInput, setTagInput] = useState(selectedPrompt ? (initialPromptTags[selectedPrompt.promptId] ?? []).join(", ") : "");
+  const [storylineFactsInput, setStorylineFactsInput] = useState(
+    initialStorylineFacts.map((fact) => fact.text).join("\n"),
+  );
 
   useEffect(() => {
     setSelectedVersionId(selectedPrompt?.activeDraft.id ?? null);
@@ -108,6 +134,10 @@ export function EssaysWorkspace({
     }
     setTagInput((initialPromptTags[selectedPrompt.promptId] ?? []).join(", "));
   }, [initialPromptTags, selectedPrompt?.promptId]);
+
+  useEffect(() => {
+    setStorylineFactsInput(initialStorylineFacts.map((fact) => fact.text).join("\n"));
+  }, [initialStorylineFacts]);
 
   if (!selectedPrompt) {
     return (
@@ -130,6 +160,7 @@ export function EssaysWorkspace({
   const isOverLimit =
     selectedPrompt.limitValue !== null ? currentLength > selectedPrompt.limitValue : false;
   const promptTags = initialPromptTags[selectedPrompt.promptId] ?? [];
+  const savedStorylineCount = initialStorylineCards.filter((storyline) => storyline.saved).length;
 
   const sidebarGroups = useMemo(() => {
     if (groupMode === "college") {
@@ -251,8 +282,95 @@ export function EssaysWorkspace({
     }
   }
 
+  async function handleSaveStorylineFacts() {
+    try {
+      setIsSaving("facts");
+      setActionError(null);
+      const formData = new FormData();
+      formData.set("facts", storylineFactsInput);
+      await saveStorylineFacts(formData);
+      router.refresh();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not save your facts.");
+    } finally {
+      setIsSaving(null);
+    }
+  }
+
+  async function handleGenerateStorylines() {
+    try {
+      setIsSaving("storylines");
+      setActionError(null);
+      const formData = new FormData();
+      formData.set("facts", storylineFactsInput);
+      await generateEssayStorylines(formData);
+      router.refresh();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not generate storylines.");
+    } finally {
+      setIsSaving(null);
+    }
+  }
+
+  async function handleToggleSavedStoryline(storylineId: string) {
+    try {
+      setIsSaving("storyline");
+      setActionError(null);
+      const formData = new FormData();
+      formData.set("storylineId", storylineId);
+      await toggleSavedStoryline(formData);
+      router.refresh();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not save this storyline.");
+    } finally {
+      setIsSaving(null);
+    }
+  }
+
+  async function handleApplyStorylineToPrompt(storylineId: string) {
+    try {
+      setIsSaving("storyline");
+      setActionError(null);
+      const formData = new FormData();
+      formData.set("storylineId", storylineId);
+      formData.set("promptId", selectedPrompt.promptId);
+      await applyStorylineToPrompt(formData);
+      router.refresh();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not apply this storyline.");
+    } finally {
+      setIsSaving(null);
+    }
+  }
+
   return (
-    <section className="essay-shell">
+    <>
+      <section className="panel essay-workspace-switcher">
+        <div>
+          <strong>Essay workspace mode</strong>
+          <div className="muted">
+            Switch between drafting and idea generation without leaving the essays page.
+          </div>
+        </div>
+        <div className="essay-group-toggle">
+          <button
+            className={`essay-toggle-chip ${workspaceMode === "writing" ? "active" : ""}`}
+            onClick={() => setWorkspaceMode("writing")}
+            type="button"
+          >
+            Writing
+          </button>
+          <button
+            className={`essay-toggle-chip ${workspaceMode === "storylines" ? "active" : ""}`}
+            onClick={() => setWorkspaceMode("storylines")}
+            type="button"
+          >
+            Storylines
+          </button>
+        </div>
+      </section>
+
+    <section className={`essay-shell ${workspaceMode === "storylines" ? "storylines-mode" : ""}`}>
       <aside className="panel essay-sidebar">
         <div className="essay-sidebar-header">
           <div>
@@ -313,6 +431,7 @@ export function EssaysWorkspace({
         </div>
       </aside>
 
+      {workspaceMode === "writing" ? (
       <div className="panel essay-main">
         {actionError ? <div className="essay-error-banner">{actionError}</div> : null}
         <div className="essay-main-header">
@@ -395,7 +514,145 @@ export function EssaysWorkspace({
             </a>
         </div>
       </div>
+      ) : (
+      <div className="panel essay-main essay-storylines-workspace">
+        {actionError ? <div className="essay-error-banner">{actionError}</div> : null}
+        <div className="essay-main-header">
+          <div className="stack">
+            <div className="essay-kicker-row">
+              <span className="pill">Storylines</span>
+              <span className="pill">{selectedPrompt.collegeName}</span>
+              <span className="pill">{selectedPrompt.primaryTag ?? "Other"}</span>
+            </div>
+            <h2 className="essay-workspace-title">Idea generation workspace</h2>
+            <div className="muted">
+              Build angles first, then move the best ones into your prompt writing flow.
+            </div>
+          </div>
+          <div className="essay-live-counter">
+            {savedStorylineCount} saved
+          </div>
+        </div>
 
+        <div className="essay-storylines-grid">
+          <div className="essay-storylines-panel stack">
+            <div className="subpanel-header">
+              <strong>21 Interesting Facts About Me</strong>
+              <span className="muted">{storylineFactsInput.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).length}/21</span>
+            </div>
+            <p className="muted">
+              Drop in facts, quirks, hobbies, rituals, or weirdly specific things you keep doing.
+            </p>
+            <div className="essay-ai-debug">
+              <div className="muted">
+                AI: {aiConfigured ? "configured" : "missing key"} · model: {aiModel}
+              </div>
+              <div className="muted essay-ai-url">{aiBaseUrl}</div>
+            </div>
+            <label className="field-label" htmlFor="storyline-facts">
+              Facts, quirks, hobbies, rituals
+            </label>
+            <textarea
+              className="field field-textarea essay-storyline-textarea"
+              id="storyline-facts"
+              onChange={(event) => setStorylineFactsInput(event.target.value)}
+              placeholder={"I teach kids Scratch\nI make bookmarks\nI mark dance counts in my notebook"}
+              rows={10}
+              value={storylineFactsInput}
+            />
+            <div className="essay-main-actions">
+              <button
+                className="button button-secondary"
+                disabled={isSaving !== null}
+                onClick={handleSaveStorylineFacts}
+                type="button"
+              >
+                {isSaving === "facts" ? "Saving..." : "Save facts"}
+              </button>
+              <button
+                className="button"
+                disabled={isSaving !== null}
+                onClick={handleGenerateStorylines}
+                type="button"
+              >
+                {isSaving === "storylines" ? "Generating..." : "Generate storylines"}
+              </button>
+            </div>
+            {initialStorylineGeneratedAt ? (
+              <div className="muted">Generated {formatSavedAt(initialStorylineGeneratedAt).replace("Saved ", "")}</div>
+            ) : null}
+          </div>
+
+          <div className="essay-storylines-panel stack">
+            <div className="subpanel-header">
+              <strong>Generated angles</strong>
+              <span className="muted">{initialStorylineCards.length} ideas</span>
+            </div>
+            <p className="muted">
+              Save strong angles, then attach them to the currently selected prompt when they fit.
+            </p>
+            <div className="essay-storyline-list">
+              {initialStorylineCards.length > 0 ? (
+                initialStorylineCards.map((storyline) => {
+                  const supportingFacts = storyline.supportingFactIds
+                    .map((factId) => initialStorylineFacts.find((fact) => fact.id === factId)?.text ?? "")
+                    .filter(Boolean);
+
+                  return (
+                    <div className={`essay-storyline-card ${storyline.saved ? "saved" : ""}`} key={storyline.id}>
+                      <div className="essay-storyline-top">
+                        <strong>{storyline.title}</strong>
+                        <span className="pill essay-storyline-confidence">{storyline.confidence}</span>
+                      </div>
+                      <div className="essay-storyline-connection">{storyline.connection}</div>
+                      <div className="essay-tag-row">
+                        {storyline.sharedValues.map((value) => (
+                          <span className="pill" key={value}>
+                            {value}
+                          </span>
+                        ))}
+                      </div>
+                      {supportingFacts.length > 0 ? (
+                        <div className="muted essay-storyline-facts">{supportingFacts.join(" · ")}</div>
+                      ) : null}
+                      <div className="essay-tag-row">
+                        {storyline.possiblePromptTypes.map((promptType) => (
+                          <span className="pill pill-warning" key={promptType}>
+                            {promptType}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="essay-main-actions">
+                        <button
+                          className="button button-secondary"
+                          disabled={isSaving !== null}
+                          onClick={() => void handleToggleSavedStoryline(storyline.id)}
+                          type="button"
+                        >
+                          {storyline.saved ? "Unsave" : "Save angle"}
+                        </button>
+                        <button
+                          className="button button-secondary"
+                          disabled={isSaving !== null}
+                          onClick={() => void handleApplyStorylineToPrompt(storyline.id)}
+                          type="button"
+                        >
+                          Use for selected prompt
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="muted">No storylines yet. Save a few facts, then generate.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      )}
+
+      {workspaceMode === "writing" ? (
       <aside className="panel essay-right-rail">
         <div className="stack">
           <div className="subpanel-header">
@@ -475,6 +732,8 @@ export function EssaysWorkspace({
           </button>
         </div>
       </aside>
+      ) : null}
     </section>
+    </>
   );
 }

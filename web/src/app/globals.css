@@ -97,6 +97,34 @@ a {
   margin-bottom: 28px;
 }
 
+.dashboard-status-strip,
+.colleges-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.dashboard-status-item {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 18px 20px;
+  background: linear-gradient(180deg, #fffdfa 0%, #fff8f1 100%);
+}
+
+.dashboard-status-item strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.5rem;
+  color: #87414a;
+}
+
+.dashboard-status-item-wide {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .tab-row {
   display: flex;
   flex-wrap: wrap;
@@ -391,6 +419,196 @@ code.inline {
   flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-end;
+}
+
+.plus-launch-button {
+  width: 64px;
+  height: 64px;
+  border: 0;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #b86372 0%, #d99b6d 100%);
+  color: #fffdf9;
+  font-size: 2rem;
+  line-height: 1;
+  box-shadow: 0 18px 30px rgba(150, 86, 78, 0.22);
+  cursor: pointer;
+}
+
+.plus-launch-button:hover {
+  transform: translateY(-1px);
+}
+
+.modal-shell {
+  width: min(520px, calc(100vw - 32px));
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.modal-shell::backdrop {
+  background: rgba(53, 38, 29, 0.36);
+  backdrop-filter: blur(6px);
+}
+
+.modal-card {
+  border: 1px solid rgba(111, 101, 93, 0.12);
+  border-radius: 28px;
+  background: linear-gradient(180deg, #fffdfa 0%, #fff6ef 100%);
+  padding: 24px;
+  box-shadow: 0 28px 50px rgba(64, 42, 28, 0.16);
+}
+
+.modal-card-compact {
+  max-width: 460px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.modal-description {
+  margin: 8px 0 0;
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fffdfa;
+  color: #87414a;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.modal-content {
+  margin-top: 18px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.button-danger {
+  background: #9f4250;
+  color: #fff9f6;
+  border-color: #9f4250;
+}
+
+.progress-track {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: #efe1d4;
+  overflow: hidden;
+}
+
+.progress-track-large {
+  height: 16px;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #d99b6d 0%, #b8646f 100%);
+}
+
+.progress-caption {
+  margin-top: 10px;
+}
+
+.colleges-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.college-overview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 280px;
+  border: 1px solid rgba(111, 101, 93, 0.12);
+  border-radius: 28px;
+  padding: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 246, 238, 0.98) 100%),
+    radial-gradient(circle at top right, rgba(243, 221, 224, 0.5) 0%, rgba(243, 221, 224, 0) 34%);
+  box-shadow: 0 18px 36px rgba(64, 42, 28, 0.08);
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+}
+
+.college-overview-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(184, 100, 111, 0.28);
+  box-shadow: 0 24px 42px rgba(64, 42, 28, 0.12);
+}
+
+.college-overview-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.college-overview-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.college-overview-title-group strong {
+  font-size: 1.55rem;
+  line-height: 1.08;
+}
+
+.college-overview-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill-soft {
+  background: #fff8f3;
+}
+
+.college-overview-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.subpanel-header.compact {
+  margin-bottom: 0;
+}
+
+.college-overview-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.college-overview-notes {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.45;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
 .activities-layout {
@@ -918,6 +1136,18 @@ code.inline {
   gap: 20px;
 }
 
+.essay-shell.storylines-mode {
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+
+.essay-workspace-switcher {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
 .essay-sidebar,
 .essay-right-rail,
 .essay-main {
@@ -1044,6 +1274,10 @@ code.inline {
   gap: 18px;
 }
 
+.essay-storylines-workspace {
+  min-height: 72vh;
+}
+
 .essay-error-banner {
   border-radius: 18px;
   border: 1px solid rgba(184, 100, 111, 0.22);
@@ -1106,6 +1340,19 @@ code.inline {
   gap: 12px;
   align-items: flex-start;
   flex-wrap: wrap;
+}
+
+.essay-storylines-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
+  gap: 18px;
+}
+
+.essay-storylines-panel {
+  border: 1px solid rgba(111, 101, 93, 0.12);
+  border-radius: 22px;
+  padding: 18px;
+  background: linear-gradient(180deg, #fffefa 0%, #fff8f1 100%);
 }
 
 .text-link {
@@ -1172,10 +1419,77 @@ code.inline {
   gap: 12px;
 }
 
+.essay-storyline-textarea {
+  min-height: 180px;
+}
+
+.essay-ai-debug {
+  border: 1px dashed rgba(111, 101, 93, 0.18);
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: #fffcf8;
+}
+
+.essay-ai-url {
+  word-break: break-all;
+}
+
+.essay-storyline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.essay-storyline-card {
+  border: 1px solid rgba(111, 101, 93, 0.12);
+  background: linear-gradient(180deg, #fffdfa 0%, #fff8f1 100%);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.essay-storyline-card.saved {
+  border-color: rgba(184, 100, 111, 0.26);
+  box-shadow: 0 12px 24px rgba(184, 100, 111, 0.1);
+}
+
+.essay-storyline-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.essay-storyline-top strong {
+  font-size: 1.02rem;
+  color: #87414a;
+}
+
+.essay-storyline-confidence {
+  text-transform: capitalize;
+}
+
+.essay-storyline-connection {
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.essay-storyline-facts {
+  line-height: 1.45;
+}
+
 .essay-tag-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.detail-header-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
 }
 
 .college-card-top {
@@ -1238,6 +1552,13 @@ code.inline {
   margin-top: 24px;
 }
 
+.dashboard-note-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: center;
+}
+
 .quick-task-row {
   display: grid;
   grid-template-columns: 1.7fr 1fr 0.9fr auto;
@@ -1278,6 +1599,57 @@ code.inline {
   color: var(--muted);
 }
 
+.requirements-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.requirements-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.requirements-item-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.requirement-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid rgba(111, 101, 93, 0.12);
+}
+
+.requirement-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.requirement-copy {
+  min-width: 0;
+}
+
+.requirement-value {
+  margin-top: 4px;
+}
+
+.requirement-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.requirement-actions-wide {
+  min-width: min(100%, 320px);
+}
+
 @media (max-width: 900px) {
   .hero {
     grid-template-columns: 1fr;
@@ -1287,6 +1659,11 @@ code.inline {
   .stat-grid,
   .card-grid,
   .two-up,
+  .dashboard-status-strip,
+  .colleges-summary-strip,
+  .colleges-card-grid,
+  .requirements-grid,
+  .essay-storylines-grid,
   .research-card-grid,
   .metric-row,
   .quick-task-row,
@@ -1309,6 +1686,8 @@ code.inline {
 
   .app-hero,
   .page-header-row,
+  .detail-header-actions,
+  .essay-workspace-switcher,
   .research-detail-hero-top,
   .snapshot-row,
   .subpanel-header,
@@ -1319,7 +1698,11 @@ code.inline {
   .research-card-footer,
   .site-header-inner,
   .site-nav,
-  .prompt-card {
+  .prompt-card,
+  .college-overview-top,
+  .requirement-row,
+  .modal-actions,
+  .essay-storyline-top {
     align-items: flex-start;
     flex-direction: column;
   }

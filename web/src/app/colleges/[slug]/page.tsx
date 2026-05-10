@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { updatePromptPreference, updateUserCollege } from "@/app/app/actions";
+import {
+  removeCollegeFromDashboard,
+  updatePromptPreference,
+  updateUserCollege,
+} from "@/app/app/actions";
+import { ConfirmSubmitModal } from "@/app/components/confirm-submit-modal";
 import { updateRequirements, updateResearchEntry } from "@/app/workspace-actions";
 import { getUserCollegeBySlug, requireCurrentUser } from "@/lib/app-data";
 import {
@@ -86,19 +91,32 @@ export default async function CollegeDetailPage({
           <span className="eyebrow">College Command Center</span>
           <h1 className="page-title">{college.name}</h1>
           <p className="lede">
-            This route is the web copy of the NiceGUI college command center. The structure now
-            matches the original tabs so we can port behavior without changing the mental model.
+            This is the full college page for setup, essays, research, and requirements without
+            crowding the main colleges list.
           </p>
         </div>
-        <div className="stat-grid compact">
-          <div className="stat-card">
-            <span className="stat-label">Cycle</span>
-            <strong>{college.applicationCycle ?? "TBD"}</strong>
+        <div className="detail-header-actions">
+          <div className="stat-grid compact">
+            <div className="stat-card">
+              <span className="stat-label">Cycle</span>
+              <strong>{college.applicationCycle ?? "TBD"}</strong>
+            </div>
+            <div className="stat-card">
+              <span className="stat-label">Prompts</span>
+              <strong>{college.promptCount}</strong>
+            </div>
           </div>
-          <div className="stat-card">
-            <span className="stat-label">Prompts</span>
-            <strong>{college.promptCount}</strong>
-          </div>
+          <form action={removeCollegeFromDashboard}>
+            <input name="collegeSlug" type="hidden" value={college.slug} />
+            <ConfirmSubmitModal
+              confirmClassName="button button-danger"
+              confirmLabel="Remove college"
+              description={`This will remove ${college.name} from your college list. You can add it again later, but its saved setup on this page will be cleared.`}
+              title={`Remove ${college.name}?`}
+              triggerClassName="button button-secondary"
+              triggerLabel="Remove from list"
+            />
+          </form>
         </div>
       </section>
 
@@ -316,21 +334,31 @@ export default async function CollegeDetailPage({
       ) : null}
 
       {activeTab === "requirements" ? (
-        <div className="panel stack">
+        <div className="requirements-grid">
           {REQUIREMENT_SECTIONS.map((section) => (
-            <div className="panel sub-card" key={section.title}>
-              <strong>{section.title}</strong>
-              <div className="stack">
+            <div className="panel sub-card requirements-panel" key={section.title}>
+              <div className="subpanel-header">
+                <strong>{section.title}</strong>
+                <span className="muted">{section.items.length} items</span>
+              </div>
+              <div className="requirements-item-list">
                 {section.items.map((item) => (
-                  <form action={updateRequirements} className="prompt-card" key={item.key}>
+                  <form action={updateRequirements} className="requirement-row" key={item.key}>
                     <input name="collegeSlug" type="hidden" value={college.slug} />
                     <input name="key" type="hidden" value={item.key} />
                     <input name="current" type="hidden" value={JSON.stringify(college.requirementsChecklist)} />
-                    <div>
+                    <div className="requirement-copy">
                       <strong>{item.label}</strong>
+                      <div className="muted requirement-value">
+                        {item.type === "checkbox"
+                          ? Boolean(college.requirementsChecklist[item.key])
+                            ? "Completed"
+                            : "Not done yet"
+                          : String(college.requirementsChecklist[item.key] ?? TESTING_POLICY_OPTIONS[0])}
+                      </div>
                     </div>
                     {item.type === "checkbox" ? (
-                      <>
+                      <div className="requirement-actions">
                         <input
                           name="value"
                           type="hidden"
@@ -339,15 +367,25 @@ export default async function CollegeDetailPage({
                         <button className="button button-secondary" type="submit">
                           {Boolean(college.requirementsChecklist[item.key]) ? "Mark incomplete" : "Mark complete"}
                         </button>
-                      </>
+                      </div>
                     ) : (
-                      <select className="field compact-field" defaultValue={String(college.requirementsChecklist[item.key] ?? TESTING_POLICY_OPTIONS[0])} name="value">
-                        {TESTING_POLICY_OPTIONS.map((option) => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
+                      <div className="requirement-actions requirement-actions-wide">
+                        <select
+                          className="field compact-field"
+                          defaultValue={String(college.requirementsChecklist[item.key] ?? TESTING_POLICY_OPTIONS[0])}
+                          name="value"
+                        >
+                          {TESTING_POLICY_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                        <button className="button button-secondary" type="submit">
+                          Save
+                        </button>
+                      </div>
                     )}
-                    {item.type === "select" ? <button className="button button-secondary" type="submit">Save</button> : null}
                   </form>
                 ))}
               </div>

@@ -11,6 +11,8 @@ export default async function DashboardPage() {
     ensureWorkspaceState(user.id),
   ]);
   const tasks = normalizeHomeTasks(workspace.homeTasks);
+  const activeTasks = tasks.filter((task) => !task.completed).length;
+  const draftingColleges = colleges.filter((college) => college.status === "Drafting").length;
 
   return (
     <main className="shell">
@@ -18,19 +20,18 @@ export default async function DashboardPage() {
         <div>
           <span className="eyebrow">Your Dashboard</span>
           <h1 className="page-title">
-            {user.name ? `${user.name.split(" ")[0]}'s application dashboard` : "Your application dashboard"}
+            {user.name ? `${user.name.split(" ")[0]}'s dashboard` : "Application dashboard"}
           </h1>
           <p className="lede">
-            This is the first real replacement slice of the NiceGUI app. Your college list now
-            belongs to your signed-in account, not a local JSON file.
+            Keep track of colleges, tasks, and what to work on next.
           </p>
         </div>
         <div className="cta-row">
           <Link className="button" href="/colleges">
-            Manage colleges
+            Open colleges
           </Link>
           <Link className="button button-secondary" href="/essays">
-            Essays coming next
+            Open essays
           </Link>
         </div>
       </section>
@@ -76,11 +77,26 @@ export default async function DashboardPage() {
         )}
       </section>
 
+      <section className="dashboard-status-strip">
+        <div className="dashboard-status-item">
+          <span className="stat-label">Saved colleges</span>
+          <strong>{colleges.length}</strong>
+        </div>
+        <div className="dashboard-status-item">
+          <span className="stat-label">Active tasks</span>
+          <strong>{activeTasks}</strong>
+        </div>
+        <div className="dashboard-status-item">
+          <span className="stat-label">Drafting now</span>
+          <strong>{draftingColleges}</strong>
+        </div>
+      </section>
+
       <section className="two-up dashboard-lower">
         <div className="panel">
           <div className="subpanel-header">
             <strong>To-Do List</strong>
-            <span className="muted">{tasks.filter((task) => !task.completed).length} active</span>
+            <span className="muted">{activeTasks} active</span>
           </div>
           <form action={addHomeTask} className="quick-task-row">
             <input className="field" name="title" placeholder="Quick add" />
@@ -125,16 +141,19 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="panel">
-          <div className="subpanel-header">
-            <strong>Workspace status</strong>
-            <span className="pill">Live</span>
-          </div>
-          <div className="stack">
-            <div className="check">Colleges are persisted to Neon.</div>
-            <div className="check">Prompt selections are now persisted per user.</div>
-            <div className="check">Home tasks are now persisted too.</div>
-            <div className="check">Next I am tightening research, college planning, settings, and activities into a cleaner workflow.</div>
+        <div className="panel dashboard-note-card">
+          <strong>Resume where you left off</strong>
+          <p className="muted">
+            Your list, tasks, and essay setup are already saved. Use this page for quick triage,
+            then jump back into a college or the essays workspace.
+          </p>
+          <div className="cta-row">
+            <Link className="button button-secondary" href="/essays">
+              Open essays
+            </Link>
+            <Link className="button button-secondary" href="/research">
+              Open research
+            </Link>
           </div>
         </div>
       </section>

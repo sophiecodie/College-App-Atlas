@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import { userColleges, userWorkspaceState } from "@/db/schema";
+import { normalizeStorylineCards, normalizeStorylineFacts } from "@/lib/storylines";
 
 export const TASK_PRIORITY_OPTIONS = ["", "High", "Medium", "Low"] as const;
 export const TESTING_POLICY_OPTIONS = [
@@ -160,6 +161,9 @@ export function defaultWorkspaceSettings() {
     essayWorkspace: {
       selectedPromptId: null as string | null,
       promptTags: {} as Record<string, string[]>,
+      storylineFacts: [],
+      storylineCards: [],
+      storylineGeneratedAt: null as string | null,
     },
   };
 }
@@ -262,6 +266,11 @@ export function normalizeEssayWorkspaceSettings(raw: unknown) {
   return {
     selectedPromptId: source.selectedPromptId ? String(source.selectedPromptId) : null,
     promptTags,
+    storylineFacts: normalizeStorylineFacts(source.storylineFacts),
+    storylineCards: normalizeStorylineCards(source.storylineCards),
+    storylineGeneratedAt: source.storylineGeneratedAt
+      ? String(source.storylineGeneratedAt)
+      : null,
   };
 }
 

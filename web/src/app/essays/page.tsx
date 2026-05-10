@@ -5,6 +5,9 @@ import { ensureWorkspaceState, normalizeSettingsState } from "@/lib/workspace-st
 
 export default async function EssaysPage() {
   const user = await requireCurrentUser();
+  const aiBaseUrl = (process.env.OPENAI_API_BASE_URL ?? "https://api.openai.com/v1").replace(/\/$/, "");
+  const aiModel = process.env.OPENAI_STORYLINES_MODEL ?? "gpt-5.2";
+  const aiConfigured = Boolean(process.env.OPENAI_API_KEY);
   const [groups, workspace] = await Promise.all([
     getEssayWorkspaceForUser(user.id),
     ensureWorkspaceState(user.id),
@@ -28,6 +31,12 @@ export default async function EssaysPage() {
         groups={groups}
         initialPromptId={settings.essayWorkspace.selectedPromptId}
         initialPromptTags={settings.essayWorkspace.promptTags}
+        initialStorylineFacts={settings.essayWorkspace.storylineFacts}
+        initialStorylineCards={settings.essayWorkspace.storylineCards}
+        initialStorylineGeneratedAt={settings.essayWorkspace.storylineGeneratedAt}
+        aiConfigured={aiConfigured}
+        aiBaseUrl={aiBaseUrl}
+        aiModel={aiModel}
       />
     </main>
   );

@@ -2,6 +2,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { db } from "@/db/client";
 import { userColleges, userPromptPreferences } from "@/db/schema";
@@ -69,6 +70,28 @@ export async function updateUserCollege(formData: FormData) {
   revalidatePath("/colleges");
   revalidatePath(`/colleges/${collegeSlug}`);
   revalidatePath("/essays");
+}
+
+export async function removeCollegeFromDashboard(formData: FormData) {
+  const user = await requireCurrentUser();
+  const collegeSlug = String(formData.get("collegeSlug") ?? "").trim();
+
+  if (!collegeSlug) {
+    return;
+  }
+
+  await db
+    .delete(userColleges)
+    .where(and(eq(userColleges.userId, user.id), eq(userColleges.collegeSlug, collegeSlug)));
+
+  revalidatePath("/app");
+  revalidatePath("/colleges");
+  revalidatePath(`/colleges/${collegeSlug}`);
+  revalidatePath("/research");
+  revalidatePath(`/research/${collegeSlug}`);
+  revalidatePath("/essays");
+
+  redirect("/colleges");
 }
 
 export async function updatePromptPreference(formData: FormData) {
