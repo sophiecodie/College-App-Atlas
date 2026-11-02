@@ -1,0 +1,13 @@
+{
+  "unitid": 211440,
+  "name": "Carnegie Mellon University",
+  "cycle": "2026-2027",
+  "platforms": ["common_app", "coalition"],
+  "sources": [{ "url": "https://www.cmu.edu/admission/admission/application-plans-deadlines", "kind": "deadlines" }],
+  "deadlines": [
+    { "round": "ED", "date": "2026-11-02", "conditions": "Binding; notified by December 15.", "sourceUrl": "https://www.cmu.edu/admission/admission/application-plans-deadlines", "excerpt": "Early Decision Timeline Deadline: November 2" },
+    { "round": "RD", "date": "2027-01-04", "sourceUrl": "https://www.cmu.edu/admission/admission/application-plans-deadlines", "excerpt": "Regular Decision Timeline Deadline: January 4" },
+    { "round": "RD", "date": "2026-12-01", "programScope": ["drama", "music"], "conditions": "Schools of Drama and Music.", "sourceUrl": "https://www.cmu.edu/admission/admission/application-plans-deadlines", "excerpt": "Regular Decision for Schools of Drama and Music Deadline: December 1" }
+  ],
+  "unavailable": { "prompts": "Short-answer prompts were not captured from an official CMU page yet." }
+}

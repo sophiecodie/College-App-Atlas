@@ -8,28 +8,43 @@
     "start": "next start",
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "tsx scripts/migrate.ts",
     "db:push": "drizzle-kit push",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:seed": "tsx scripts/seed.ts",
+    "db:migrate:drizzle-kit": "drizzle-kit migrate",
+    "catalog:import-directory": "tsx scripts/import-directory.ts",
+    "catalog:ingest-admissions": "tsx scripts/ingest-admissions.ts",
+    "catalog:refresh-admissions": "tsx scripts/refresh-admissions.ts",
+    "catalog:cycle-rollover": "tsx scripts/cycle-rollover.ts",
+    "catalog:report": "tsx scripts/catalog-report.ts",
+    "test": "node --import tsx --import ./tests/setup-env.mjs --test --test-concurrency=1 \"tests/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "catalog:curate": "tsx scripts/curate-sources.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
     "@auth/drizzle-adapter": "^1.7.4",
     "@neondatabase/serverless": "^0.10.4",
+    "@xyflow/react": "^12.3.6",
     "drizzle-orm": "^0.44.2",
+    "lucide-react": "^0.468.0",
+    "motion": "^11.15.0",
     "next": "^15.0.4",
     "next-auth": "^5.0.0-beta.25",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-zoom-pan-pinch": "^3.6.1",
     "ws": "^8.18.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.3.15",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "@types/ws": "^8.5.13",
     "drizzle-kit": "^0.31.4",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
 }
-

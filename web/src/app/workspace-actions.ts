@@ -9,6 +9,8 @@ import {
   defaultResearchEntry,
   ensureWorkspaceState,
   normalizeActivities,
+  normalizeFeeEntry,
+  normalizeRecommendationSlots,
   normalizeRecommenders,
   normalizeRequirementsChecklist,
   normalizeResearchData,
@@ -69,6 +71,7 @@ export async function addRecommender(formData: FormData) {
   });
   await updateWorkspaceState(user.id, { recommenders });
   revalidatePath("/colleges");
+  revalidatePath("/settings");
 }
 
 export async function deleteRecommender(formData: FormData) {
@@ -80,6 +83,7 @@ export async function deleteRecommender(formData: FormData) {
     recommenders: recommenders.filter((rec) => rec.name !== name),
   });
   revalidatePath("/colleges");
+  revalidatePath("/settings");
 }
 
 export async function addActivity(formData: FormData) {
@@ -206,4 +210,47 @@ export async function deleteActivity(formData: FormData) {
       : { finalActivities: entries },
   );
   revalidatePath("/activities");
+}
+
+export async function updateCollegeFees(formData: FormData) {
+  const user = await requireCurrentUser();
+  const collegeSlug = String(formData.get("collegeSlug") ?? "");
+  const current = normalizeFeeEntry(JSON.parse(String(formData.get("current") ?? "{}")), "");
+  const money = (key: string) => {
+    const value = Number(formData.get(key));
+    return Number.isFinite(value) && value >= 0 ? value : 0;
+  };
+
+  await updateCollegeExtras(user.id, collegeSlug, {
+    fees: {
+      ...current,
+      application_fee: money("application_fee"),
+      fee_waiver_status: String(formData.get("fee_waiver_status") ?? current.fee_waiver_status),
+      payment_status: String(formData.get("payment_status") ?? current.payment_status),
+      notes: String(formData.get("notes") ?? ""),
+      css_profile_required: formData.get("css_profile_required") === "on",
+      css_profile_cost: money("css_profile_cost"),
+      sat_score_send_required: formData.get("sat_score_send_required") === "on",
+      sat_score_send_cost: money("sat_score_send_cost"),
+      ap_score_send_required: formData.get("ap_score_send_required") === "on",
+      ap_score_send_cost: money("ap_score_send_cost"),
+    },
+  });
+  revalidatePath(`/colleges/${collegeSlug}`);
+}
+
+export async function updateRecommendationSlots(formData: FormData) {
+  const user = await requireCurrentUser();
+  const collegeSlug = String(formData.get("collegeSlug") ?? "");
+  const slots = (kind: "required" | "optional") => {
+    const labels = formData.getAll(`${kind}_label`).map(String);
+    const assigned = formData.getAll(`${kind}_assigned`).map(String);
+    return labels.map((label, index) => ({ label, assigned_recommender: assigned[index] ?? "" }));
+  };
+
+  await updateCollegeExtras(user.id, collegeSlug, {
+    requiredRecommendations: normalizeRecommendationSlots(slots("required"), "required"),
+    optionalRecommendations: normalizeRecommendationSlots(slots("optional"), "optional"),
+  });
+  revalidatePath(`/colleges/${collegeSlug}`);
 }

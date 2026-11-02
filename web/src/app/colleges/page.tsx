@@ -1,168 +1,113 @@
+import { List, Map as MapIcon } from "lucide-react";
 import Link from "next/link";
 
-import { addCollegeToDashboard } from "@/app/app/actions";
-import { ModalShell } from "@/app/components/modal-shell";
-import { getAvailableColleges, getUserColleges, requireCurrentUser } from "@/lib/app-data";
-import { REQUIREMENT_SECTIONS, TESTING_POLICY_OPTIONS } from "@/lib/workspace-state";
+import { CampusMap, MapLegend, type MapCollege } from "@/app/colleges/campus-map";
+import { CollegePicker } from "@/app/colleges/college-picker";
+import { CollegeCard } from "@/components/cozy/college-card";
+import { CozyCard, EmptyState, PageHeader } from "@/components/cozy/ui";
+import { db } from "@/db/client";
+import { getUserColleges, requireCurrentUser } from "@/lib/app-data";
+import { APPLICATION_TYPE_OPTIONS, currentAcademicYear } from "@/lib/catalog/cycles";
+import { getUpcomingDeadlinesForUser } from "@/lib/catalog/requirements";
+import { listStates } from "@/lib/catalog/search";
+import { dueLabel, getCollegeProgress } from "@/lib/progress";
 
-function getCollegeProgress(college: Awaited<ReturnType<typeof getUserColleges>>[number]) {
-  let totalRequirementSteps = 0;
-  let completedSteps = 0;
-
-  for (const section of REQUIREMENT_SECTIONS) {
-    for (const item of section.items) {
-      totalRequirementSteps += 1;
-      const value = college.requirementsChecklist[item.key];
-      if (item.type === "checkbox" && Boolean(value)) {
-        completedSteps += 1;
-      }
-      if (item.type === "select" && typeof value === "string" && value !== TESTING_POLICY_OPTIONS[0]) {
-        completedSteps += 1;
-      }
-    }
-  }
-
-  const totalSteps = totalRequirementSteps + 3;
-
-  if (college.selectedApplicationType) {
-    completedSteps += 1;
-  }
-  if (college.programSelection) {
-    completedSteps += 1;
-  }
-  if (college.status && college.status !== "In Progress") {
-    completedSteps += 1;
-  }
-
-  return {
-    completedSteps,
-    totalSteps,
-    percent: Math.max(8, Math.round((completedSteps / totalSteps) * 100)),
-  };
-}
-
-export default async function CollegesPage() {
+export default async function CollegesPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const user = await requireCurrentUser();
-  const [savedColleges, availableColleges] = await Promise.all([
+  const { view: requestedView } = await searchParams;
+  const [savedColleges, states, deadlines] = await Promise.all([
     getUserColleges(user.id),
-    getAvailableColleges(user.id),
+    listStates(db),
+    getUpcomingDeadlinesForUser(db, user.id, currentAcademicYear()),
   ]);
+  const view = requestedView === "list" || savedColleges.length === 0 ? "list" : "map";
+  const deadlineBySlug = new Map(deadlines.map((row) => [row.collegeSlug, row]));
+
+  // Map order follows the journey: soonest official deadline first.
+  const rows = savedColleges
+    .map((college) => {
+      const deadline = deadlineBySlug.get(college.slug);
+      const due = dueLabel(deadline?.officialDate ?? null);
+      const { percent } = getCollegeProgress(college);
+      const status: MapCollege["status"] =
+        college.status === "Submitted" ? "completed" : due?.urgent ? "due_soon" : percent > 20 ? "in_progress" : "not_started";
+      return { college, percent, due, status, sortKey: deadline?.officialDate ?? deadline?.personalDate ?? "9999" };
+    })
+    .sort((a, b) => a.sortKey.localeCompare(b.sortKey) || a.college.name.localeCompare(b.college.name));
+
+  const counts = { due_soon: 0, in_progress: 0, not_started: 0, completed: 0 };
+  for (const row of rows) counts[row.status] += 1;
 
   return (
-    <main className="shell">
-      <section className="workspace-header">
-        <div>
-          <span className="eyebrow">Schools</span>
-          <h1 className="page-title">College dashboard</h1>
-          <p className="lede">
-            Keep your saved schools in one place, then open any one for prompts,
-            research, requirements, and notes.
-          </p>
-        </div>
-        <div className="workspace-actions">
-          <ModalShell
-            description="Choose from the seeded catalog and add another school to your workspace."
-            title="Add a college"
-            triggerClassName="plus-launch-button"
-            triggerLabel="+"
-          >
-            {availableColleges.length > 0 ? (
-              <form action={addCollegeToDashboard} className="stack">
-                <label className="field-label" htmlFor="collegeSlug">
-                  Choose a college
-                </label>
-                <select
-                  className="field"
-                  defaultValue={availableColleges[0]?.slug}
-                  id="collegeSlug"
-                  name="collegeSlug"
-                >
-                  {availableColleges.map((college) => (
-                    <option key={college.slug} value={college.slug}>
-                      {college.name}
-                    </option>
-                  ))}
-                </select>
-                <button className="button" type="submit">
-                  Add to my colleges
-                </button>
-              </form>
-            ) : (
-              <p className="muted">You already added every seeded college.</p>
-            )}
-          </ModalShell>
-        </div>
-      </section>
-
-      <section className="panel dashboard-route-panel">
-        <div className="section-heading-row">
-          <div>
-            <span className="section-kicker">Saved schools</span>
-            <h2 className="section-title">{savedColleges.length} colleges in your list</h2>
+    <main className="shell shell-wide">
+      <PageHeader
+        actions={
+          <div className="view-toggle" role="tablist">
+            <Link aria-selected={view === "map"} className={view === "map" ? "active" : ""} href="/colleges?view=map" role="tab">
+              <MapIcon size={15} /> Map view
+            </Link>
+            <Link aria-selected={view === "list"} className={view === "list" ? "active" : ""} href="/colleges?view=list" role="tab">
+              <List size={15} /> List view
+            </Link>
           </div>
-        </div>
+        }
+        description="Explore and track your application journey."
+        title="My Colleges"
+      />
 
-        <section className="colleges-card-grid">
-        {savedColleges.length > 0 ? (
-          savedColleges.map((college) => {
-            const progress = getCollegeProgress(college);
-
-            return (
-              <Link className="college-overview-card" href={`/colleges/${college.slug}`} key={college.id}>
-                <div className="college-overview-top">
-                  <div className="college-overview-title-group">
-                    <strong>{college.name}</strong>
-                    <span className="muted">{college.applicationCycle ?? "Cycle TBD"}</span>
-                  </div>
-                  <span className="pill">{college.status ?? "In Progress"}</span>
-                </div>
-
-                <div className="college-overview-pill-row">
-                  <span className="pill pill-soft">{college.selectedApplicationType ?? "App type pending"}</span>
-                  <span className="pill pill-soft">
-                    {college.programSelection === "engineering"
-                      ? "Engineering"
-                      : college.programSelection === "undecided"
-                        ? "Undecided"
-                        : "General applicant"}
-                  </span>
-                  <span className="pill pill-soft">{college.promptCount} prompts</span>
-                </div>
-
-                <div className="college-overview-progress">
-                  <div className="subpanel-header compact">
-                    <strong>Progress</strong>
-                    <span className="muted">{progress.percent}%</span>
-                  </div>
-                  <div className="progress-track" aria-hidden="true">
-                    <div className="progress-fill" style={{ width: `${progress.percent}%` }} />
-                  </div>
-                  <div className="muted">
-                    {progress.completedSteps} of {progress.totalSteps} setup checkpoints done
-                  </div>
-                </div>
-
-                <div className="college-overview-footer">
-                  <span className="muted college-overview-notes">
-                    {college.quickNotes?.trim()
-                      ? college.quickNotes
-                      : "Open this college to edit notes, prompts, research, and requirements."}
-                  </span>
-                  <span className="research-open-label">Open college page</span>
-                </div>
-              </Link>
-            );
-          })
-        ) : (
-          <div className="empty-panel">
-            <strong>No colleges saved yet</strong>
-            <p className="muted">
-              Use the plus button to add your first school and start building the list.
-            </p>
-          </div>
-        )}
+      {view === "map" ? (
+        <section className="map-layout">
+          <aside className="map-side">
+            <CozyCard title="Your journey">
+              <MapLegend counts={counts} />
+            </CozyCard>
+            <Link className="cozy-button secondary" href="/colleges?view=list">
+              + Add a college
+            </Link>
+            <p className="muted map-hint">Drag to explore, scroll or pinch to zoom, and click a school to open it.</p>
+          </aside>
+          <CampusMap
+            colleges={rows.map((row) => ({
+              slug: row.college.slug,
+              name: row.college.name,
+              percent: row.percent,
+              dueLabel: row.due?.label ?? null,
+              status: row.status,
+            }))}
+          />
         </section>
-      </section>
+      ) : (
+        <>
+          <CozyCard className="picker-card" title="Add a college">
+            <p className="muted picker-note">Not every school uses the Common App or asks for supplements.</p>
+            <CollegePicker roundOptions={APPLICATION_TYPE_OPTIONS} states={states} />
+          </CozyCard>
+
+          <CozyCard title={`${savedColleges.length} college${savedColleges.length === 1 ? "" : "s"} in your list`}>
+            {rows.length > 0 ? (
+              <div className="colleges-grid">
+                {rows.map(({ college, percent, due }) => (
+                  <CollegeCard
+                    college={{
+                      slug: college.slug,
+                      name: college.name,
+                      meta: [[college.city, college.state].filter(Boolean).join(", "), college.selectedApplicationType ?? "Round not set", `${college.promptCount} prompts`]
+                        .filter(Boolean)
+                        .join(" · "),
+                      percent,
+                      dueLabel: due?.label ?? null,
+                      dueUrgent: due?.urgent,
+                    }}
+                    key={college.id}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No colleges yet">Search above and press + to start your journey.</EmptyState>
+            )}
+          </CozyCard>
+        </>
+      )}
     </main>
   );
 }

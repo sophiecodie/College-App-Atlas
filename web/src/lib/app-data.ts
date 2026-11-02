@@ -1,9 +1,10 @@
-import { and, asc, eq, notInArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { db } from "@/db/client";
 import { colleges, prompts, userColleges, users } from "@/db/schema";
+import { currentAcademicYear } from "@/lib/catalog/cycles";
 import {
   normalizeFeeEntry,
   normalizeRecommendationSlots,
@@ -18,8 +19,15 @@ export type AppUser = {
 
 export type UserCollegeRecord = {
   id: string;
+  collegeId: string;
   slug: string;
   name: string;
+  city: string | null;
+  state: string | null;
+  websiteUrl: string | null;
+  admissionsUrl: string | null;
+  personalDeadline: string | null;
+  personalDeadlineNote: string | null;
   applicationCycle: string | null;
   selectedApplicationType: string | null;
   programSelection: string | null;
@@ -53,9 +61,39 @@ export async function requireCurrentUser(): Promise<AppUser> {
   };
 }
 
+/** Prompts counted on cards: live statuses in the current cycle (legacy rows without a cycle included). */
+function livePromptJoin() {
+  return and(
+    eq(prompts.collegeSlug, colleges.slug),
+    inArray(prompts.verificationStatus, ["verified", "pending_review", "conflicting"]),
+    or(eq(prompts.cycle, currentAcademicYear()), isNull(prompts.cycle)),
+  );
+}
+
+const collegeDetailColumns = {
+  collegeId: colleges.id,
+  city: colleges.city,
+  state: colleges.state,
+  websiteUrl: colleges.websiteUrl,
+  admissionsUrl: colleges.admissionsUrl,
+  personalDeadline: userColleges.personalDeadline,
+  personalDeadlineNote: userColleges.personalDeadlineNote,
+};
+
+const collegeDetailGroupBy = [
+  colleges.id,
+  colleges.city,
+  colleges.state,
+  colleges.websiteUrl,
+  colleges.admissionsUrl,
+  userColleges.personalDeadline,
+  userColleges.personalDeadlineNote,
+];
+
 export async function getUserColleges(userId: string): Promise<UserCollegeRecord[]> {
   const rows = await db
     .select({
+      ...collegeDetailColumns,
       id: userColleges.id,
       slug: colleges.slug,
       name: colleges.name,
@@ -72,9 +110,10 @@ export async function getUserColleges(userId: string): Promise<UserCollegeRecord
     })
     .from(userColleges)
     .innerJoin(colleges, eq(userColleges.collegeSlug, colleges.slug))
-    .leftJoin(prompts, eq(prompts.collegeSlug, colleges.slug))
-    .where(eq(userColleges.userId, userId))
+    .leftJoin(prompts, livePromptJoin())
+    .where(and(eq(userColleges.userId, userId), isNull(userColleges.archivedAt)))
     .groupBy(
+      ...collegeDetailGroupBy,
       userColleges.id,
       colleges.slug,
       colleges.name,
@@ -103,7 +142,7 @@ export async function getAvailableColleges(userId: string) {
   const existing = await db
     .select({ slug: userColleges.collegeSlug })
     .from(userColleges)
-    .where(eq(userColleges.userId, userId));
+    .where(and(eq(userColleges.userId, userId), isNull(userColleges.archivedAt)));
 
   const existingSlugs = existing.map((row) => row.slug);
 
@@ -124,6 +163,7 @@ export async function getAvailableColleges(userId: string) {
 export async function getUserCollegeBySlug(userId: string, slug: string) {
   const [record] = await db
     .select({
+      ...collegeDetailColumns,
       id: userColleges.id,
       slug: colleges.slug,
       name: colleges.name,
@@ -140,9 +180,10 @@ export async function getUserCollegeBySlug(userId: string, slug: string) {
     })
     .from(userColleges)
     .innerJoin(colleges, eq(userColleges.collegeSlug, colleges.slug))
-    .leftJoin(prompts, eq(prompts.collegeSlug, colleges.slug))
-    .where(and(eq(userColleges.userId, userId), eq(userColleges.collegeSlug, slug)))
+    .leftJoin(prompts, livePromptJoin())
+    .where(and(eq(userColleges.userId, userId), eq(userColleges.collegeSlug, slug), isNull(userColleges.archivedAt)))
     .groupBy(
+      ...collegeDetailGroupBy,
       userColleges.id,
       colleges.slug,
       colleges.name,

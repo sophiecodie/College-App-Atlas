@@ -31,7 +31,7 @@ export default async function ResearchDetailPage({
     <main className="shell shell-wide">
       <section className="research-detail-hero panel">
         <div className="research-detail-hero-top">
-          <Link className="button button-secondary" href={`/research?sort=${sortBy}`}>
+          <Link className="button button-secondary" href={`/research?college=${slug}`}>
             Back to research board
           </Link>
           <div className="research-workspace-summary">

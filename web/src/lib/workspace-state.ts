@@ -165,6 +165,48 @@ export function defaultWorkspaceSettings() {
       storylineCards: [],
       storylineGeneratedAt: null as string | null,
     },
+    onboarding: defaultOnboarding(),
+  };
+}
+
+export const FOCUS_OPTIONS = [
+  "Essays",
+  "Deadlines",
+  "Research",
+  "Majors & Programs",
+  "Application Tracking",
+  "Extracurriculars",
+  "Recommendations",
+  "Financial Aid",
+  "Personal Notes",
+] as const;
+
+export function defaultOnboarding() {
+  return {
+    completed: false,
+    completedAt: null as string | null,
+    grade: "",
+    location: "",
+    focus: [] as string[],
+    interests: [] as string[],
+  };
+}
+
+export function normalizeOnboarding(raw: unknown) {
+  const base = defaultOnboarding();
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return base;
+  }
+  const source = raw as Record<string, unknown>;
+  const list = (value: unknown, max: number) =>
+    Array.isArray(value) ? value.map((item) => String(item).trim().slice(0, 60)).filter(Boolean).slice(0, max) : [];
+  return {
+    completed: Boolean(source.completed),
+    completedAt: typeof source.completedAt === "string" ? source.completedAt : null,
+    grade: String(source.grade ?? "").slice(0, 40),
+    location: String(source.location ?? "").slice(0, 80),
+    focus: list(source.focus, FOCUS_OPTIONS.length).filter((item) => (FOCUS_OPTIONS as readonly string[]).includes(item)),
+    interests: list(source.interests, 8),
   };
 }
 
@@ -235,6 +277,7 @@ export function normalizeSettingsState(raw: unknown) {
       dark_mode: Boolean(appearance.dark_mode),
     },
     essayWorkspace: normalizeEssayWorkspaceSettings(source.essayWorkspace),
+    onboarding: normalizeOnboarding(source.onboarding),
   };
 }
 

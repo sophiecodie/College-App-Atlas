@@ -75,6 +75,7 @@ export async function saveSettings(formData: FormData) {
       dark_mode: String(formData.get("dark_mode") ?? "") === "on",
     },
     essayWorkspace: current.essayWorkspace,
+    onboarding: current.onboarding,
   };
 
   await updateWorkspaceState(user.id, { settingsState: nextState });

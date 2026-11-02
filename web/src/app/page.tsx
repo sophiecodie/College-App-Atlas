@@ -1,133 +1,141 @@
-import { desc, sql } from "drizzle-orm";
+import { ArrowRight, Compass, Map, PenLine, Sprout } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
-import { signInWithGoogle, signOutUser } from "@/app/actions";
-import { db } from "@/db/client";
-import { colleges, prompts } from "@/db/schema";
+import { Stars } from "@/components/cozy/ui";
+import { ART, CAMPUS_ART } from "@/lib/illustrations";
 
-async function loadCatalogSnapshot() {
-  const [collegeCountRow, promptCountRow, collegePreview] = await Promise.all([
-    db.select({ count: sql<number>`count(*)::int` }).from(colleges),
-    db.select({ count: sql<number>`count(*)::int` }).from(prompts),
-    db
-      .select({
-        slug: colleges.slug,
-        name: colleges.name,
-        cycle: colleges.applicationCycle,
-      })
-      .from(colleges)
-      .orderBy(desc(colleges.createdAt))
-      .limit(5),
-  ]);
+const FEATURES = [
+  {
+    title: "Discover Your Story",
+    body: "Plant memories, hobbies and quirks in the Idea Garden, then let AI find surprising connections worth writing about.",
+    art: ART.flowers,
+    icon: Sprout,
+    tone: "tone-rose",
+    lead: true,
+  },
+  {
+    title: "Write Better Essays",
+    body: "A calm editor with autosave, versions, outlines and feedback that asks questions instead of rewriting you.",
+    art: ART.books,
+    icon: PenLine,
+    tone: "tone-butter",
+  },
+  {
+    title: "Explore Colleges",
+    body: "Search 5,700+ colleges and research programs, labs and clubs with sources you can check.",
+    art: CAMPUS_ART.brick,
+    icon: Compass,
+    tone: "tone-blue",
+  },
+  {
+    title: "Track Your Journey",
+    body: "Deadlines, checklists and progress for every school on one illustrated map.",
+    art: CAMPUS_ART.dome,
+    icon: Map,
+    tone: "tone-sage",
+  },
+];
 
-  return {
-    collegeCount: collegeCountRow[0]?.count ?? 0,
-    promptCount: promptCountRow[0]?.count ?? 0,
-    collegePreview,
-  };
-}
+const STEPS = [
+  ["Tell us about you", "Your grade, the schools on your mind, and what you want help with."],
+  ["Find your story", "Brainstorm in the Idea Garden and turn a theme into an outline."],
+  ["Write and research", "Draft essays beside sourced research about each college."],
+  ["Apply with calm", "Watch deadlines and checklists fill in on your map."],
+];
 
 export default async function HomePage() {
   const session = await auth();
-  const catalog = await loadCatalogSnapshot();
-
   if (session?.user?.email) {
     redirect("/app");
   }
 
   return (
-    <main className="shell">
-      <section className="hero">
-        <div className="panel hero-panel">
-          <span className="eyebrow">{session?.user ? "Signed in" : "Student planning, less panic"}</span>
-          <h1 className="headline">Map your college application season without losing the plot.</h1>
-          <p className="lede">
-            College Atlas turns colleges, essay work, and deadlines into one calmer
-            workspace. This web app is the real signed-in foundation, with live data,
-            saved progress, and room for stronger student-facing tools.
-          </p>
+    <div className="landing">
+      <header className="landing-nav">
+        <Link className="brand-mark" href="/">
+          CollegeAtlas<span className="sparkle">✦</span>
+        </Link>
+        <nav aria-label="Site">
+          <a href="#features">Features</a>
+          <a href="#how-it-works">How it works</a>
+          <Link href="/signin?mode=login">Log in</Link>
+          <Link className="cozy-button" href="/signin">
+            Get started
+          </Link>
+        </nav>
+      </header>
 
-          <div className="stack" style={{ marginTop: 24 }}>
-            <div className="check">Colleges and prompts already live in the shared catalog.</div>
-            <div className="check">Google sign-in and database sessions are already wired up.</div>
-            <div className="check">Saved colleges, tasks, and essays are moving into one student route map.</div>
-          </div>
-
-          <div className="cta-row">
-            {session?.user ? (
-              <form action={signOutUser}>
-                <button className="button button-secondary" type="submit">
-                  Sign out
-                </button>
-              </form>
-            ) : (
-              <form action={signInWithGoogle}>
-                <button className="button" type="submit">
-                  Continue with Google
-                </button>
-              </form>
-            )}
-            <span className="helper-text">
-              {session?.user
-                ? `Signed in as ${session.user.email ?? session.user.name ?? "your account"}.`
-                : "Use your Google account to test the real signed-in flow locally."}
-            </span>
-          </div>
+      <section className="landing-hero">
+        <div className="landing-hero-sky">
+          <Image alt="" fill priority sizes="100vw" src={ART.panorama.src} />
         </div>
-
-        <div className="panel">
-          <div className="stat-grid">
-            <div className="stat-card">
-              <span className="stat-label">Route map</span>
-              <strong>{catalog.collegeCount}</strong>
-              <div className="muted">colleges already ready to add</div>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Story bank</span>
-              <strong>{catalog.promptCount}</strong>
-              <div className="muted">essay prompts waiting in the workspace</div>
-            </div>
+        <Stars />
+        <div className="landing-hero-copy">
+          <h1>Your college journey, mapped out.</h1>
+          <p>Discover your story, organize your applications, and find your path to college—all in one cozy place.</p>
+          <div className="landing-ctas">
+            <Link className="cozy-button large" href="/signin">
+              Get started <ArrowRight size={18} />
+            </Link>
+            <a className="cozy-button secondary large" href="#features">
+              Explore features
+            </a>
           </div>
-
-          <div className="subpanel">
-            <div className="subpanel-header">
-              <strong>Live catalog snapshot</strong>
-              <span className="muted">Pulled live from Neon</span>
-            </div>
-            <div className="snapshot-list">
-              {catalog.collegePreview.map((college) => (
-                <div className="snapshot-row" key={college.slug}>
-                  <div>
-                    <strong>{college.name}</strong>
-                    <div className="muted">{college.slug}</div>
-                  </div>
-                  <span className="pill">{college.cycle ?? "Cycle TBD"}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="meta-grid">
-            <div className="meta-card">
-              <strong>Now</strong>
-              <div className="muted">Sign-in, persistence, and seeded college data are already in place.</div>
-            </div>
-            <div className="meta-card">
-              <strong>Next route</strong>
-              <div className="muted">Make the signed-in dashboard feel more like a guided map than a generic tool.</div>
-            </div>
-            <div className="meta-card">
-              <strong>Essays</strong>
-              <div className="muted">Storylines and drafting can become the core personal-feeling part of the app.</div>
-            </div>
-            <div className="meta-card">
-              <strong>Direction</strong>
-              <div className="muted">This web app is where the lighter, student-facing design system now takes shape.</div>
-            </div>
-          </div>
+          <span className="landing-fineprint">Free · No credit card · Built for students</span>
+        </div>
+        <div className="sticky-note landing-note">Small steps, brighter futures. ♡</div>
+        <div className="landing-desk">
+          <Image alt="A cozy desk with books, a mug, a notebook and a laptop showing the CollegeAtlas map" height={ART.desk.height} priority src={ART.desk.src} width={ART.desk.width} />
         </div>
       </section>
-    </main>
+
+      <section className="landing-section" id="features">
+        <h2 className="landing-section-title">Everything you need, in one place.</h2>
+        <p className="landing-section-sub">AI-powered brainstorming and writing at the heart, with research and tracking alongside.</p>
+        <div className="landing-features">
+          {FEATURES.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <article className={`landing-feature cozy-card interactive ${feature.lead ? "lead" : ""}`} key={feature.title}>
+                <div className={`landing-feature-art ${feature.tone}`}>
+                  <Image alt="" height={feature.art.height} src={feature.art.src} width={feature.art.width} />
+                </div>
+                <h3>
+                  <Icon size={18} /> {feature.title}
+                </h3>
+                <p>{feature.body}</p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="landing-section" id="how-it-works">
+        <h2 className="landing-section-title">How it works</h2>
+        <ol className="landing-steps">
+          {STEPS.map(([title, body], index) => (
+            <li className="cozy-card" key={title}>
+              <span className="landing-step-number">{index + 1}</span>
+              <strong>{title}</strong>
+              <p>{body}</p>
+            </li>
+          ))}
+        </ol>
+        <div className="landing-final">
+          <Image alt="" height={110} src={ART.flowers.src} width={94} />
+          <Link className="cozy-button large" href="/signin">
+            Start your journey <ArrowRight size={18} />
+          </Link>
+        </div>
+      </section>
+
+      <footer className="landing-footer">
+        <span className="brand-mark">CollegeAtlas</span>
+        <span className="muted">Made for students, one small step at a time.</span>
+      </footer>
+    </div>
   );
 }

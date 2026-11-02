@@ -1,5 +1,7 @@
 "use server";
 
+import { activeCaller, aiProvider } from "@/lib/ai/client";
+
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -224,23 +226,16 @@ function buildStorylineCards(raw: unknown) {
 async function generateStorylinesWithOpenAI(facts: StorylineFact[]) {
   const apiKey = process.env.OPENAI_API_KEY;
   const baseUrl = (process.env.OPENAI_API_BASE_URL ?? "https://api.openai.com/v1").replace(/\/$/, "");
+  const useClaude = aiProvider() === "claude";
 
-  if (!apiKey) {
-    throw new Error("Add OPENAI_API_KEY to generate storylines.");
+  if (!useClaude && !apiKey) {
+    throw new Error("Add an AI provider key (ANTHROPIC_API_KEY or OPENAI_API_KEY) to generate storylines.");
   }
 
   const model = process.env.OPENAI_STORYLINES_MODEL ?? "gpt-5.2";
   const factList = facts.map((fact) => `- ${fact.id}: ${fact.text}`).join("\n");
 
-  const response = await fetch(`${baseUrl}/responses`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      instructions: [
+  const storylineInstructions = [
         "You generate compact essay storyline cards for a college application app.",
         "Return exactly 3 cards.",
         "Be creative but evidence-based.",
@@ -251,14 +246,8 @@ async function generateStorylinesWithOpenAI(facts: StorylineFact[]) {
         "Shared values should be concise nouns or short phrases.",
         "Only use supportingFactIds from the provided list.",
         "Do not invent facts.",
-      ].join(" "),
-      input: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: [
+      ].join(" ");
+  const storylineInput = [
                 "Create 3 compact storyline cards from these student facts.",
         "Facts:",
         factList,
@@ -268,7 +257,35 @@ async function generateStorylinesWithOpenAI(facts: StorylineFact[]) {
         "Return at least 3 ideas.",
         "Preferred format: a JSON array of 3 objects.",
         'Each object should look like {"title":"...","type":"Why Major","connection":"...","sharedValues":["..."],"supportingFactIds":["..."]}.',
-      ].join("\n\n"),
+      ].join("\n\n");
+
+  let jsonCandidate: string | null;
+  if (useClaude) {
+    jsonCandidate = (
+      await activeCaller()({
+        instructions: storylineInstructions,
+        input: storylineInput,
+        schemaName: "essay_storylines",
+        jsonSchema: storylineSchema() as Record<string, unknown>,
+      })
+    ).text;
+  } else {
+  const response = await fetch(`${baseUrl}/responses`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      instructions: storylineInstructions,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: storylineInput,
     },
   ],
         },
@@ -291,10 +308,11 @@ async function generateStorylinesWithOpenAI(facts: StorylineFact[]) {
   }
 
   const payload = (await response.json()) as unknown;
-  const jsonCandidate = extractStorylineJsonCandidate(payload);
+    jsonCandidate = extractStorylineJsonCandidate(payload);
+  }
 
   if (!jsonCandidate) {
-    throw new Error(`The model returned no readable text payload. ${JSON.stringify(payload).slice(0, 280)}`);
+    throw new Error("The model returned no readable text. Please try again.");
   }
 
   let parsed: unknown;
@@ -337,11 +355,12 @@ export async function saveEssayDraft(formData: FormData) {
   const status = normalizeEssayStatus(String(formData.get("status") ?? ""), content);
 
   if (!promptId || !collegeSlug) {
-    return;
+    return null;
   }
 
+  let savedId: string | null = null;
   if (draftId && !draftId.startsWith("draft-")) {
-    await db
+    const updated = await db
       .update(essayDrafts)
       .set({
         title,
@@ -349,19 +368,23 @@ export async function saveEssayDraft(formData: FormData) {
         status,
         updatedAt: new Date(),
       })
-      .where(and(eq(essayDrafts.id, draftId), eq(essayDrafts.userId, user.id)));
+      .where(and(eq(essayDrafts.id, draftId), eq(essayDrafts.userId, user.id)))
+      .returning({ id: essayDrafts.id });
+    savedId = updated[0]?.id ?? null;
   } else {
-    await db.insert(essayDrafts).values({
+    const [inserted] = await db.insert(essayDrafts).values({
       userId: user.id,
       promptId,
       title,
       content,
       status,
-    });
+    }).returning({ id: essayDrafts.id });
+    savedId = inserted?.id ?? null;
   }
 
   revalidatePath("/essays");
   revalidatePath(`/colleges/${collegeSlug}`);
+  return savedId ? { id: savedId, savedAt: new Date().toISOString() } : null;
 }
 
 export async function createEssayVersion(formData: FormData) {

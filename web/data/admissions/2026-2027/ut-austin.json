@@ -1,0 +1,20 @@
+{
+  "unitid": 228778,
+  "name": "The University of Texas at Austin",
+  "cycle": "2026-2027",
+  "platforms": ["common_app", "applytexas"],
+  "sources": [{ "url": "https://admissions.utexas.edu/apply/application-materials/essays-and-short-answers/", "kind": "essay_prompts" }],
+  "prompts": [
+    {
+      "slot": "why-major",
+      "text": "Why are you interested in the major you indicated as your first-choice major?",
+      "sourceUrl": "https://admissions.utexas.edu/apply/application-materials/essays-and-short-answers/",
+      "promptType": "short_answer",
+      "required": true,
+      "category": "Why Major",
+      "conditionNote": "Answers are limited to no more than 40 lines, or about 250-300 words per prompt."
+    }
+  ],
+  "unavailable": { "deadlines": "Not captured from an official UT Austin deadlines page yet." },
+  "notes": "The page also says the Common App personal essay completes the UT essay requirement."
+}

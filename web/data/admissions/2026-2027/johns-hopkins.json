@@ -1,0 +1,13 @@
+{
+  "unitid": 162928,
+  "name": "Johns Hopkins University",
+  "cycle": "2026-2027",
+  "platforms": ["common_app", "coalition"],
+  "sources": [{ "url": "https://apply.jhu.edu/how-to-apply/application-deadlines-requirements/", "kind": "deadlines" }],
+  "deadlines": [
+    { "round": "ED", "date": "2026-11-01", "conditions": "Binding; Early Decision Agreement required. 'Application Deadline' row of the official table.", "sourceUrl": "https://apply.jhu.edu/how-to-apply/application-deadlines-requirements/", "excerpt": "Early Decision I Early Decision II Regular Decision Transfer Application Deadline November 1, 2026 January 2, 2027 January 2, 2027" },
+    { "round": "ED2", "date": "2027-01-02", "conditions": "Binding; Early Decision Agreement required. 'Application Deadline' row of the official table.", "sourceUrl": "https://apply.jhu.edu/how-to-apply/application-deadlines-requirements/", "excerpt": "Early Decision I Early Decision II Regular Decision Transfer Application Deadline November 1, 2026 January 2, 2027 January 2, 2027" },
+    { "round": "RD", "date": "2027-01-02", "conditions": "'Application Deadline' row of the official table.", "sourceUrl": "https://apply.jhu.edu/how-to-apply/application-deadlines-requirements/", "excerpt": "Early Decision I Early Decision II Regular Decision Transfer Application Deadline November 1, 2026 January 2, 2027 January 2, 2027" }
+  ],
+  "unavailable": { "prompts": "The supplemental essay prompt is not published on the official deadlines page we captured." }
+}

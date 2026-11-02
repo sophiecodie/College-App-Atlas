@@ -6,6 +6,7 @@ import { db } from "@/db/client";
 import { essayDrafts } from "@/db/schema";
 import { getCollegePromptsForUser, promptIsActive } from "@/lib/prompts";
 import { getUserColleges } from "@/lib/app-data";
+import { roundFromApplicationType } from "@/lib/catalog/cycles";
 import {
   type EssayDraftRecord,
   type EssayStatus,
@@ -22,7 +23,7 @@ export async function getEssayWorkspaceForUser(userId: string): Promise<EssayWor
   const groups = await Promise.all(
     colleges.map(async (college) => {
       const prompts = (await getCollegePromptsForUser(userId, college.slug)).filter((prompt) =>
-        promptIsActive(college.programSelection, prompt),
+        promptIsActive(college.programSelection, prompt, roundFromApplicationType(college.selectedApplicationType)),
       );
 
       if (prompts.length === 0) {

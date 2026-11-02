@@ -1,8 +1,12 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { db } from "../src/db/client";
+import { and, eq } from "drizzle-orm";
+
+import { connectDatabase } from "../src/db/connect";
 import { colleges, promptSources, prompts } from "../src/db/schema";
+import { contentHash } from "../src/lib/catalog/normalize";
+import { ensureCycle } from "../src/lib/ingest/submit";
 
 type PromptRow = {
   prompt_id: string;
@@ -49,66 +53,106 @@ async function loadPromptSources() {
   return JSON.parse(contents) as PromptSourceRow[];
 }
 
+// Idempotent: existing colleges, sources and prompts (matched by slug / URL / prompt_id) are left untouched.
 async function main() {
   const [promptRows, sourceRows] = await Promise.all([loadPrompts(), loadPromptSources()]);
+  const connection = await connectDatabase();
+  const { db } = connection;
 
-  const uniqueColleges = new Map<string, { slug: string; name: string; cycle?: string | null }>();
+  try {
+    const uniqueColleges = new Map<string, { slug: string; name: string; cycle?: string | null }>();
 
-  for (const prompt of promptRows) {
-    uniqueColleges.set(prompt.college_slug, {
-      slug: prompt.college_slug,
-      name: prompt.college_name,
-      cycle: prompt.cycle,
-    });
-  }
+    for (const prompt of promptRows) {
+      uniqueColleges.set(prompt.college_slug, {
+        slug: prompt.college_slug,
+        name: prompt.college_name,
+        cycle: prompt.cycle,
+      });
+    }
 
-  if (uniqueColleges.size > 0) {
-    await db.insert(colleges).values(
-      [...uniqueColleges.values()].map((college) => ({
-        slug: college.slug,
-        name: college.name,
-        applicationCycle: college.cycle ?? null,
-      })),
+    if (uniqueColleges.size > 0) {
+      await db
+        .insert(colleges)
+        .values(
+          [...uniqueColleges.values()].map((college) => ({
+            slug: college.slug,
+            name: college.name,
+            applicationCycle: college.cycle ?? null,
+            normalizedName: college.name.toLowerCase(),
+            searchText: college.name.toLowerCase(),
+          })),
+        )
+        .onConflictDoNothing({ target: colleges.slug });
+    }
+
+    const collegeRows = await db.select({ id: colleges.id, slug: colleges.slug }).from(colleges);
+    const collegeIds = new Map(collegeRows.map((row) => [row.slug, row.id]));
+
+    let sourcesAdded = 0;
+    for (const source of sourceRows) {
+      const [existing] = await db
+        .select({ id: promptSources.id })
+        .from(promptSources)
+        .where(and(eq(promptSources.collegeSlug, source.college_slug), eq(promptSources.sourceUrl, source.source_url)))
+        .limit(1);
+      if (!existing) {
+        await db.insert(promptSources).values({
+          collegeSlug: source.college_slug,
+          sourceUrl: source.source_url,
+          sourceType: source.source_type,
+          applicationCycle: source.application_cycle ?? null,
+          notes: source.notes ?? null,
+        });
+        sourcesAdded += 1;
+      }
+    }
+
+    let promptsAdded = 0;
+    for (const prompt of promptRows) {
+      const collegeId = collegeIds.get(prompt.college_slug) ?? null;
+      const cycle =
+        collegeId && prompt.cycle && /^\d{4}-\d{4}$/.test(prompt.cycle)
+          ? await ensureCycle(db, collegeId, prompt.cycle)
+          : null;
+      const inserted = await db
+        .insert(prompts)
+        .values({
+          promptId: prompt.prompt_id,
+          collegeSlug: prompt.college_slug,
+          collegeName: prompt.college_name,
+          cycle: prompt.cycle ?? null,
+          promptText: prompt.prompt_text,
+          promptType: prompt.prompt_type ?? null,
+          required: Boolean(prompt.required),
+          isOptionalChoice: Boolean(prompt.is_optional_choice),
+          wordLimit: prompt.word_limit ?? null,
+          wordMin: prompt.word_min ?? null,
+          characterLimit: prompt.character_limit ?? null,
+          primaryTag: prompt.primary_tag ?? null,
+          category: prompt.primary_tag ?? null,
+          programScope: prompt.program_scope ?? [],
+          sourceUrl: prompt.source_url ?? null,
+          sourceType: prompt.source_type ?? null,
+          extractionStatus: prompt.extraction_status ?? null,
+          lastUpdated: prompt.last_updated ?? null,
+          collegeId,
+          cycleId: cycle?.id ?? null,
+          contentHash: contentHash(prompt.prompt_text),
+          // Seed rows are never presented as verified; they wait for review like any other candidate.
+          verificationStatus: "pending_review",
+          reviewNote: `Legacy seed row (extraction_status=${prompt.extraction_status ?? "unknown"}, captured ${prompt.last_updated ?? "unknown date"}). Re-check against the official page before verifying.`,
+        })
+        .onConflictDoNothing()
+        .returning({ id: prompts.id });
+      promptsAdded += inserted.length;
+    }
+
+    console.log(
+      `Seed complete: ${uniqueColleges.size} colleges checked, ${sourcesAdded} prompt sources added, ${promptsAdded} prompts added (existing rows untouched).`,
     );
+  } finally {
+    await connection.close();
   }
-
-  if (sourceRows.length > 0) {
-    await db.insert(promptSources).values(
-      sourceRows.map((source) => ({
-        collegeSlug: source.college_slug,
-        sourceUrl: source.source_url,
-        sourceType: source.source_type,
-        applicationCycle: source.application_cycle ?? null,
-        notes: source.notes ?? null,
-      })),
-    );
-  }
-
-  if (promptRows.length > 0) {
-    await db.insert(prompts).values(
-      promptRows.map((prompt) => ({
-        promptId: prompt.prompt_id,
-        collegeSlug: prompt.college_slug,
-        collegeName: prompt.college_name,
-        cycle: prompt.cycle ?? null,
-        promptText: prompt.prompt_text,
-        promptType: prompt.prompt_type ?? null,
-        required: Boolean(prompt.required),
-        isOptionalChoice: Boolean(prompt.is_optional_choice),
-        wordLimit: prompt.word_limit ?? null,
-        wordMin: prompt.word_min ?? null,
-        characterLimit: prompt.character_limit ?? null,
-        primaryTag: prompt.primary_tag ?? null,
-        programScope: prompt.program_scope ?? [],
-        sourceUrl: prompt.source_url ?? null,
-        sourceType: prompt.source_type ?? null,
-        extractionStatus: prompt.extraction_status ?? null,
-        lastUpdated: prompt.last_updated ?? null,
-      })),
-    );
-  }
-
-  console.log(`Seeded ${uniqueColleges.size} colleges, ${sourceRows.length} prompt sources, and ${promptRows.length} prompts.`);
 }
 
 main().catch((error) => {

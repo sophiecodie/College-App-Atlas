@@ -1,0 +1,13 @@
+{
+  "unitid": 139658,
+  "name": "Emory University",
+  "cycle": "2026-2027",
+  "platforms": ["common_app"],
+  "sources": [{ "url": "https://apply.emory.edu/apply/plans-deadlines", "kind": "deadlines" }],
+  "deadlines": [
+    { "round": "ED", "date": "2026-11-01", "conditions": "Binding. Applies to Emory College and/or Oxford College. 'Application deadline' row of the official plans table.", "sourceUrl": "https://apply.emory.edu/apply/plans-deadlines", "excerpt": "Early Decision I Early Decision II Regular Decision Transfer Application deadline November 1 January 1 January 1" },
+    { "round": "ED2", "date": "2027-01-01", "conditions": "Binding. 'Application deadline' row of the official plans table.", "sourceUrl": "https://apply.emory.edu/apply/plans-deadlines", "excerpt": "Early Decision I Early Decision II Regular Decision Transfer Application deadline November 1 January 1 January 1" },
+    { "round": "RD", "date": "2027-01-01", "conditions": "'Application deadline' row of the official plans table.", "sourceUrl": "https://apply.emory.edu/apply/plans-deadlines", "excerpt": "Early Decision I Early Decision II Regular Decision Transfer Application deadline November 1 January 1 January 1" }
+  ],
+  "unavailable": { "prompts": "Supplemental prompts were not captured from an official Emory page yet." }
+}

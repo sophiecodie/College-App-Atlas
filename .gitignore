@@ -11,3 +11,7 @@ web/.env.local
 web/.env.development.local
 web/.env.production.local
 
+web/.cache/
+web/.local-db/
+web/.next-build/
+web/.next-local/

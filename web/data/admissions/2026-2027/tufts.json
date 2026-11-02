@@ -1,0 +1,69 @@
+{
+  "unitid": 168148,
+  "name": "Tufts University",
+  "cycle": "2026-2027",
+  "platforms": ["common_app"],
+  "sources": [{ "url": "https://admissions.tufts.edu/apply/short-answer-questions/", "kind": "essay_prompts" }],
+  "prompts": [
+    {
+      "slot": "engagement",
+      "text": "Please describe how you have learned about and engaged with Tufts during your college search process",
+      "sourceUrl": "https://admissions.tufts.edu/apply/short-answer-questions/",
+      "required": true,
+      "wordMin": 75,
+      "wordLimit": 150,
+      "limitEvidence": "(75-150 words)",
+      "category": "Why Us"
+    },
+    {
+      "slot": "school-as",
+      "text": "Tell us about one of your favorite school assignments in the past two years. What was the assignment and why did you enjoy it?",
+      "sourceUrl": "https://admissions.tufts.edu/apply/short-answer-questions/",
+      "required": true,
+      "wordMin": 100,
+      "wordLimit": 200,
+      "limitEvidence": "Applicants to the School of Arts and Sciences are required to answer the following question in 100-200 words",
+      "category": "Intellectual Curiosity",
+      "programScope": ["general", "undecided"],
+      "conditionNote": "School of Arts and Sciences applicants."
+    },
+    {
+      "slot": "school-engineering",
+      "text": "Tell us about an engineering or science-related project that you have helped build, design, create, or iterate in the past two years. What was the project and what was your role?",
+      "sourceUrl": "https://admissions.tufts.edu/apply/short-answer-questions/",
+      "required": true,
+      "wordMin": 100,
+      "wordLimit": 200,
+      "limitEvidence": "Applicants to the School of Engineering are required to answer the following question in 100-200 words",
+      "category": "Intellectual Curiosity",
+      "programScope": ["engineering"],
+      "conditionNote": "School of Engineering applicants."
+    },
+    {
+      "slot": "school-bfa",
+      "text": "Tell us more about a specific piece in your portfolio. What were the ideas you intended to explore, and how did those ideas inform the process of making the piece?",
+      "sourceUrl": "https://admissions.tufts.edu/apply/short-answer-questions/",
+      "required": true,
+      "wordMin": 100,
+      "wordLimit": 200,
+      "limitEvidence": "Applicants to the Bachelor of Fine Arts (BFA) program are required to answer the following question in 100-200 words",
+      "category": "Extracurricular",
+      "programScope": ["bfa"],
+      "conditionNote": "Bachelor of Fine Arts (BFA) applicants."
+    },
+    {
+      "slot": "school-combined",
+      "text": "Tell us more about a specific piece in your portfolio. How did an academic course, project, or interest inspire the ideas that you explored in this piece? Or, how did making this piece influence your academic interests?",
+      "sourceUrl": "https://admissions.tufts.edu/apply/short-answer-questions/",
+      "required": true,
+      "wordMin": 100,
+      "wordLimit": 200,
+      "limitEvidence": "Applicants to the Combined Degree (BFA+BA/BS) program are required to answer the following question in 100-200 words",
+      "category": "Intellectual Curiosity",
+      "programScope": ["combined-degree"],
+      "conditionNote": "Combined Degree (BFA+BA/BS) applicants."
+    }
+  ],
+  "unavailable": { "deadlines": "Not captured from an official Tufts deadlines page yet." },
+  "notes": "Page does not print a cycle year; captured 2026-11-01 during the 2026-2027 cycle."
+}

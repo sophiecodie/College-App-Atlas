@@ -1,0 +1,96 @@
+{
+  "unitid": 186131,
+  "name": "Princeton University",
+  "cycle": "2026-2027",
+  "platforms": ["common_app"],
+  "sources": [
+    { "url": "https://admission.princeton.edu/apply/princeton-specific-questions", "kind": "essay_prompts" },
+    { "url": "https://admission.princeton.edu/apply/first-year-application-dates-deadlines", "kind": "deadlines" }
+  ],
+  "prompts": [
+    {
+      "slot": "academic-ab",
+      "text": "As a research institution that also prides itself on its liberal arts curriculum, Princeton allows students to explore areas across the humanities and the arts, the natural sciences, and the social sciences. What academic areas most pique your curiosity, and how do the programs offered at Princeton suit your particular interests?",
+      "sourceUrl": "https://admission.princeton.edu/apply/princeton-specific-questions",
+      "required": true,
+      "wordLimit": 250,
+      "limitEvidence": "(Please respond in 250 words or fewer.)",
+      "category": "Why Major",
+      "programScope": ["general", "undecided"],
+      "conditionNote": "For A.B. degree and undecided applicants."
+    },
+    {
+      "slot": "academic-bse",
+      "text": "Please describe why you are interested in studying engineering at Princeton. Include any of your experiences in or exposure to engineering, and how you think the programs offered at the University suit your particular interests.",
+      "sourceUrl": "https://admission.princeton.edu/apply/princeton-specific-questions",
+      "required": true,
+      "wordLimit": 250,
+      "limitEvidence": "(Please respond in 250 words or fewer.)",
+      "category": "Why Major",
+      "programScope": ["engineering"],
+      "conditionNote": "For B.S.E. (engineering) applicants."
+    },
+    {
+      "slot": "lived-experience",
+      "text": "Princeton values community and encourages students, faculty, staff and leadership to engage in respectful conversations that can expand their perspectives and challenge their ideas and beliefs. As a prospective member of this community, reflect on how your lived experiences will impact the conversations you will have in the classroom, the dining hall or other campus spaces. What lessons have you learned in life thus far? What will your classmates learn from you? In short, how has your lived experience shaped you?",
+      "sourceUrl": "https://admission.princeton.edu/apply/princeton-specific-questions",
+      "required": true,
+      "wordMin": 400,
+      "wordLimit": 500,
+      "limitEvidence": "(Please respond in 400-500 words.)",
+      "category": "Identity"
+    },
+    {
+      "slot": "service",
+      "text": "Princeton has a longstanding commitment to understanding our responsibility to society through service and civic engagement. How does your own story intersect with these ideals?",
+      "sourceUrl": "https://admission.princeton.edu/apply/princeton-specific-questions",
+      "required": true,
+      "wordLimit": 250,
+      "limitEvidence": "(Please respond in 250 words or fewer.)",
+      "category": "Service"
+    },
+    {
+      "slot": "short-skill",
+      "text": "What is a new skill you would like to learn in college?",
+      "sourceUrl": "https://admission.princeton.edu/apply/princeton-specific-questions",
+      "promptType": "short_answer",
+      "required": true,
+      "wordLimit": 50,
+      "limitEvidence": "Please respond to each question in 50 words or fewer.",
+      "category": "Short Essays"
+    },
+    {
+      "slot": "short-joy",
+      "text": "What brings you joy?",
+      "sourceUrl": "https://admission.princeton.edu/apply/princeton-specific-questions",
+      "promptType": "short_answer",
+      "required": true,
+      "wordLimit": 50,
+      "limitEvidence": "Please respond to each question in 50 words or fewer.",
+      "category": "Short Essays"
+    },
+    {
+      "slot": "short-song",
+      "text": "What song represents the soundtrack of your life at this moment?",
+      "sourceUrl": "https://admission.princeton.edu/apply/princeton-specific-questions",
+      "promptType": "short_answer",
+      "required": true,
+      "wordLimit": 50,
+      "limitEvidence": "Please respond to each question in 50 words or fewer.",
+      "category": "Short Essays"
+    }
+  ],
+  "deadlines": [
+    {
+      "round": "REA",
+      "date": "2026-11-01",
+      "conditions": "Single-choice early action (nonbinding).",
+      "sourceUrl": "https://admission.princeton.edu/apply/first-year-application-dates-deadlines",
+      "excerpt": "If you apply single-choice early action on Nov. 1"
+    }
+  ],
+  "unavailable": {
+    "deadlines": "The official dates page text did not state the regular decision deadline in a form we could capture; check the official page."
+  },
+  "notes": "Pages do not print a cycle year; captured 2026-11-01 during the 2026-2027 cycle."
+}

@@ -1,46 +1,32 @@
 import "./globals.css";
+import "./cozy.css";
+
 import type { Metadata } from "next";
-import Link from "next/link";
+import { DM_Sans, Fraunces } from "next/font/google";
 import { ReactNode } from "react";
 
 import { auth } from "@/auth";
-import { signOutUser } from "@/app/actions";
-import { SiteNav } from "@/app/components/site-nav";
+import { AppShell } from "@/components/cozy/app-shell";
+import { MotionProvider } from "@/components/cozy/motion-provider";
+import { isAdminEmail } from "@/lib/admin";
+
+const serif = Fraunces({ subsets: ["latin"], variable: "--font-serif", display: "swap", axes: ["opsz"] });
+const sans = DM_Sans({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "College Atlas",
-  description: "The launch-ready web app for College Atlas.",
+  title: "CollegeAtlas",
+  description: "Your college journey, mapped out. Brainstorm, write, research and track applications in one cozy place.",
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const session = await auth();
 
   return (
-    <html lang="en">
+    <html className={`${serif.variable} ${sans.variable}`} lang="en">
       <body suppressHydrationWarning>
-        <header className="site-header">
-          <div className="site-header-inner">
-            <div className="site-brand-wrap">
-              <Link className="brand-mark" href={session?.user ? "/app" : "/"}>
-                College Atlas
-              </Link>
-              {session?.user ? <span className="site-brand-note">Student workspace</span> : null}
-            </div>
-            {session?.user ? <SiteNav /> : <span className="muted">Launch stack in progress</span>}
-            <div className="site-header-actions">
-              {session?.user ? (
-                <>
-                  <form action={signOutUser}>
-                    <button className="nav-button" type="submit">
-                      Sign out
-                    </button>
-                  </form>
-                </>
-              ) : null}
-            </div>
-          </div>
-        </header>
-        {children}
+        <MotionProvider>
+          {session?.user ? <AppShell isAdmin={isAdminEmail(session.user.email)}>{children}</AppShell> : children}
+        </MotionProvider>
       </body>
     </html>
   );

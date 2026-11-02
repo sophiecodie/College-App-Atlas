@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { updateResearchEntry } from "@/app/workspace-actions";
 import { priorityDotClass, reachDotClass } from "@/lib/research";
@@ -33,25 +32,48 @@ export function ResearchWorkspaceForm({
   selectedApplicationType,
   entry,
 }: ResearchWorkspaceFormProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [formState, setFormState] = useState<ResearchFormState>(entry);
   const [saveState, setSaveState] = useState<"saved" | "saving" | "typing" | "error">("saved");
   const timeoutRef = useRef<number | null>(null);
-  const serializedEntry = useMemo(() => JSON.stringify(entry), [entry]);
+  // The newest text, for flushing a pending save when the page is hidden or left.
+  const latestRef = useRef<ResearchFormState>(entry);
 
+  // Only reset from the server when switching colleges; never overwrite what is being typed.
   useEffect(() => {
     setFormState(entry);
+    latestRef.current = entry;
     setSaveState("saved");
-  }, [collegeSlug, serializedEntry, entry]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collegeSlug]);
 
   useEffect(() => {
-    return () => {
+    const flush = () => {
       if (timeoutRef.current !== null) {
         window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+        void updateResearchEntry(buildFormData(latestRef.current));
       }
     };
-  }, []);
+    const onHide = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (timeoutRef.current !== null) {
+        flush();
+        event.preventDefault();
+      }
+    };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      // Leaving the page (client navigation) with a save still waiting: send it now.
+      flush();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collegeSlug]);
 
   function buildFormData(nextState: ResearchFormState) {
     const formData = new FormData();
@@ -79,8 +101,8 @@ export function ResearchWorkspaceForm({
     startTransition(async () => {
       try {
         await updateResearchEntry(buildFormData(nextState));
-        setSaveState("saved");
-        router.refresh();
+        // A newer edit may already be waiting; only show "saved" if nothing is pending.
+        setSaveState(timeoutRef.current === null ? "saved" : "typing");
       } catch {
         setSaveState("error");
       }
@@ -109,6 +131,7 @@ export function ResearchWorkspaceForm({
     };
 
     setFormState(nextState);
+    latestRef.current = nextState;
 
     if (options?.immediate) {
       runSave(nextState);

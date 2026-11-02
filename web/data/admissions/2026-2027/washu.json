@@ -1,0 +1,14 @@
+{
+  "unitid": 179867,
+  "name": "Washington University in St Louis",
+  "cycle": "2026-2027",
+  "platforms": ["common_app", "coalition"],
+  "sources": [{ "url": "https://admissions.washu.edu/how-to-apply/application-dates-deadlines/", "kind": "deadlines" }],
+  "deadlines": [
+    { "round": "EA", "date": "2026-11-02", "conditions": "'Application due' row of the official dates table.", "sourceUrl": "https://admissions.washu.edu/how-to-apply/application-dates-deadlines/", "excerpt": "Application due Common Application or Coalition Application Early ActionNov. 2 Early Decision INov. 2 Early Decision IIJan. 4 Regular DecisionJan. 4" },
+    { "round": "ED", "date": "2026-11-02", "conditions": "Early Decision I. 'Application due' row of the official dates table.", "sourceUrl": "https://admissions.washu.edu/how-to-apply/application-dates-deadlines/", "excerpt": "Application due Common Application or Coalition Application Early ActionNov. 2 Early Decision INov. 2 Early Decision IIJan. 4 Regular DecisionJan. 4" },
+    { "round": "ED2", "date": "2027-01-04", "conditions": "'Application due' row of the official dates table.", "sourceUrl": "https://admissions.washu.edu/how-to-apply/application-dates-deadlines/", "excerpt": "Application due Common Application or Coalition Application Early ActionNov. 2 Early Decision INov. 2 Early Decision IIJan. 4 Regular DecisionJan. 4" },
+    { "round": "RD", "date": "2027-01-04", "conditions": "'Application due' row of the official dates table.", "sourceUrl": "https://admissions.washu.edu/how-to-apply/application-dates-deadlines/", "excerpt": "Application due Common Application or Coalition Application Early ActionNov. 2 Early Decision INov. 2 Early Decision IIJan. 4 Regular DecisionJan. 4" }
+  ],
+  "unavailable": { "prompts": "Supplemental prompts were not captured from an official WashU page yet." }
+}

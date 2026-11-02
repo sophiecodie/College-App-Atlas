@@ -21,6 +21,12 @@ import {
   essayStatusLabel,
   ESSAY_STATUS_OPTIONS,
 } from "@/lib/essays-shared";
+import { VerificationNote } from "@/app/components/verification-note";
+import { FeedbackPanel } from "@/app/essays/feedback-panel";
+import { ResearchSidebar } from "@/app/essays/research-sidebar";
+import { essayFeedbackAction } from "@/app/essays/studio-actions";
+import type { FindingView } from "@/lib/research/findings";
+import type { EssayFeedback } from "@/lib/studio/writing";
 import { promptLimitLabel } from "@/lib/prompts-shared";
 import { type StorylineCard, type StorylineFact } from "@/lib/storylines";
 
@@ -34,6 +40,8 @@ type WorkspaceProps = {
   aiConfigured: boolean;
   aiBaseUrl: string;
   aiModel: string;
+  researchFindings?: Record<string, FindingView[]>;
+  researchLinks?: Record<string, string[]>;
 };
 
 const TAG_GROUP_ORDER = [
@@ -87,6 +95,8 @@ export function EssaysWorkspace({
   aiConfigured,
   aiBaseUrl,
   aiModel,
+  researchFindings = {},
+  researchLinks = {},
 }: WorkspaceProps) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState<null | "draft" | "version" | "tags" | "facts" | "storylines" | "storyline">(null);
@@ -113,6 +123,8 @@ export function EssaysWorkspace({
   const [draftTitle, setDraftTitle] = useState(selectedVersion?.title ?? "");
   const [draftStatus, setDraftStatus] = useState(selectedVersion?.status ?? "not_started");
   const [draftContent, setDraftContent] = useState(selectedVersion?.content ?? "");
+  const [feedback, setFeedback] = useState<{ promptId: string; data: EssayFeedback } | null>(null);
+  const [feedbackState, setFeedbackState] = useState<{ loading: boolean; error: string | null }>({ loading: false, error: null });
   const [tagInput, setTagInput] = useState(selectedPrompt ? (initialPromptTags[selectedPrompt.promptId] ?? []).join(", ") : "");
   const [storylineFactsInput, setStorylineFactsInput] = useState(
     initialStorylineFacts.map((fact) => fact.text).join("\n"),
@@ -487,6 +499,12 @@ export function EssaysWorkspace({
         <div className="essay-main-header">
           <div className="stack">
             <h2 className="essay-workspace-title essay-prompt-title">{selectedPrompt.promptText}</h2>
+            {selectedPrompt.conditionalRules?.note ? <div className="muted">{selectedPrompt.conditionalRules.note}</div> : null}
+            <VerificationNote
+              sourceUrl={selectedPrompt.sourceUrl}
+              staleReason={selectedPrompt.staleReason}
+              status={selectedPrompt.verificationStatus}
+            />
             <div className="muted">
               {formatSavedAt(selectedVersion?.updatedAt ?? null)}
             </div>
@@ -786,6 +804,40 @@ export function EssaysWorkspace({
             {isSaving === "tags" ? "Saving..." : "Save tags"}
           </button>
         </div>
+        <ResearchSidebar
+          collegeName={selectedPrompt.collegeName}
+          collegeSlug={selectedPrompt.collegeSlug}
+          findings={researchFindings[selectedPrompt.collegeSlug] ?? []}
+          key={selectedPrompt.promptId}
+          linkedIds={researchLinks[selectedPrompt.promptId] ?? []}
+          promptId={selectedPrompt.promptId}
+        />
+
+        <details className="essay-research-panel">
+          <summary>
+            <strong>AI feedback</strong>
+          </summary>
+          <FeedbackPanel
+            aiConfigured={aiConfigured}
+            error={feedbackState.error}
+            feedback={feedback?.promptId === selectedPrompt.promptId ? feedback.data : null}
+            loading={feedbackState.loading}
+            onRequest={async () => {
+              setFeedbackState({ loading: true, error: null });
+              const result = await essayFeedbackAction(
+                draftContent,
+                selectedPrompt.promptText,
+                selectedPrompt.limitUnit === "words" ? selectedPrompt.limitValue : null,
+              );
+              if (result.ok) {
+                setFeedback({ promptId: selectedPrompt.promptId, data: result.data });
+                setFeedbackState({ loading: false, error: null });
+              } else {
+                setFeedbackState({ loading: false, error: result.error });
+              }
+            }}
+          />
+        </details>
       </aside>
       ) : null}
     </section>

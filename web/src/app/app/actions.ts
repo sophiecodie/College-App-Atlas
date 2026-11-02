@@ -7,11 +7,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db/client";
 import { userColleges, userPromptPreferences } from "@/db/schema";
 import { requireCurrentUser } from "@/lib/app-data";
-import {
-  defaultFeeEntry,
-  defaultRecommendationSlots,
-  defaultRequirementsChecklist,
-} from "@/lib/workspace-state";
+import { addCollegeForUser, removeCollegeForUser, setPersonalDeadline } from "@/lib/catalog/user-colleges";
 
 export async function addCollegeToDashboard(formData: FormData) {
   const user = await requireCurrentUser();
@@ -21,30 +17,22 @@ export async function addCollegeToDashboard(formData: FormData) {
     return;
   }
 
-  const [existing] = await db
-    .select({ id: userColleges.id })
-    .from(userColleges)
-    .where(and(eq(userColleges.userId, user.id), eq(userColleges.collegeSlug, collegeSlug)))
-    .limit(1);
-
-  if (!existing) {
-    await db.insert(userColleges).values({
-      userId: user.id,
-      collegeSlug,
-      selectedApplicationType: "Regular Decision",
-      programSelection: "general",
-      status: "In Progress",
-      quickNotes: "",
-      requirementsChecklist: defaultRequirementsChecklist(),
-      fees: defaultFeeEntry(),
-      requiredRecommendations: defaultRecommendationSlots("required"),
-      optionalRecommendations: defaultRecommendationSlots("optional"),
-    });
-  }
+  await addCollegeForUser(
+    db,
+    user.id,
+    collegeSlug,
+    String(formData.get("selectedApplicationType") ?? "").trim() || null,
+  );
 
   revalidatePath("/app");
   revalidatePath("/colleges");
   revalidatePath(`/colleges/${collegeSlug}`);
+  revalidatePath("/essays");
+
+  const returnTo = String(formData.get("returnTo") ?? "");
+  if (returnTo.startsWith("/colleges")) {
+    redirect(returnTo);
+  }
 }
 
 export async function updateUserCollege(formData: FormData) {
@@ -80,9 +68,8 @@ export async function removeCollegeFromDashboard(formData: FormData) {
     return;
   }
 
-  await db
-    .delete(userColleges)
-    .where(and(eq(userColleges.userId, user.id), eq(userColleges.collegeSlug, collegeSlug)));
+  // Archived, not deleted: re-adding the college restores its notes, checklist and prompt choices.
+  await removeCollegeForUser(db, user.id, collegeSlug);
 
   revalidatePath("/app");
   revalidatePath("/colleges");
@@ -92,6 +79,26 @@ export async function removeCollegeFromDashboard(formData: FormData) {
   revalidatePath("/essays");
 
   redirect("/colleges");
+}
+
+export async function updatePersonalDeadline(formData: FormData) {
+  const user = await requireCurrentUser();
+  const collegeSlug = String(formData.get("collegeSlug") ?? "").trim();
+
+  if (!collegeSlug) {
+    return;
+  }
+
+  await setPersonalDeadline(
+    db,
+    user.id,
+    collegeSlug,
+    String(formData.get("personalDeadline") ?? "").trim() || null,
+    String(formData.get("personalDeadlineNote") ?? ""),
+  );
+
+  revalidatePath("/app");
+  revalidatePath(`/colleges/${collegeSlug}`);
 }
 
 export async function updatePromptPreference(formData: FormData) {
