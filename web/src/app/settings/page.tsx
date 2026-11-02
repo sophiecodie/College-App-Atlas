@@ -5,6 +5,7 @@ import { addRecommender, deleteRecommender } from "@/app/workspace-actions";
 import { db } from "@/db/client";
 import { aiConfig, aiConfigured, usageToday } from "@/lib/ai/client";
 import { requireCurrentUser } from "@/lib/app-data";
+import { isGuestEmail } from "@/lib/guest";
 import { ensureWorkspaceState, normalizeRecommenders, normalizeSettingsState } from "@/lib/workspace-state";
 
 export default async function SettingsPage() {
@@ -22,7 +23,7 @@ export default async function SettingsPage() {
           <span className="eyebrow">Settings</span>
           <h1 className="page-title">Account settings</h1>
           <p className="lede">
-            Signed in as {user.email}. Profile, appearance, recommenders, and your AI data controls.
+            {isGuestEmail(user.email) ? "Guest session in this browser." : `Signed in as ${user.email}.`} Profile, appearance, recommenders, and your AI data controls.
           </p>
         </div>
       </section>

@@ -76,7 +76,8 @@ export function PersonalStatementWorkspace({ versions, notes, selectedPrompt, ou
       firstRender.current = false;
       return;
     }
-    setSaveState((state) => ({ ...state, kind: "dirty" }));
+    // Same object when already dirty, so fast typing doesn't trigger a re-render per keystroke.
+    setSaveState((state) => (state.kind === "dirty" ? state : { ...state, kind: "dirty" }));
     const timer = setTimeout(async () => {
       setSaveState((state) => ({ ...state, kind: "saving" }));
       const result = await autosavePersonalStatementAction(draftId, content);

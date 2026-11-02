@@ -2621,3 +2621,22 @@ progress {
   max-height: none;
   overflow: visible;
 }
+
+.auth-start {
+  width: 100%;
+}
+
+/* Focus mode: the main column's stacking context would keep the full-screen layer under the sidebar. */
+.app-main .shell {
+  z-index: auto;
+}
+
+.ps-layout.three-panel.focus-mode {
+  grid-template-columns: minmax(0, 1fr);
+  z-index: 1000;
+}
+
+.ps-layout.focus-mode .ps-editor {
+  max-width: 820px;
+  margin: 0 auto;
+}

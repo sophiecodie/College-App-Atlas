@@ -41,6 +41,8 @@ export function aiConfig(env = process.env) {
     baseUrl: (env.OPENAI_API_BASE_URL ?? "https://api.openai.com/v1").replace(/\/$/, ""),
     model: env.OPENAI_STUDIO_MODEL ?? env.OPENAI_STORYLINES_MODEL ?? "gpt-5.2",
     dailyLimit: Math.max(1, Number(env.AI_DAILY_REQUEST_LIMIT ?? 40) || 40),
+    // Cap across all users (guests can be created freely), so total AI spend per day stays bounded.
+    globalDailyLimit: Math.max(1, Number(env.AI_GLOBAL_DAILY_LIMIT ?? 500) || 500),
     // Local models (e.g. oMLX) can need minutes for long answers; hosted APIs are usually much faster.
     timeoutMs: Math.max(10_000, Number(env.AI_REQUEST_TIMEOUT_MS ?? 90_000) || 90_000),
   };
@@ -139,6 +141,13 @@ export async function runStructured<T>(
   const limit = options.dailyLimit ?? aiConfig().dailyLimit;
   if ((await usageToday(db, userId)) >= limit) {
     throw new AiLimitError(limit);
+  }
+  if (!options.caller) {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [all] = await db.select({ count: sql<number>`count(*)::int` }).from(aiUsage).where(gte(aiUsage.createdAt, since));
+    if ((all?.count ?? 0) >= aiConfig().globalDailyLimit) {
+      throw new AiOutputError("CollegeAtlas has reached today's AI limit for everyone. Please try again tomorrow.");
+    }
   }
 
   let lastProblem = "";

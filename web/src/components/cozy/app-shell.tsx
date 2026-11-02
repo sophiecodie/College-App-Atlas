@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { ChevronsLeft, ChevronsRight, Home, Landmark, LogOut, Menu, PenLine, Settings, ShieldCheck, Star, Telescope, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,7 +21,7 @@ const NAV = [
 const STORAGE_KEY = "atlas.sidebarCollapsed";
 
 /** Signed-in frame: collapsible sidebar on desktop, drawer + top bar on mobile. */
-export function AppShell({ isAdmin, children }: { isAdmin: boolean; children: ReactNode }) {
+export function AppShell({ isAdmin, isGuest = false, children }: { isAdmin: boolean; isGuest?: boolean; children: ReactNode }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -81,7 +80,7 @@ export function AppShell({ isAdmin, children }: { isAdmin: boolean; children: Re
             const Icon = item.icon;
             return (
               <Link aria-current={active ? "page" : undefined} className={`sidebar-link ${active ? "active" : ""}`} href={item.href} key={item.href} title={item.label}>
-                {active ? <motion.span className="active-bg" layoutId="sidebar-active" transition={{ type: "spring", stiffness: 420, damping: 36 }} /> : null}
+                {active ? <span className="active-bg" /> : null}
                 <Icon size={18} strokeWidth={1.8} />
                 <span className="sidebar-label">{item.label}</span>
               </Link>
@@ -91,7 +90,20 @@ export function AppShell({ isAdmin, children }: { isAdmin: boolean; children: Re
 
         <div className="sidebar-footer">
           <Image alt="" className="sidebar-cat" height={ART.flowers.height} src={ART.flowers.src} width={ART.flowers.width} />
-          <form action={signOutUser} style={{ width: "100%" }}>
+          <form
+            action={signOutUser}
+            onSubmit={(event) => {
+              if (
+                isGuest &&
+                !window.confirm(
+                  "You're using a guest session. If you sign out, you won't be able to get back to your essays, notes and colleges. Sign out anyway?",
+                )
+              ) {
+                event.preventDefault();
+              }
+            }}
+            style={{ width: "100%" }}
+          >
             <button className="sidebar-signout" title="Sign out" type="submit">
               <LogOut size={15} />
               <span className="sidebar-label">Sign out</span>

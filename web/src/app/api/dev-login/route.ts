@@ -1,11 +1,10 @@
-import { randomBytes } from "node:crypto";
-
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { db } from "@/db/client";
-import { sessions, users } from "@/db/schema";
+import { users } from "@/db/schema";
 import { DEV_STUDENT, devLoginEnabled } from "@/lib/dev-login";
+import { startSession } from "@/lib/session-cookie";
 
 /**
  * Local-only sign-in: creates (or reuses) a test student and a database session, then sets the same
@@ -21,16 +20,5 @@ export async function POST(request: Request) {
     [user] = await db.insert(users).values(DEV_STUDENT).returning({ id: users.id });
   }
 
-  const sessionToken = randomBytes(32).toString("hex");
-  const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  await db.insert(sessions).values({ sessionToken, userId: user!.id, expires });
-
-  const response = NextResponse.redirect(new URL("/app", request.url), 303);
-  response.cookies.set("authjs.session-token", sessionToken, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    expires,
-  });
-  return response;
+  return startSession(request, user!.id, "/app");
 }

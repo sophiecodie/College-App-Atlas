@@ -61,7 +61,6 @@ export default async function HomePage() {
         <nav aria-label="Site">
           <a href="#features">Features</a>
           <a href="#how-it-works">How it works</a>
-          <Link href="/signin?mode=login">Log in</Link>
           <Link className="cozy-button" href="/signin">
             Get started
           </Link>
