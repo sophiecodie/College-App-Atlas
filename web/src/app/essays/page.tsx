@@ -16,13 +16,12 @@ export default async function EssaysPage() {
 
   return (
     <main className="shell shell-wide">
-      <section className="page-header-row">
+      <section className="workspace-header">
         <div>
-          <span className="eyebrow">Essays</span>
+          <span className="eyebrow">Writing</span>
           <h1 className="page-title">Essay workspace</h1>
           <p className="lede">
-            One focused workspace at a time, with the same core rhythm as NiceGUI: choose a prompt,
-            draft live, keep versions, and tag the work as you go.
+            Pick a prompt, write, and keep your strongest angles close by.
           </p>
         </div>
       </section>

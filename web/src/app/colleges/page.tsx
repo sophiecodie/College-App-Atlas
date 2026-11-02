@@ -50,48 +50,59 @@ export default async function CollegesPage() {
 
   return (
     <main className="shell">
-      <section className="page-header-row">
+      <section className="workspace-header">
         <div>
-          <span className="eyebrow">Colleges</span>
+          <span className="eyebrow">Schools</span>
           <h1 className="page-title">College dashboard</h1>
           <p className="lede">
-            Scan your colleges here, then open any school for details, research, prompts, and requirements.
+            Keep your saved schools in one place, then open any one for prompts,
+            research, requirements, and notes.
           </p>
         </div>
-        <ModalShell
-          description="Choose from the seeded catalog and add another school to your workspace."
-          title="Add a college"
-          triggerClassName="plus-launch-button"
-          triggerLabel="+"
-        >
-          {availableColleges.length > 0 ? (
-            <form action={addCollegeToDashboard} className="stack">
-              <label className="field-label" htmlFor="collegeSlug">
-                Choose a college
-              </label>
-              <select
-                className="field"
-                defaultValue={availableColleges[0]?.slug}
-                id="collegeSlug"
-                name="collegeSlug"
-              >
-                {availableColleges.map((college) => (
-                  <option key={college.slug} value={college.slug}>
-                    {college.name}
-                  </option>
-                ))}
-              </select>
-              <button className="button" type="submit">
-                Add to my colleges
-              </button>
-            </form>
-          ) : (
-            <p className="muted">You already added every seeded college.</p>
-          )}
-        </ModalShell>
+        <div className="workspace-actions">
+          <ModalShell
+            description="Choose from the seeded catalog and add another school to your workspace."
+            title="Add a college"
+            triggerClassName="plus-launch-button"
+            triggerLabel="+"
+          >
+            {availableColleges.length > 0 ? (
+              <form action={addCollegeToDashboard} className="stack">
+                <label className="field-label" htmlFor="collegeSlug">
+                  Choose a college
+                </label>
+                <select
+                  className="field"
+                  defaultValue={availableColleges[0]?.slug}
+                  id="collegeSlug"
+                  name="collegeSlug"
+                >
+                  {availableColleges.map((college) => (
+                    <option key={college.slug} value={college.slug}>
+                      {college.name}
+                    </option>
+                  ))}
+                </select>
+                <button className="button" type="submit">
+                  Add to my colleges
+                </button>
+              </form>
+            ) : (
+              <p className="muted">You already added every seeded college.</p>
+            )}
+          </ModalShell>
+        </div>
       </section>
 
-      <section className="colleges-card-grid">
+      <section className="panel dashboard-route-panel">
+        <div className="section-heading-row">
+          <div>
+            <span className="section-kicker">Saved schools</span>
+            <h2 className="section-title">{savedColleges.length} colleges in your list</h2>
+          </div>
+        </div>
+
+        <section className="colleges-card-grid">
         {savedColleges.length > 0 ? (
           savedColleges.map((college) => {
             const progress = getCollegeProgress(college);
@@ -143,13 +154,14 @@ export default async function CollegesPage() {
             );
           })
         ) : (
-          <div className="panel empty-panel">
+          <div className="empty-panel">
             <strong>No colleges saved yet</strong>
             <p className="muted">
               Use the plus button to add your first school and start building the list.
             </p>
           </div>
         )}
+        </section>
       </section>
     </main>
   );

@@ -93,6 +93,7 @@ export function EssaysWorkspace({
   const [actionError, setActionError] = useState<string | null>(null);
   const [workspaceMode, setWorkspaceMode] = useState<"writing" | "storylines">("writing");
   const [groupMode, setGroupMode] = useState<"college" | "tag">("college");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const prompts = useMemo(() => groups.flatMap((group) => group.prompts), [groups]);
   const firstPromptId = prompts[0]?.promptId ?? null;
   const [selectedPromptId, setSelectedPromptId] = useState(
@@ -197,6 +198,16 @@ export function EssaysWorkspace({
       }));
   }, [groupMode, groups, prompts]);
 
+  useEffect(() => {
+    setCollapsedGroups((current) => {
+      const next: Record<string, boolean> = {};
+      for (const group of sidebarGroups) {
+        next[group.id] = current[group.id] ?? true;
+      }
+      return next;
+    });
+  }, [sidebarGroups]);
+
   function buildDraftFormData() {
     const formData = new FormData();
     formData.set("draftId", selectedVersion?.id ?? "");
@@ -213,6 +224,11 @@ export function EssaysWorkspace({
       ...current,
       [groupId]: !current[groupId],
     }));
+  }
+
+  function selectPrompt(promptId: string) {
+    setSelectedPromptId(promptId);
+    setSidebarOpen(false);
   }
 
   async function handleSaveDraft() {
@@ -346,13 +362,24 @@ export function EssaysWorkspace({
   return (
     <>
       <section className="panel essay-workspace-switcher">
-        <div>
-          <strong>Essay workspace mode</strong>
+        <div className="essay-switcher-copy">
+          <span className="section-kicker">Essays</span>
+          <strong>{workspaceMode === "writing" ? "Drafting" : "Storylines"}</strong>
           <div className="muted">
-            Switch between drafting and idea generation without leaving the essays page.
+            {workspaceMode === "writing"
+              ? "Write one prompt at a time, then keep only the versions and tags you need."
+              : "Collect details about yourself first, then build angles you can carry into real prompts."}
           </div>
         </div>
-        <div className="essay-group-toggle">
+        <div className="essay-switcher-actions">
+          <button
+            className="button button-secondary"
+            onClick={() => setSidebarOpen((current) => !current)}
+            type="button"
+          >
+            {sidebarOpen ? "Hide prompts" : "Browse prompts"}
+          </button>
+          <div className="essay-group-toggle">
           <button
             className={`essay-toggle-chip ${workspaceMode === "writing" ? "active" : ""}`}
             onClick={() => setWorkspaceMode("writing")}
@@ -367,15 +394,17 @@ export function EssaysWorkspace({
           >
             Storylines
           </button>
+          </div>
         </div>
       </section>
 
-    <section className={`essay-shell ${workspaceMode === "storylines" ? "storylines-mode" : ""}`}>
+      <section className={`essay-shell ${workspaceMode === "storylines" ? "storylines-mode" : ""} ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
+      {sidebarOpen ? (
       <aside className="panel essay-sidebar">
         <div className="essay-sidebar-header">
           <div>
-            <strong>Essay menu</strong>
-            <div className="muted">{prompts.length} active prompts</div>
+            <strong>Prompt list</strong>
+            <div className="muted">{prompts.length} prompts in progress</div>
           </div>
           <div className="essay-group-toggle">
             <button
@@ -383,21 +412,27 @@ export function EssaysWorkspace({
               onClick={() => setGroupMode("college")}
               type="button"
             >
-              College
+              By school
             </button>
             <button
               className={`essay-toggle-chip ${groupMode === "tag" ? "active" : ""}`}
               onClick={() => setGroupMode("tag")}
               type="button"
             >
-              Tag
+              By theme
             </button>
           </div>
         </div>
 
+        <div className="essay-sidebar-current">
+          <span className="essay-sidebar-current-label">Current prompt</span>
+          <strong>{selectedPrompt.collegeName}</strong>
+          <div className="muted essay-sidebar-current-copy">{selectedPrompt.primaryTag ?? "Other"}</div>
+        </div>
+
         <div className="essay-sidebar-groups">
           {sidebarGroups.map((group) => {
-            const isCollapsed = collapsedGroups[group.id] ?? false;
+            const isCollapsed = collapsedGroups[group.id] ?? true;
             return (
             <div className="essay-sidebar-group" key={group.id}>
               <button
@@ -417,7 +452,7 @@ export function EssaysWorkspace({
                     <button
                       className={`essay-sidebar-item ${active ? "active" : ""}`}
                       key={prompt.promptId}
-                      onClick={() => setSelectedPromptId(prompt.promptId)}
+                      onClick={() => selectPrompt(prompt.promptId)}
                       type="button"
                     >
                       <span className="essay-sidebar-item-title">{prompt.primaryTag ?? "Other"}</span>
@@ -430,20 +465,30 @@ export function EssaysWorkspace({
           )})}
         </div>
       </aside>
+      ) : null}
 
       {workspaceMode === "writing" ? (
       <div className="panel essay-main">
         {actionError ? <div className="essay-error-banner">{actionError}</div> : null}
+        <div className="essay-context-bar">
+          <div className="essay-context-copy">
+            <span className="essay-context-label">Current prompt</span>
+            <strong>{selectedPrompt.collegeName}</strong>
+            <div className="muted">{selectedPrompt.primaryTag ?? "Other"} · {promptLimitLabel(selectedPrompt)}</div>
+          </div>
+          <button
+            className="button button-secondary"
+            onClick={() => setSidebarOpen(true)}
+            type="button"
+          >
+            Change prompt
+          </button>
+        </div>
         <div className="essay-main-header">
           <div className="stack">
-            <div className="essay-kicker-row">
-              <span className="pill">{selectedPrompt.collegeName}</span>
-              <span className="pill">{selectedPrompt.primaryTag ?? "Other"}</span>
-              {selectedPrompt.completed ? <span className="pill">Completed</span> : null}
-            </div>
-            <h2 className="essay-workspace-title">{selectedPrompt.promptText}</h2>
+            <h2 className="essay-workspace-title essay-prompt-title">{selectedPrompt.promptText}</h2>
             <div className="muted">
-              {promptLimitLabel(selectedPrompt)} · {formatSavedAt(selectedVersion?.updatedAt ?? null)}
+              {formatSavedAt(selectedVersion?.updatedAt ?? null)}
             </div>
           </div>
           <div className={`essay-live-counter ${isOverLimit ? "over" : ""}`}>
@@ -469,7 +514,7 @@ export function EssaysWorkspace({
 
           <div>
             <label className="field-label" htmlFor="essay-version-status">
-              Draft status
+              Status
             </label>
             <select
               className="field"
@@ -488,13 +533,13 @@ export function EssaysWorkspace({
 
         <div className="stack">
           <label className="field-label" htmlFor="essay-content">
-            Draft text
+            Your draft
           </label>
           <textarea
             className="field field-textarea essay-live-textarea"
             id="essay-content"
             onChange={(event) => setDraftContent(event.target.value)}
-            placeholder="Start drafting here. The counter updates live as you write."
+            placeholder="Start writing here. The counter updates as you go."
             rows={18}
             value={draftContent}
           />
@@ -510,23 +555,32 @@ export function EssaysWorkspace({
             {isSaving === "draft" ? "Saving..." : "Save current version"}
           </button>
             <a className="button button-secondary" href={`/colleges/${selectedPrompt.collegeSlug}?tab=essays`}>
-              Manage prompt settings
+              Open prompt settings
             </a>
         </div>
       </div>
       ) : (
       <div className="panel essay-main essay-storylines-workspace">
         {actionError ? <div className="essay-error-banner">{actionError}</div> : null}
+        <div className="essay-context-bar">
+          <div className="essay-context-copy">
+            <span className="essay-context-label">Working with</span>
+            <strong>{selectedPrompt.collegeName}</strong>
+            <div className="muted">{selectedPrompt.primaryTag ?? "Other"} prompt selected</div>
+          </div>
+          <button
+            className="button button-secondary"
+            onClick={() => setSidebarOpen(true)}
+            type="button"
+          >
+            Change prompt
+          </button>
+        </div>
         <div className="essay-main-header">
           <div className="stack">
-            <div className="essay-kicker-row">
-              <span className="pill">Storylines</span>
-              <span className="pill">{selectedPrompt.collegeName}</span>
-              <span className="pill">{selectedPrompt.primaryTag ?? "Other"}</span>
-            </div>
-            <h2 className="essay-workspace-title">Idea generation workspace</h2>
-            <div className="muted">
-              Build angles first, then move the best ones into your prompt writing flow.
+            <h2 className="essay-workspace-title">Build story angles first</h2>
+            <div className="muted essay-storylines-intro">
+              Start with specific details about yourself, then keep only the angles that feel real.
             </div>
           </div>
           <div className="essay-live-counter">
@@ -537,20 +591,21 @@ export function EssaysWorkspace({
         <div className="essay-storylines-grid">
           <div className="essay-storylines-panel stack">
             <div className="subpanel-header">
-              <strong>21 Interesting Facts About Me</strong>
+              <strong className="essay-panel-title">Interesting facts about me</strong>
               <span className="muted">{storylineFactsInput.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).length}/21</span>
             </div>
-            <p className="muted">
-              Drop in facts, quirks, hobbies, rituals, or weirdly specific things you keep doing.
+            <p className="muted essay-storylines-copy">
+              Add one detail per line. Think quirks, habits, hobbies, routines, or oddly specific things you keep doing.
             </p>
-            <div className="essay-ai-debug">
+            <details className="essay-ai-debug">
+              <summary>AI details</summary>
               <div className="muted">
                 AI: {aiConfigured ? "configured" : "missing key"} · model: {aiModel}
               </div>
               <div className="muted essay-ai-url">{aiBaseUrl}</div>
-            </div>
+            </details>
             <label className="field-label" htmlFor="storyline-facts">
-              Facts, quirks, hobbies, rituals
+              One fact per line
             </label>
             <textarea
               className="field field-textarea essay-storyline-textarea"
@@ -567,7 +622,7 @@ export function EssaysWorkspace({
                 onClick={handleSaveStorylineFacts}
                 type="button"
               >
-                {isSaving === "facts" ? "Saving..." : "Save facts"}
+                {isSaving === "facts" ? "Saving..." : "Save list"}
               </button>
               <button
                 className="button"
@@ -575,23 +630,23 @@ export function EssaysWorkspace({
                 onClick={handleGenerateStorylines}
                 type="button"
               >
-                {isSaving === "storylines" ? "Generating..." : "Generate storylines"}
+                {isSaving === "storylines" ? "Generating..." : "Generate angles"}
               </button>
             </div>
             {initialStorylineGeneratedAt ? (
-              <div className="muted">Generated {formatSavedAt(initialStorylineGeneratedAt).replace("Saved ", "")}</div>
+              <div className="muted essay-storylines-meta">Last generated {formatSavedAt(initialStorylineGeneratedAt).replace("Saved ", "")}</div>
             ) : null}
           </div>
 
           <div className="essay-storylines-panel stack">
             <div className="subpanel-header">
-              <strong>Generated angles</strong>
+              <strong className="essay-panel-title">Generated angles</strong>
               <span className="muted">{initialStorylineCards.length} ideas</span>
             </div>
-            <p className="muted">
-              Save strong angles, then attach them to the currently selected prompt when they fit.
+            <p className="muted essay-storylines-copy">
+              Keep the strong ones, then attach them to the prompt you are writing right now.
             </p>
-            <div className="essay-storyline-list">
+              <div className="essay-storyline-list">
               {initialStorylineCards.length > 0 ? (
                 initialStorylineCards.map((storyline) => {
                   const supportingFacts = storyline.supportingFactIds
@@ -629,7 +684,7 @@ export function EssaysWorkspace({
                           onClick={() => void handleToggleSavedStoryline(storyline.id)}
                           type="button"
                         >
-                          {storyline.saved ? "Unsave" : "Save angle"}
+                          {storyline.saved ? "Unsave" : "Keep"}
                         </button>
                         <button
                           className="button button-secondary"
@@ -637,7 +692,7 @@ export function EssaysWorkspace({
                           onClick={() => void handleApplyStorylineToPrompt(storyline.id)}
                           type="button"
                         >
-                          Use for selected prompt
+                          Use in prompt
                         </button>
                       </div>
                     </div>
@@ -702,7 +757,7 @@ export function EssaysWorkspace({
         <div className="essay-tags-panel">
           <div className="subpanel-header">
             <strong>Tags</strong>
-            <span className="muted">Prompt + custom</span>
+            <span className="muted">Main theme + custom</span>
           </div>
           <div className="essay-tag-row">
             <span className="pill">{selectedPrompt.primaryTag ?? "Other"}</span>
@@ -719,7 +774,7 @@ export function EssaysWorkspace({
             className="field"
             id="essay-tags"
             onChange={(event) => setTagInput(event.target.value)}
-            placeholder="community, identity, reuse later"
+            placeholder="identity, community, reuse later"
             value={tagInput}
           />
           <button

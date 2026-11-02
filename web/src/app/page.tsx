@@ -40,20 +40,18 @@ export default async function HomePage() {
     <main className="shell">
       <section className="hero">
         <div className="panel hero-panel">
-          <span className="eyebrow">
-            {session?.user ? "Authenticated MVP" : "Launch Skeleton"}
-          </span>
-          <h1 className="headline">College Atlas is ready for the real stack.</h1>
+          <span className="eyebrow">{session?.user ? "Signed in" : "Student planning, less panic"}</span>
+          <h1 className="headline">Map your college application season without losing the plot.</h1>
           <p className="lede">
-            This new <code className="inline">web/</code> app is the Vercel-native
-            version of the product. The NiceGUI prototype stays intact while auth,
-            persistence, and the essay catalog move onto a production path.
+            College Atlas turns colleges, essay work, and deadlines into one calmer
+            workspace. This web app is the real signed-in foundation, with live data,
+            saved progress, and room for stronger student-facing tools.
           </p>
 
           <div className="stack" style={{ marginTop: 24 }}>
-            <div className="check">Neon is now storing the shared college and prompt catalog.</div>
-            <div className="check">Auth.js is wired for Google sign-in and database sessions.</div>
-            <div className="check">The next build step is user-owned data: saved colleges, prompt selections, and drafts.</div>
+            <div className="check">Colleges and prompts already live in the shared catalog.</div>
+            <div className="check">Google sign-in and database sessions are already wired up.</div>
+            <div className="check">Saved colleges, tasks, and essays are moving into one student route map.</div>
           </div>
 
           <div className="cta-row">
@@ -73,7 +71,7 @@ export default async function HomePage() {
             <span className="helper-text">
               {session?.user
                 ? `Signed in as ${session.user.email ?? session.user.name ?? "your account"}.`
-                : "Use your Google account to test the real session flow locally."}
+                : "Use your Google account to test the real signed-in flow locally."}
             </span>
           </div>
         </div>
@@ -81,20 +79,20 @@ export default async function HomePage() {
         <div className="panel">
           <div className="stat-grid">
             <div className="stat-card">
-              <span className="stat-label">Catalog</span>
+              <span className="stat-label">Route map</span>
               <strong>{catalog.collegeCount}</strong>
-              <div className="muted">colleges seeded into Neon</div>
+              <div className="muted">colleges already ready to add</div>
             </div>
             <div className="stat-card">
-              <span className="stat-label">Prompts</span>
+              <span className="stat-label">Story bank</span>
               <strong>{catalog.promptCount}</strong>
-              <div className="muted">essay prompts ready for the new app</div>
+              <div className="muted">essay prompts waiting in the workspace</div>
             </div>
           </div>
 
           <div className="subpanel">
             <div className="subpanel-header">
-              <strong>Current Snapshot</strong>
+              <strong>Live catalog snapshot</strong>
               <span className="muted">Pulled live from Neon</span>
             </div>
             <div className="snapshot-list">
@@ -112,20 +110,20 @@ export default async function HomePage() {
 
           <div className="meta-grid">
             <div className="meta-card">
-              <strong>Today</strong>
-              <div className="muted">Database, auth adapter, and seed pipeline are all live.</div>
+              <strong>Now</strong>
+              <div className="muted">Sign-in, persistence, and seeded college data are already in place.</div>
             </div>
             <div className="meta-card">
-              <strong>Next</strong>
-              <div className="muted">Build the first signed-in workspace for saved colleges and essay drafts.</div>
+              <strong>Next route</strong>
+              <div className="muted">Make the signed-in dashboard feel more like a guided map than a generic tool.</div>
             </div>
             <div className="meta-card">
-              <strong>Migration</strong>
-              <div className="muted">Keep seeding from JSON until the admin workflow moves into the app.</div>
+              <strong>Essays</strong>
+              <div className="muted">Storylines and drafting can become the core personal-feeling part of the app.</div>
             </div>
             <div className="meta-card">
-              <strong>UX</strong>
-              <div className="muted">This separate app is where the polished visual direction should now happen.</div>
+              <strong>Direction</strong>
+              <div className="muted">This web app is where the lighter, student-facing design system now takes shape.</div>
             </div>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { ReactNode } from "react";
 
 import { auth } from "@/auth";
 import { signOutUser } from "@/app/actions";
-import { mainNav } from "@/lib/shell";
+import { SiteNav } from "@/app/components/site-nav";
 
 export const metadata: Metadata = {
   title: "College Atlas",
@@ -20,27 +20,24 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body suppressHydrationWarning>
         <header className="site-header">
           <div className="site-header-inner">
-            <Link className="brand-mark" href={session?.user ? "/app" : "/"}>
-              College Atlas
-            </Link>
-            <nav className="site-nav">
+            <div className="site-brand-wrap">
+              <Link className="brand-mark" href={session?.user ? "/app" : "/"}>
+                College Atlas
+              </Link>
+              {session?.user ? <span className="site-brand-note">Student workspace</span> : null}
+            </div>
+            {session?.user ? <SiteNav /> : <span className="muted">Launch stack in progress</span>}
+            <div className="site-header-actions">
               {session?.user ? (
                 <>
-                  {mainNav.map((item) => (
-                    <Link href={item.href} key={item.href}>
-                      {item.label}
-                    </Link>
-                  ))}
                   <form action={signOutUser}>
                     <button className="nav-button" type="submit">
                       Sign out
                     </button>
                   </form>
                 </>
-              ) : (
-                <span className="muted">Launch stack in progress</span>
-              )}
-            </nav>
+              ) : null}
+            </div>
           </div>
         </header>
         {children}
