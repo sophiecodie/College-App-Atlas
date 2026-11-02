@@ -415,7 +415,7 @@ a {
   width: 280px;
   height: 280px;
   border-radius: 999px;
-  background: radial-gradient(circle, oklch(0.75 0.084 10 / 0.26) 0%, oklch(0.75 0.084 10 / 0) 72%);
+  background: radial-gradient(circle, oklch(0.75 0.084 165 / 0.26) 0%, oklch(0.75 0.084 165 / 0) 72%);
   pointer-events: none;
 }
 
@@ -472,7 +472,7 @@ a {
   font-weight: 700;
   padding: 0.88rem 1.15rem;
   cursor: pointer;
-  box-shadow: 0 14px 28px oklch(0.38 0.063 10 / 0.2);
+  box-shadow: 0 14px 28px oklch(0.38 0.063 165 / 0.2);
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
@@ -481,7 +481,7 @@ a {
 
 .button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 18px 30px oklch(0.38 0.063 10 / 0.24);
+  box-shadow: 0 18px 30px oklch(0.38 0.063 165 / 0.24);
 }
 
 .button-secondary {
@@ -671,11 +671,11 @@ code.inline {
   height: 64px;
   border: 0;
   border-radius: 22px;
-  background: linear-gradient(135deg, var(--accent) 0%, oklch(0.52 0.063 10) 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, oklch(0.52 0.063 165) 100%);
   color: #fffdf9;
   font-size: 2rem;
   line-height: 1;
-  box-shadow: 0 18px 30px oklch(0.38 0.063 10 / 0.22);
+  box-shadow: 0 18px 30px oklch(0.38 0.063 165 / 0.22);
   cursor: pointer;
 }
 
@@ -746,9 +746,9 @@ code.inline {
 }
 
 .button-danger {
-  background: #9f4250;
+  background: #3e6b5b;
   color: #fff9f6;
-  border-color: #9f4250;
+  border-color: #3e6b5b;
 }
 
 .progress-track {
@@ -766,7 +766,7 @@ code.inline {
 .progress-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, oklch(0.52 0.063 10) 0%, var(--accent-2) 100%);
+  background: linear-gradient(90deg, oklch(0.52 0.063 165) 0%, var(--accent-2) 100%);
 }
 
 .progress-caption {
@@ -963,7 +963,7 @@ code.inline {
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  color: #87414a;
+  color: #3e6b5b;
 }
 
 .activity-final-title {
@@ -1017,7 +1017,7 @@ code.inline {
   margin-top: 8px;
   font-size: 1.9rem;
   font-weight: 800;
-  color: #87414a;
+  color: #3e6b5b;
 }
 
 .category-chip-wrap {
@@ -1077,7 +1077,7 @@ code.inline {
   width: 320px;
   height: 320px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(184, 100, 111, 0.14) 0%, rgba(184, 100, 111, 0) 72%);
+  background: radial-gradient(circle, rgba(184, 100, 111, 0.14) 0%, rgba(79, 127, 110, 0) 72%);
   pointer-events: none;
 }
 
@@ -1114,7 +1114,7 @@ code.inline {
 
 .research-overview-card:hover {
   transform: translateY(-1px);
-  border-color: rgba(184, 100, 111, 0.28);
+  border-color: rgba(79, 127, 110, 0.25);
   box-shadow: 0 14px 28px rgba(64, 42, 28, 0.08);
 }
 
@@ -1331,7 +1331,7 @@ code.inline {
 .research-detail-hero {
   margin-bottom: 22px;
   background:
-    radial-gradient(circle at top right, rgba(184, 100, 111, 0.16) 0%, rgba(184, 100, 111, 0) 28%),
+    radial-gradient(circle at top right, rgba(184, 100, 111, 0.16) 0%, rgba(79, 127, 110, 0) 28%),
     linear-gradient(180deg, #fffdfa 0%, #fff7ef 100%);
 }
 
@@ -1547,7 +1547,7 @@ code.inline {
 
 .essay-sidebar-item:hover {
   transform: translateY(-1px);
-  border-color: rgba(184, 100, 111, 0.28);
+  border-color: rgba(79, 127, 110, 0.25);
 }
 
 .essay-sidebar-item.active {
@@ -1733,7 +1733,7 @@ code.inline {
 }
 
 .text-link {
-  color: #87414a;
+  color: #3e6b5b;
   font-weight: 700;
 }
 
@@ -2457,7 +2457,7 @@ h3,
 
 .app-sidebar .site-nav-link.active {
   background: var(--accent-soft);
-  color: #8f2f5a;
+  color: #2f5f4f;
   font-weight: 700;
 }
 
@@ -2710,7 +2710,7 @@ h3,
 }
 
 .studio-tab.active strong {
-  color: #8f2f5a;
+  color: #2f5f4f;
 }
 
 .ai-disabled-note {

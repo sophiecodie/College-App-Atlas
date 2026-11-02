@@ -12,7 +12,7 @@ export function ProgressRing({ value, size = 128, stroke = 12, label }: Props) {
   return (
     <div aria-label={label ?? `${clamped}% complete`} className="progress-ring" role="img" style={{ width: size, height: size }}>
       <svg height={size} width={size}>
-        <circle cx={size / 2} cy={size / 2} fill="none" r={radius} stroke="#F4E7DE" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} fill="none" r={radius} stroke="#ECE8DF" strokeWidth={stroke} />
         <motion.circle
           animate={{ strokeDashoffset: circumference * (1 - clamped / 100) }}
           cx={size / 2}

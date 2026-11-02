@@ -95,7 +95,7 @@ export function OnboardingFlow({ initial, popular, savedSlugs }: Props) {
             {Array.from({ length: STEPS - 1 }, (_, index) => (
               <span className="onboarding-progress-segment" key={index}>
                 <motion.span animate={{ scaleX: step > index ? 1 : 0 }} initial={false} transition={{ duration: 0.35 }} />
-                <motion.i animate={{ scale: step >= index ? 1 : 0.7, backgroundColor: step >= index ? "#D58D9A" : "#E8D8CF" }} initial={false} />
+                <motion.i animate={{ scale: step >= index ? 1 : 0.7, backgroundColor: step >= index ? "#4F7F6E" : "#DDE3DC" }} initial={false} />
               </span>
             ))}
           </div>

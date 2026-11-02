@@ -29,17 +29,23 @@ export async function getPersonalStatement(db: AtlasDb, userId: string) {
 }
 
 /** Autosave target: updates the given version (owned by the user) or creates the first one. */
-export async function savePersonalStatementDraft(db: AtlasDb, userId: string, draftId: string | null, content: string, title = "") {
+export async function savePersonalStatementDraft(db: AtlasDb, userId: string, draftId: string | null, content: string, title?: string) {
   const text = content.slice(0, 40_000);
   if (draftId) {
     const rows = await db
       .update(essayDrafts)
-      .set({ content: text, title: title.slice(0, 120), status: text.trim() ? "drafting" : "not_started", updatedAt: new Date() })
+      // Autosave passes no title, so a version's name is never wiped while typing.
+      .set({
+        content: text,
+        ...(title !== undefined ? { title: title.slice(0, 120) } : {}),
+        status: text.trim() ? "drafting" : "not_started",
+        updatedAt: new Date(),
+      })
       .where(and(eq(essayDrafts.id, draftId), eq(essayDrafts.userId, userId), eq(essayDrafts.promptId, PERSONAL_STATEMENT_PROMPT_ID)))
       .returning({ id: essayDrafts.id, updatedAt: essayDrafts.updatedAt });
     if (rows[0]) return rows[0];
   }
-  return createPersonalStatementVersion(db, userId, text, title);
+  return createPersonalStatementVersion(db, userId, text, title ?? "");
 }
 
 export async function createPersonalStatementVersion(db: AtlasDb, userId: string, content: string, title = "") {

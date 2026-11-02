@@ -31,6 +31,11 @@ function createDb() {
     return createLocalDb(process.env.ATLAS_PGLITE_DIR);
   }
   if (!process.env.DATABASE_URL) {
+    // `next build` loads every route module but never queries (all pages render on demand), so builds
+    // don't need the database. The placeholder is never connected to; at runtime a missing URL still fails.
+    if (process.env.NEXT_PHASE === "phase-production-build") {
+      return drizzle({ client: neon("postgresql://build:build@localhost:5432/build") });
+    }
     throw new Error("DATABASE_URL is required to initialize the database client.");
   }
   return drizzle({ client: neon(process.env.DATABASE_URL) });

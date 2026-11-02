@@ -340,6 +340,24 @@ export async function saveOutline(db: AtlasDb, userId: string, outlineId: string
     .where(and(eq(essayOutlines.id, outlineId), eq(essayOutlines.userId, userId)));
 }
 
+/** A blank personal-statement outline the student fills in themselves. */
+export async function createBlankOutline(db: AtlasDb, userId: string, title: string) {
+  const [outline] = await db
+    .insert(essayOutlines)
+    .values({
+      userId,
+      title: title.trim().slice(0, 200) || "New outline idea",
+      targetKind: "personal_statement",
+      sections: [
+        { heading: "Opening moment", notes: "" },
+        { heading: "What changed", notes: "" },
+        { heading: "What it means now", notes: "" },
+      ],
+    })
+    .returning();
+  return outline!;
+}
+
 export async function deleteOutline(db: AtlasDb, userId: string, outlineId: string) {
   await db.delete(essayOutlines).where(and(eq(essayOutlines.id, outlineId), eq(essayOutlines.userId, userId)));
 }

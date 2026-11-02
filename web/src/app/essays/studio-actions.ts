@@ -10,6 +10,7 @@ import {
   clearUnsavedThemes,
   createConnection,
   createIdeaCard,
+  createBlankOutline,
   createOutlineFromTheme,
   deleteConnection,
   deleteIdeaCard,
@@ -111,6 +112,10 @@ export async function createOutlineFromThemeAction(themeId: string) {
 // Outlines
 export async function saveOutlineAction(outlineId: string, title: string, sections: OutlineSection[]) {
   return attempt((userId) => saveOutline(db, userId, outlineId, title, sections), []);
+}
+
+export async function createBlankOutlineAction(title: string) {
+  return attempt(async (userId) => (await createBlankOutline(db, userId, title)).id);
 }
 
 export async function deleteOutlineAction(outlineId: string) {
